@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 score += 2; // Good (moderate wind)
                 windSpeedIcon = '✅';
             } else {
-                score -= 1; // Potentially too strong
+                score -= 2; // Potentially too strong
                 windSpeedIcon = '❌';
             }
             details.push(`${windSpeedIcon} Макс. скорост на вятър: ${data.wind_speed_10m_max} km/h`);
