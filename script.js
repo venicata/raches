@@ -41,12 +41,26 @@ document.addEventListener('DOMContentLoaded', () => {
             knotsUnit: "knots",
             msUnit: "m/s",
             noData: "N/A",
-            mapLink: "📍 Map"
+            mapLink: "📍 Map",
+            criteriaLink: "📋 Criteria",
+            footerText: "Created with AI assistant. Data from <a href=\"https://open-meteo.com/\" target=\"_blank\">Open-Meteo</a>.",
+            modalTitle: "Criteria for Thermal Wind in Raches",
+            modalIntro: "In Raches, the thermal effect intensifies when the following 5 conditions are met simultaneously:",
+            criteria1Title: "✅ 1. Sunny and clear sky (no clouds until noon)",
+            criteria1Desc: "➡️ Windy: enable Clouds layer → look for very few clouds before 13:00. Why? The sun needs to heat the land to create a temperature difference between land and sea.",
+            criteria2Title: "✅ 2. Land-sea temperature difference",
+            criteria2Desc: "➡️ Windy: enable Airgram or Meteogram layer. Look for: Air temperature on land (e.g., 30°C). Sea temperature (usually 23–25°C). The greater the difference, the stronger the thermal breeze.",
+            criteria3Title: "✅ 3. Weak to moderate synoptic circulation from east or northeast (ENE/NE)",
+            criteria3Desc: "➡️ Windy: enable Wind layer → observe the arrows in the Raches area. The ideal scenario is 5–10 knots from ENE/NE in the morning (until noon). This \"helps\" the thermal effect without suppressing it.",
+            criteria4Title: "✅ 4. No strong west or south wind",
+            criteria4Desc: "➡️ It's important to have no wind against the thermal effect. Wind from W, SW, S will kill or reverse it. Avoid days with a forecast for west wind after 15:00.",
+            criteria5Title: "✅ 5. Local suction effect (you can ‘see’ it in Windy by wind acceleration around 14–16h)",
+            criteria5Desc: "➡️ Windy: in the Wind layer, place the cursor on the spot (Raches). If the wind sharply increases after 13:00 (e.g., from 6 to 15 knots), this is THERMAL INTENSIFICATION."
         },
         bg: {
             title: "💨 Raches Thermal Wind Forecaster",
             subtitle: "AI Асистент за прогноза на термичния вятър в Рахес",
-            instructions: "Кликнете 2 пъти на една дата ако искате да е за нея, или селектирайте период от дати",
+            instructions: "Кликнете 2 пъти на една дата, или селектирайте период от дати",
             analyzeBtn: "Анализирай",
             placeholderLoading: "Зареждам данни и анализирам... 🧠",
             placeholderDefault: "Изберете период и натиснете 'Анализирай', за да видите прогнозата.",
@@ -74,7 +88,21 @@ document.addEventListener('DOMContentLoaded', () => {
             knotsUnit: "възли",
             msUnit: "м/с",
             noData: "N/A",
-            mapLink: "📍 Карта"
+            mapLink: "📍 Карта",
+            criteriaLink: "📋 Критерии",
+            footerText: "Създадено с AI асистент. Данни от <a href=\"https://open-meteo.com/\" target=\"_blank\">Open-Meteo</a>.",
+            modalTitle: "Критерии за Термичен Вятър в Рахес",
+            modalIntro: "В Рахес термиката се засилва, когато са налице следните 5 условия едновременно:",
+            criteria1Title: "✅ 1. Слънчево и ясно небе (без облаци до обяд)",
+            criteria1Desc: "➡️ Windy: включи слоя Clouds → търси много малко облаци преди 13:00. Защо? Слънцето трябва да затопли сушата, за да се създаде температурна разлика между суша и море.",
+            criteria2Title: "✅ 2. Температурна разлика суша-море",
+            criteria2Desc: "➡️ Windy: включи слоя Airgram или Meteogram. Търси: Температура на въздуха на сушата (примерно 30°C). Температура на морето (обикновено 23–25°C). Колкото по-голяма е разликата, толкова по-силен е термичният бриз.",
+            criteria3Title: "✅ 3. Слаба до умерена синоптична циркулация от изток или североизток (ENE/NE)",
+            criteria3Desc: "➡️ Windy: включи слоя Wind → наблюдавай стрелките в района на Raches. Идеалният сценарий е 5–10 възела от ENE/NE сутринта (до обяд). Това \"помага\" на термиката, без да я задушава.",
+            criteria4Title: "✅ 4. Без силен западен или южен вятър",
+            criteria4Desc: "➡️ Важно е да няма вятър срещу термиката. Вятър от W, SW, S ще я убие или обърне. Избягвай дни с прогноза за западен вятър след 15:00.",
+            criteria5Title: "✅ 5. Местен ефект на засмукване (можеш да го „видиш“ в Windy по ускоряване на вятъра около 14–16 ч.)",
+            criteria5Desc: "➡️ Windy: в слоя Wind, постави курсора на мястото на спота (Raches). Ако след 13:00 вятърът рязко се усилва (примерно от 6 на 15 възела), това е ТЕРМИЧНО ЗАСИЛВАНЕ."
         }
     };
 
@@ -370,4 +398,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Set initial language
     setLanguage('bg');
+
+    // Modal functionality
+    const modal = document.getElementById('criteria-modal');
+    const criteriaLink = document.getElementById('criteria-link');
+    const closeButton = document.querySelector('.close-button');
+
+    criteriaLink.onclick = function(event) {
+        event.preventDefault(); // Prevent page jump for # href
+        modal.style.display = 'block';
+    }
+
+    closeButton.onclick = function() {
+        modal.style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
 });
