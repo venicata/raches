@@ -311,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
             let weatherInfoHtml = `
                 <h3>${result.date}</h3>
-                <p>Прогноза: ${result.finalForecast}</p>
+                <p>🎯 Прогноза: ${result.finalForecast}</p>
                 <p>Прогнозиран вятър: ${result.predicted_wind_range}</p> 
                 <p>Температура на водата: ${result.sea_temp !== undefined ? result.sea_temp + '°C' : 'N/A'}</p>
                 <p>Макс. скорост на вятър (API): ${result.wind_speed !== undefined ? (result.wind_speed * 0.539957).toFixed(1) + ' възли (' + result.wind_speed + ' km/h)' : 'N/A'}</p>
