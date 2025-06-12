@@ -5,8 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const RACHES_LAT = 38.867085;
     const RACHES_LON = 22.759371;
 
-    const VOLOS_LAT = 39.3692;
-    const VOLOS_LON = 22.9477;
+    const VOLOS_LAT = 38.9534;
+    const VOLOS_LON = 22.9668;
 
     // --- START: Language and Translations ---
     let currentLang = 'bg';
