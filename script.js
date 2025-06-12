@@ -101,6 +101,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+
+        // Fill in missing sea temperature data with the last known value
+        let lastKnownSeaTemp = null;
+        // First pass to find an initial value and handle cases where the first days are missing data
+        for (const date of weatherData.daily.time) {
+            if (dailyData[date] && dailyData[date].sea_temp !== undefined && dailyData[date].sea_temp !== null) {
+                lastKnownSeaTemp = dailyData[date].sea_temp;
+                break;
+            }
+        }
+        // If no data at all, use a default
+        if (lastKnownSeaTemp === null) {
+            lastKnownSeaTemp = 15.0;
+        }
+
+        // Second pass to fill the gaps
+        for (const date of weatherData.daily.time) {
+            if (dailyData[date]) {
+                if (dailyData[date].sea_temp !== undefined && dailyData[date].sea_temp !== null) {
+                    lastKnownSeaTemp = dailyData[date].sea_temp; // Update last known temp
+                } else {
+                    dailyData[date].sea_temp = lastKnownSeaTemp; // Use last known temp
+                }
+            }
+        }
     
         const analysisResults = [];
     
@@ -151,12 +176,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             details.push(`${windSpeedIcon} Макс. скорост на вятър: ${data.wind_speed_10m_max} km/h`);
     
-            // 4. Wind Direction (calibrated for a South-facing beach like Raches/Kouvela)
+            // 4. Wind Direction (calibrated for a South-facing beach like Raches/Kouvela) - НАМАЛЕНА ТЕЖЕСТ
             const windDir = data.wind_direction_10m_dominant;
             let windDirIcon = '';
             // Ideal direction is onshore (SE to SW).
             if (windDir >= 135 && windDir <= 225) { // Onshore (SE to SW)
-                score += 2; // Good direction
+                score += 1; // Good direction (was 2)
                 windDirIcon = '✅';
                 details.push(`${windDirIcon} Посока на вятър: ${windDir}° (Подходяща - Onshore)`);
             } else if (windDir >= 315 || windDir <= 45) { // Offshore (NW to NE)
@@ -164,18 +189,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 windDirIcon = '❌';
                 details.push(`${windDirIcon} Посока на вятър: ${windDir}° (Неподходяща - Offshore)`);
             } else { // Side-shore
-                score += 1; // Neutral
+                // score += 0; // Neutral (was 1) - No change
                 windDirIcon = '⚠️';
                 details.push(`${windDirIcon} Посока на вятър: ${windDir}° (Странична - Side-shore)`);
             }
-    
-            // 5. Suck Effect (Thermal Wind Potential)
+
+            // 5. Suck Effect (Thermal Wind Potential) - More lenient thresholds to match reality
             let suckEffectScore = 0;
-            if (tempDiff > 7 && data.cloud_cover < 40) {
+            if (tempDiff > 6.5 && data.cloud_cover < 45) { // Was > 7 and < 40
                 suckEffectScore = 3; // Strong suck effect
-            } else if (tempDiff > 4 && data.cloud_cover < 50) {
+            } else if (tempDiff > 4 && data.cloud_cover < 60) { // Was > 4 and < 50
                 suckEffectScore = 2; // Moderate suck effect
-            } else if (tempDiff > 2 && data.cloud_cover < 60) {
+            } else if (tempDiff > 2 && data.cloud_cover < 70) { // Was > 2 and < 60
                 suckEffectScore = 1; // Weak suck effect
             }
             data.suck_effect_score = suckEffectScore;
@@ -189,13 +214,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 suckEffectIcon = '❌';
             }
             details.push(`${suckEffectIcon} Suck ефект (термичен вятър): ${suckEffectScore}/3`);
-    
+
+            // Min/Max scores are calculated based on the sum of min/max points from each criterion:
+            // Cloud (0/2), Temp (0/2), Wind Speed (-1/2), Wind Dir (-1/1), Suck (0/3)
+            const minScore = -2;
+            const maxScore = 10;
+
             let finalForecast = "";
+            // Adjusted thresholds based on new max score of 10
             if (score >= 7) finalForecast = "ВИСОКА ВЕРОЯТНОСТ ЗА ДОБРИ УСЛОВИЯ";
-            else if (score >= 5) finalForecast = "СРЕДНА ВЕРОЯТНОСТ ЗА ДОБРИ УСЛОВИЯ";
-            else if (score >= 3) finalForecast = "НИСКА ВЕРОЯТНОСТ ЗА ДОБРИ УСЛОВИЯ";
+            else if (score >= 4) finalForecast = "СРЕДНА ВЕРОЯТНОСТ ЗА ДОБРИ УСЛОВИЯ";
+            else if (score >= 2) finalForecast = "НИСКА ВЕРОЯТНОСТ ЗА ДОБРИ УСЛОВИЯ";
             else finalForecast = "НЕ Е ПОДХОДЯЩО ЗА КАЙТ";
-    
+
             // Predict wind speed range
             data.predicted_wind_range = predictWindSpeedRange(
                 data.cloud_cover,
@@ -204,9 +235,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.wind_direction_10m_dominant,
                 suckEffectScore
             );
-    
+
             analysisResults.push({
                 date: date,
+                score: score,
+                minScore: minScore,
+                maxScore: maxScore,
                 cloud_cover: data.cloud_cover,
                 temperature_2m_max: data.temperature_2m_max,
                 sea_temp: data.sea_temp,
@@ -222,78 +256,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function predictWindSpeedRange(cloudCover, tempDiff, baseWindSpeed, windDirection, suckEffectScore) {
-        let predictedMin = baseWindSpeed; // Start with the API's max wind speed as a base for min
-        let predictedMax = baseWindSpeed;
-    
-        // Convert baseWindSpeed from km/h to knots for easier reasoning (1 km/h = 0.539957 knots)
         const baseWindKnots = baseWindSpeed * 0.539957;
         let minKnots = baseWindKnots;
         let maxKnots = baseWindKnots;
-    
-        // Adjust based on suck effect (calibrated for Raches, target 18-23 knots on good days)
-        // suckEffectScore is 0-3
-        if (suckEffectScore === 3) { // Strong suck effect -> Aims for ~18-23 knots
-            minKnots += 6;
-            maxKnots += 11;
-        } else if (suckEffectScore === 2) { // Moderate suck effect
-            minKnots += 3;
-            maxKnots += 7;
-        } else if (suckEffectScore === 1) { // Weak suck effect
-            minKnots += 1;
-            maxKnots += 4;
+
+        // New logic: Use suckEffectScore to determine the wind profile.
+        // For strong thermal days, we largely IGNORE the base wind and set a new range.
+        if (suckEffectScore === 3) { // Prime thermal day: 18-24 knots
+            minKnots = 18;
+            maxKnots = 24;
+        } else if (suckEffectScore === 2) { // Good thermal day: 16-22 knots
+            minKnots = 16;
+            maxKnots = 22;
+        } else if (suckEffectScore === 1) { // Weak thermal day, boost the base wind
+            minKnots = baseWindKnots + 3;
+            maxKnots = baseWindKnots + 7;
         }
-    
-        // Adjust based on temperature difference (if not already fully captured by suck effect)
-        if (tempDiff > 8 && suckEffectScore < 3) { // Very high temp diff, might boost more
-            minKnots += 1;
-            maxKnots += 2;
-        } else if (tempDiff < 2 && suckEffectScore > 0) { // Low temp diff might reduce thermal effect
-            minKnots = Math.max(baseWindKnots, minKnots -2); // Don't go below base if thermal was boosting
-            maxKnots = Math.max(baseWindKnots, maxKnots -2);
+        // If suckEffectScore is 0, we just use the base wind from the API.
+
+        // Add a small adjustment for optimal direction, as it can help stabilize the thermal.
+        const isOptimalDirection = (windDirection >= 135 && windDirection <= 225);
+        if (isOptimalDirection && suckEffectScore >= 2) {
+            // If the direction is perfect, the wind might be slightly stronger and more stable.
+            minKnots = Math.min(minKnots + 1, maxKnots); // Add 1 but don't exceed max
+            maxKnots += 1;
         }
-    
-        // Cloud cover adjustment: heavy clouds might reduce thermal wind
-        if (cloudCover > 70 && suckEffectScore > 0) { // Heavy clouds
-            minKnots = Math.max(baseWindKnots, minKnots - 2); // Reduce boost from thermal
-            maxKnots = Math.max(baseWindKnots +1, maxKnots - 3); // Ensure max is at least slightly above min
-        }
-    
-        // Wind direction influence (subtle, could be more complex)
-        // If direction is optimal, might be slightly more stable or reach higher gusts
-        const isOptimalDirection = (windDirection >= 180 && windDirection <= 315) || (windDirection >=0 && windDirection <=45);
-        if (isOptimalDirection && suckEffectScore > 1) {
-            maxKnots +=1;
-        }
-    
-        // Ensure min is not greater than max
+
+        // Final cleanup and formatting
         if (minKnots > maxKnots) {
             minKnots = maxKnots - 2; // Ensure a small range
         }
-        // Ensure a minimum range if they are too close
         if (maxKnots - minKnots < 2 && maxKnots > 5) {
             maxKnots = minKnots + 2;
         }
         if (minKnots < 0) minKnots = 0;
-    
-        // Convert back to km/h for display, or keep in knots if preferred
-        // For now, let's return knots as requested by user implicitly
+
         const finalMinKnots = Math.max(0, Math.round(minKnots));
         const finalMaxKnots = Math.max(finalMinKnots, Math.round(maxKnots));
-    
+
         const KNOTS_TO_MS = 0.514444;
 
-        if (finalMinKnots === 0 && finalMaxKnots === 0 && baseWindKnots > 0) {
-             // If algorithm results in 0-0 but there was base wind, use a small range around base
-            const minK = Math.max(0, Math.round(baseWindKnots - 1));
-            const maxK = Math.round(baseWindKnots + 1);
-            const minMs = (minK * KNOTS_TO_MS).toFixed(1);
-            const maxMs = (maxK * KNOTS_TO_MS).toFixed(1);
-            return `${minK}-${maxK} възли (${minMs}-${maxMs} м/с)`;
-        }
-        if (finalMinKnots === 0 && finalMaxKnots === 0 && baseWindKnots === 0){
+        if (finalMinKnots === 0 && finalMaxKnots === 0) {
             return "0-0 възли (0.0-0.0 м/с)";
         }
-    
+
         const finalMinMs = (finalMinKnots * KNOTS_TO_MS).toFixed(1);
         const finalMaxMs = (finalMaxKnots * KNOTS_TO_MS).toFixed(1);
         return `${finalMinKnots}-${finalMaxKnots} възли (${finalMinMs}-${finalMaxMs} м/с)`;
@@ -322,7 +328,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let weatherInfoHtml = `
                 <h3>${result.date}</h3>
                 <p>🎯 Прогноза: ${result.finalForecast}</p>
-                <p>Прогнозиран вятър: ${result.predicted_wind_range}</p> 
+                <p>📊 <b>Оценка: ${result.score}</b> (от ${result.minScore} до ${result.maxScore})</p>
+                <p>Прогнозиран вятър: <b>${result.predicted_wind_range}</b></p> 
                 <p>Температура на водата: ${result.sea_temp !== undefined ? result.sea_temp + '°C' : 'N/A'}</p>
                 <p>Макс. скорост на вятър (API): ${result.wind_speed !== undefined ? (result.wind_speed * 0.539957).toFixed(1) + ' възли (' + result.wind_speed + ' km/h)' : 'N/A'}</p>
                 <p>Облачност: ${result.cloud_cover}%</p>
