@@ -1,0 +1,124 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f0f4f8;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+
+.container {
+    width: 100%;
+    max-width: 800px;
+    background: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+header {
+    text-align: center;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 20px;
+    margin-bottom: 25px;
+}
+
+header h1 {
+    color: #005a9c;
+    margin: 0;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+#date-picker {
+    flex-grow: 1;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+#analyze-btn {
+    padding: 12px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#analyze-btn:hover {
+    background-color: #0056b3;
+}
+
+.forecast-card {
+    background: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+}
+
+.forecast-card h2 {
+    margin-top: 0;
+    color: #005a9c;
+    font-size: 1.4em;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.criteria-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.criteria-list li {
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.criteria-list li span {
+    font-weight: 500;
+}
+
+.final-forecast {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 1.2em;
+    font-weight: 700;
+}
+
+.high { background-color: #d4edda; color: #155724; }
+.medium { background-color: #fff3cd; color: #856404; }
+.low { background-color: #f8d7da; color: #721c24; }
+
+#results-container .placeholder {
+    color: #888;
+    text-align: center;
+    padding: 40px;
+}
+
+footer {
+    text-align: center;
+    margin-top: 30px;
+    font-size: 0.9em;
+    color: #888;
+}
+
+footer a {
+    color: #007bff;
+    text-decoration: none;
+}

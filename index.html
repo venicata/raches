@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raches Thermal Wind Forecaster</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💨 Raches Thermal Wind Forecaster</h1>
+            <p>AI Асистент за прогноза на термичния вятър в Рахес</p>
+        </header>
+        
+        <div class="controls">
+            <input type="text" id="date-picker" placeholder="Избери дата или период...">
+            <button id="analyze-btn">Анализирай</button>
+        </div>
+        
+        <div id="results-container">
+            <!-- Прогнозите ще се появят тук -->
+        </div>
+
+        <footer>
+            <p>Създадено с помощта на AI асистент. Данни от <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a>.</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="script.js"></script>
+</body>
+</html>
