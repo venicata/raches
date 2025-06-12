@@ -122,3 +122,55 @@ footer a {
     color: #007bff;
     text-decoration: none;
 }
+
+.result-card {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-left: 5px solid #007bff; /* Accent color on the left */
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px; /* Increased space between cards */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+    transition: box-shadow 0.3s ease;
+}
+
+.result-card:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Enhanced shadow on hover */
+}
+
+.result-card h3 {
+    margin-top: 0;
+    color: #005a9c;
+    font-size: 1.5em;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.result-card p {
+    margin: 8px 0;
+    line-height: 1.6;
+}
+
+.result-card ul {
+    list-style-type: none;
+    padding-left: 0;
+    margin-top: 15px;
+}
+
+.result-card ul li {
+    margin-bottom: 10px;
+}
+
+/* Color coding for suitability */
+.result-card.suitable {
+    border-left-color: #28a745; /* Green for suitable */
+}
+
+.result-card.neutral {
+    border-left-color: #ffc107; /* Yellow for neutral */
+}
+
+.result-card.not-suitable {
+    border-left-color: #dc3545; /* Red for not suitable */
+}
