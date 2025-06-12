@@ -4,6 +4,102 @@ Live site
 
 https://raches.vercel.app/
 
+## 🎯 About the Project
+
+5 Criteria by which the script evaluates the wind forecast
+
+In Raches, the thermal wind intensifies when the following 5 conditions are present simultaneously:
+
+✅ 1. Sunny and clear sky (no clouds until noon)
+
+➡️ Windy: enable the Clouds layer → look for very few clouds before 13:00.
+Why? The sun needs to warm the land to create a temperature difference between land and sea.
+
+---
+
+✅ 2. Land-sea temperature difference
+
+➡️ Windy: enable the Airgram or Meteogram layer.
+Look for:
+
+Air temperature on land (e.g., 30°C)
+
+Sea temperature (usually 23–25°C)
+
+
+The greater the difference, the stronger the thermal breeze.
+
+---
+
+✅ 3. Weak to moderate synoptic circulation from the east or northeast (ENE/NE)
+
+➡️ Windy: enable the Wind layer → observe the arrows in the Raches area
+
+The ideal scenario is 5–10 knots from ENE/NE in the morning (until noon)
+
+This "helps" the thermal wind without suppressing it
+
+---
+
+✅ 4. No strong west or south wind
+
+➡️ It is important that there is no wind against the thermal.
+
+Wind from W, SW, S will kill or reverse it.
+
+Avoid days with a forecast for west wind after 15:00.
+
+---
+
+✅ 5. Local suction effect (you can "see" it in Windy by the wind accelerating around 14–16h)
+
+➡️ Windy: in the Wind layer, place the cursor on the spot's location (Raches)
+
+If the wind sharply increases after 13:00 (e.g., from 6 to 15 knots), this is THERMAL INTENSIFICATION.
+
+
+---------------------------------------------------------------------------
+
+**Raches Thermal Wind Forecaster** is a web application, created with the help of an AI assistant, that provides a specialized forecast for the thermal wind in Raches, Greece – a popular destination for kitesurfing and windsurfing.
+
+The goal of the project is to give riders a more accurate and easy-to-understand forecast by analyzing key meteorological factors that influence the local thermal wind (known as the "suck effect").
+
+## ✨ Main Features
+
+*   **Period Selection:** Ability to select a single date or a period for analysis.
+*   **Complex Analysis:** The application analyzes 5 key factors:
+    1.  **Cloud Cover:** Fewer clouds mean stronger sun and a greater thermal effect.
+    2.  **Temperature Difference (land-sea):** The main driver of thermal wind.
+    3.  **Base Wind Speed:** Data from the global model.
+    4.  **Wind Direction:** Assessment of whether the direction is suitable for the spot.
+    5.  **"Suck" Effect:** Assessment of the potential for thermal wind.
+*   **Calibrated Wind Forecast:** Predicts a wind speed range in **knots**, calibrated according to real observations for the spot (target: 18-24 knots on good days).
+*   **Visual Indicators:** Each forecast is accompanied by icons (✅, ⚠️, ❌) that provide a quick visual assessment of the conditions.
+*   **Clear and Modern Design:** Results are presented in easy-to-read "cards," one for each day, with a stylized design for better clarity.
+
+## 🛠️ Technologies
+
+*   **Frontend:** HTML5, CSS3, JavaScript (Vanilla)
+*   **Libraries:**
+    *   [Flatpickr.js](https://flatpickr.js.org/) - for the calendar and date selection.
+*   **API:**
+    *   [Open-Meteo API](https://open-meteo.com/) - for meteorological and marine data.
+
+## 🚀 How to use?
+
+1.  Open the `index.html` file in your web browser.
+2.  Use the calendar to select a date (double-click) or a date range.
+3.  Press the **"Analyze"** button.
+4.  Review the detailed forecast for each selected day.
+
+## 💡 How does it work?
+
+The script (`script.js`) sends requests to two Open-Meteo API endpoints (`forecast` and `marine`) to collect data on air temperature, cloud cover, wind, and sea water temperature.
+
+Then, the `processWeatherData` function processes this data by applying a scoring system to evaluate the five key factors. A final forecast is generated based on the total score.
+
+
+
 ## 🎯 За Проекта
 
 5 Критерия по които скрипта оценява прогнозата за вятъра
