@@ -280,15 +280,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalMinKnots = Math.max(0, Math.round(minKnots));
         const finalMaxKnots = Math.max(finalMinKnots, Math.round(maxKnots));
     
+        const KNOTS_TO_MS = 0.514444;
+
         if (finalMinKnots === 0 && finalMaxKnots === 0 && baseWindKnots > 0) {
              // If algorithm results in 0-0 but there was base wind, use a small range around base
-            return `${Math.max(0,Math.round(baseWindKnots-1))}-${Math.round(baseWindKnots+1)} възли`;
+            const minK = Math.max(0, Math.round(baseWindKnots - 1));
+            const maxK = Math.round(baseWindKnots + 1);
+            const minMs = (minK * KNOTS_TO_MS).toFixed(1);
+            const maxMs = (maxK * KNOTS_TO_MS).toFixed(1);
+            return `${minK}-${maxK} възли (${minMs}-${maxMs} м/с)`;
         }
         if (finalMinKnots === 0 && finalMaxKnots === 0 && baseWindKnots === 0){
-            return "0-0 възли (без вятър)";
+            return "0-0 възли (0.0-0.0 м/с)";
         }
     
-        return `${finalMinKnots}-${finalMaxKnots} възли`;
+        const finalMinMs = (finalMinKnots * KNOTS_TO_MS).toFixed(1);
+        const finalMaxMs = (finalMaxKnots * KNOTS_TO_MS).toFixed(1);
+        return `${finalMinKnots}-${finalMaxKnots} възли (${finalMinMs}-${finalMaxMs} м/с)`;
     }
 
     function displayResults(analysisResults) {
