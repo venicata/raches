@@ -14,14 +14,22 @@
 <body>
     <div class="container">
         <header>
-            <h1>💨 Raches Thermal Wind Forecaster</h1>
-            <p>AI Асистент за прогноза на термичния вятър в Рахес</p>
-            <p>Кликнете 2 пъти на една дата ако искате да е за нея, или селектирайте период от дати</p>
+            <div class="header-controls">
+                <div class="lang-switcher">
+                    <button id="lang-bg" class="lang-btn active">BG</button>
+                    <button id="lang-en" class="lang-btn">EN</button>
+                </div>
+                <br />
+                <a href="https://www.google.com/maps/@38.8703885,22.7571867,16z?entry=ttu" target="_blank" class="map-link" data-lang-key="mapLink">📍 Карта</a>
+            </div>
+            <h1 data-lang-key="title">💨 Raches Thermal Wind Forecaster</h1>
+            <p data-lang-key="subtitle">AI Асистент за прогноза на термичния вятър в Рахес</p>
+            <p data-lang-key="instructions">Кликнете 2 пъти на една дата ако искате да е за нея, или селектирайте период от дати</p>
         </header>
         
         <div class="controls">
             <input type="text" id="date-picker" placeholder="Избери дата или период...">
-            <button id="analyze-btn">Анализирай</button>
+            <button id="analyze-btn" data-lang-key="analyzeBtn">Анализирай</button>
         </div>
         
         <div id="results-container">
@@ -29,7 +37,7 @@
         </div>
 
         <footer>
-            <p>Създадено с помощта на AI асистент. Данни от <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a>.</p>
+            <p>Created with AI assistant. Data from <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a>.</p>
         </footer>
     </div>
 
