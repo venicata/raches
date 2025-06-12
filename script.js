@@ -1,3 +1,5 @@
+const KNOTS_TO_MS = 0.514444; // Define globally
+
 document.addEventListener('DOMContentLoaded', () => {
     // Координати за Рахес
     const RACHES_LAT = 38.867085;
@@ -32,11 +34,14 @@ document.addEventListener('DOMContentLoaded', () => {
             suckEffectLabel: "Suck Effect:",
             detailsLabel: "Details:",
             cloudCoverDetail: "{icon} Cloud Cover: {value}%",
-            tempDiffDetail: "{icon} Temp Difference (Land-Sea): {value}°C (Land: {landTemp}°C, Sea: {seaTemp})",
+            tempDiffDetail: "{icon} Temp Difference (Land-Sea): {description} ({value}°C) (Land: {landTemp}°C, Sea: {seaTemp})",
             windSpeedDetail: "{icon} Max Wind Speed: {value} km/h",
-            windDirOnshore: "{icon} Wind Direction: {value}° (Suitable - Onshore)",
-            windDirOffshore: "{icon} Wind Direction: {value}° (Unsuitable - Offshore)",
-            windDirSideshore: "{icon} Wind Direction: {value}° (Side-shore)",
+            windDirDetail: "{icon} Wind Direction: {value}° ({description})", // Generic wind direction detail
+            windDirOnshore: "Suitable - Onshore",
+            windDirOffshore: "Unsuitable - Offshore",
+            windDirSideShore: "Side-shore",
+            windDirOffshoreBad: "Unsuitable - Directly Offshore (Bad)",
+            windDirSideOff: "Side-Offshore (Not Ideal)",
             suckEffectDetail: "{icon} Suck Effect (Thermal Wind): {value}/3",
             knotsUnit: "knots",
             msUnit: "m/s",
@@ -55,7 +60,12 @@ document.addEventListener('DOMContentLoaded', () => {
             criteria4Title: "✅ 4. No strong west or south wind",
             criteria4Desc: "➡️ It's important to have no wind against the thermal effect. Wind from W, SW, S will kill or reverse it. Avoid days with a forecast for west wind after 15:00.",
             criteria5Title: "✅ 5. Local suction effect (you can ‘see’ it in Windy by wind acceleration around 14–16h)",
-            criteria5Desc: "➡️ Windy: in the Wind layer, place the cursor on the spot (Raches). If the wind sharply increases after 13:00 (e.g., from 6 to 15 knots), this is THERMAL INTENSIFICATION."
+            criteria5Desc: "➡️ Windy: in the Wind layer, place the cursor on the spot (Raches). If the wind sharply increases after 13:00 (e.g., from 6 to 15 knots), this is THERMAL INTENSIFICATION.",
+            pointsSuffix: "pts",
+            tempDiffHigh: "High",
+            tempDiffMedium: "Medium",
+            tempDiffLow: "Low",
+            tempDiffVeryLow: "Very Low"
         },
         bg: {
             title: "💨 Raches Thermal Wind Forecaster",
@@ -79,11 +89,14 @@ document.addEventListener('DOMContentLoaded', () => {
             suckEffectLabel: "Suck ефект:",
             detailsLabel: "Детайли:",
             cloudCoverDetail: "{icon} Облачност: {value}%",
-            tempDiffDetail: "{icon} Температурна разлика (суша-море): {value}°C (Суша: {landTemp}°C, Море: {seaTemp})",
+            tempDiffDetail: "{icon} Температурна разлика (суша-море): {description} ({value}°C) (Суша: {landTemp}°C, Море: {seaTemp}°C)",
             windSpeedDetail: "{icon} Макс. скорост на вятър: {value} km/h",
-            windDirOnshore: "{icon} Посока на вятър: {value}° (Подходяща - Onshore)",
-            windDirOffshore: "{icon} Посока на вятър: {value}° (Неподходяща - Offshore)",
-            windDirSideshore: "{icon} Посока на вятър: {value}° (Странична - Side-shore)",
+            windDirDetail: "{icon} Посока на вятър: {value}° ({description})", // Общ ключ за посока на вятъра
+            windDirOnshore: "Подходяща - Onshore",
+            windDirOffshore: "Неподходяща - Offshore",
+            windDirSideShore: "Странична - Side-shore",
+            windDirOffshoreBad: "Неподходяща - Директно Offshore (Лоша)",
+            windDirSideOff: "Странично-Offshore (Не идеална)",
             suckEffectDetail: "{icon} Suck ефект (термичен вятър): {value}/3",
             knotsUnit: "възли",
             msUnit: "м/с",
@@ -102,7 +115,12 @@ document.addEventListener('DOMContentLoaded', () => {
             criteria4Title: "✅ 4. Без силен западен или южен вятър",
             criteria4Desc: "➡️ Важно е да няма вятър срещу термиката. Вятър от W, SW, S ще я убие или обърне. Избягвай дни с прогноза за западен вятър след 15:00.",
             criteria5Title: "✅ 5. Местен ефект на засмукване (можеш да го „видиш“ в Windy по ускоряване на вятъра около 14–16 ч.)",
-            criteria5Desc: "➡️ Windy: в слоя Wind, постави курсора на мястото на спота (Raches). Ако след 13:00 вятърът рязко се усилва (примерно от 6 на 15 възела), това е ТЕРМИЧНО ЗАСИЛВАНЕ."
+            criteria5Desc: "➡️ Windy: в слоя Wind, постави курсора на мястото на спота (Raches). Ако след 13:00 вятърът рязко се усилва (примерно от 6 до 15 възела), това е ТЕРМИЧНО ЗАСИЛВАНЕ.",
+            pointsSuffix: "т.",
+            tempDiffHigh: "Висока",
+            tempDiffMedium: "Средна",
+            tempDiffLow: "Ниска",
+            tempDiffVeryLow: "Много ниска"
         }
     };
 
@@ -193,6 +211,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Helper functions for granular scoring (re-implemented and detailed)
+    function getCloudCoverScore(cloudCover) {
+        if (cloudCover <= 5) return { score: 5, icon: '✅' };    // Max positive score +5
+        if (cloudCover <= 10) return { score: 4.5, icon: '✅' };
+        if (cloudCover <= 15) return { score: 4, icon: '✅' };
+        if (cloudCover <= 20) return { score: 3.5, icon: '✅' };
+        if (cloudCover <= 30) return { score: 3, icon: '✅' }; 
+        if (cloudCover <= 40) return { score: 2, icon: '⚠️' };
+        if (cloudCover <= 50) return { score: 1, icon: '⚠️' };
+        if (cloudCover <= 60) return { score: 0, icon: '⚠️' }; 
+        if (cloudCover <= 70) return { score: -1, icon: '❌' };
+        if (cloudCover <= 80) return { score: -1.5, icon: '❌' };
+        if (cloudCover <= 90) return { score: -2, icon: '❌' };
+        return { score: -3, icon: '❌' }; // 91-100%, min negative score -3
+    }
+
+    function getTempDiffScore(tempDiff) {
+        if (tempDiff >= 8) return { score: 3.5, icon: '✅', textKey: 'tempDiffHigh' };
+        if (tempDiff >= 7) return { score: 3, icon: '✅', textKey: 'tempDiffHigh' };
+        if (tempDiff >= 6) return { score: 2.5, icon: '✅', textKey: 'tempDiffHigh' };
+        if (tempDiff >= 5) return { score: 2, icon: '✅', textKey: 'tempDiffHigh' };
+        if (tempDiff >= 4) return { score: 1.5, icon: '⚠️', textKey: 'tempDiffMedium' };
+        if (tempDiff >= 3) return { score: 1, icon: '⚠️', textKey: 'tempDiffMedium' };
+        if (tempDiff >= 2) return { score: 0.5, icon: '⚠️', textKey: 'tempDiffLow' }; // Added textKey for 0.5 score
+        if (tempDiff >= 1) return { score: 0, icon: '❌', textKey: 'tempDiffLow' }; // Changed icon for 0 score to neutral or slightly neg
+        return { score: -1, icon: '❌', textKey: 'tempDiffVeryLow' }; // < 1
+    }
+
     async function processWeatherData(weatherData, marineData) {
         const dailyData = {};
         weatherData.daily.time.forEach((date, index) => {
@@ -242,67 +288,135 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = dailyData[date];
             let details = [];
             let score = 0;
+            let suckEffectScore = 0; // Initialize suckEffectScore for the current day
             const T = translations[currentLang];
-    
-            // 1. Cloud Cover
-            let cloudIcon = '';
-            if (data.cloud_cover < 30) { score += 2; cloudIcon = '✅'; } 
-            else if (data.cloud_cover < 60) { score += 1; cloudIcon = '⚠️'; } 
-            else { cloudIcon = '❌'; }
-            details.push(T.cloudCoverDetail.replace('{icon}', cloudIcon).replace('{value}', data.cloud_cover));
-    
-            // 2. Temperature Difference
-            const tempDiff = data.temperature_2m_max - data.sea_temp;
-            let tempIcon = '';
-            if (tempDiff > 5) { score += 2; tempIcon = '✅'; } 
-            else if (tempDiff > 2) { score += 1; tempIcon = '⚠️'; } 
-            else { tempIcon = '❌'; }
-            details.push(T.tempDiffDetail.replace('{icon}', tempIcon).replace('{value}', tempDiff.toFixed(1)).replace('{landTemp}', data.temperature_2m_max).replace('{seaTemp}', data.sea_temp !== undefined ? data.sea_temp + '°C' : T.noData));
-    
-            // 3. Wind Speed
-            let windSpeedIcon = '';
-            if (data.wind_speed_10m_max < 15) { score += 1; windSpeedIcon = '⚠️'; } 
-            else if (data.wind_speed_10m_max < 25) { score += 2; windSpeedIcon = '✅'; } 
-            else { score -= 2; windSpeedIcon = '❌'; }
-            details.push(T.windSpeedDetail.replace('{icon}', windSpeedIcon).replace('{value}', data.wind_speed_10m_max));
-    
-            // 4. Wind Direction
-            const windDir = data.wind_direction_10m_dominant;
-            let windDirIcon = '';
-            if (windDir >= 135 && windDir <= 225) {
-                score += 1; windDirIcon = '✅';
-                details.push(T.windDirOnshore.replace('{icon}', windDirIcon).replace('{value}', windDir));
-            } else if (windDir >= 315 || windDir <= 45) {
-                score -= 1; windDirIcon = '❌';
-                details.push(T.windDirOffshore.replace('{icon}', windDirIcon).replace('{value}', windDir));
-            } else {
-                windDirIcon = '⚠️';
-                details.push(T.windDirSideshore.replace('{icon}', windDirIcon).replace('{value}', windDir));
+
+            // Calculate Suck Effect Score for the current date
+            // Find morning (e.g., 10:00) and afternoon (e.g., 16:00) wind speeds from weatherData.hourly
+            console.log(`Debugging Suck Effect for date: ${date}`); // Log date
+            let morningWindSpeed = null;
+            let afternoonWindSpeed = null;
+
+            if (weatherData.hourly && weatherData.hourly.time && weatherData.hourly.windspeed_10m) { // Corrected key
+                const hourlyTimes = weatherData.hourly.time;
+                const hourlyWindSpeeds = weatherData.hourly.windspeed_10m; // Corrected key
+
+                for (let i = 0; i < hourlyTimes.length; i++) {
+                    const hourlyDateTime = hourlyTimes[i];
+                    const entryDate = hourlyDateTime.split('T')[0];
+                    const entryHour = parseInt(hourlyDateTime.split('T')[1].split(':')[0]);
+
+                    if (entryDate === date) {
+                        if (entryHour >= 9 && entryHour <= 11) { // Capture around 10:00
+                            if (morningWindSpeed === null || hourlyWindSpeeds[i] > morningWindSpeed) {
+                                 // Take max in the morning window if multiple, or just first good one
+                                morningWindSpeed = hourlyWindSpeeds[i]; 
+                            }
+                        }
+                        if (entryHour >= 15 && entryHour <= 17) { // Capture around 16:00
+                            if (afternoonWindSpeed === null || hourlyWindSpeeds[i] > afternoonWindSpeed) {
+                                // Take max in the afternoon window
+                                afternoonWindSpeed = hourlyWindSpeeds[i]; 
+                            }
+                        }
+                    }
+                }
             }
-    
-            // 5. Suck Effect
-            let suckEffectScore = 0;
-            if (tempDiff > 6.5 && data.cloud_cover < 45) { suckEffectScore = 3; } 
-            else if (tempDiff > 4 && data.cloud_cover < 60) { suckEffectScore = 2; } 
-            else if (tempDiff > 2 && data.cloud_cover < 70) { suckEffectScore = 1; }
-            data.suck_effect_score = suckEffectScore;
-            score += suckEffectScore;
+
+            console.log(morningWindSpeed, afternoonWindSpeed)
+            
+            if (morningWindSpeed !== null && afternoonWindSpeed !== null) {
+                const windIncreaseKmh = afternoonWindSpeed - morningWindSpeed;
+                console.log(`Suck Effect Calculation for ${date}: Morning Wind: ${morningWindSpeed} km/h, Afternoon Wind: ${afternoonWindSpeed} km/h, Increase: ${windIncreaseKmh} km/h`);
+                // Scoring based on wind increase (example thresholds, adjust as needed)
+                // Wind speeds are in km/h from API
+                if (windIncreaseKmh >= 15) { suckEffectScore = 3; }
+                else if (windIncreaseKmh >= 10) { suckEffectScore = 2; }
+                else if (windIncreaseKmh >= 5) { suckEffectScore = 1; }
+                else { suckEffectScore = 0; }
+                console.log(`Suck Effect Score for ${date}: ${suckEffectScore}`);
+            } else {
+                console.warn(`Suck Effect: Insufficient data for ${date} - Morning: ${morningWindSpeed}, Afternoon: ${afternoonWindSpeed}`);
+            }
+            score += suckEffectScore; // Add to total score
+            data.suck_effect_score = suckEffectScore; // Store it in the data object for display
+
+            // 1. Cloud Cover (Granular)
+            const cloudCoverResult = getCloudCoverScore(data.cloud_cover);
+            score += cloudCoverResult.score;
+            details.push(T.cloudCoverDetail.replace('{icon}', cloudCoverResult.icon).replace('{value}', data.cloud_cover) + ` (${cloudCoverResult.score > 0 ? '+' : ''}${cloudCoverResult.score} ${T.pointsSuffix || 'pts'})`);
+
+            // Temperature Difference Score
+            const tempDiff = data.temperature_2m_max - data.sea_temp;
+            const tempDiffResult = getTempDiffScore(tempDiff);
+            score += tempDiffResult.score;
+            const tempDescriptionText = T[tempDiffResult.textKey] || tempDiffResult.textKey; // Safety check
+            details.push(
+                T.tempDiffDetail
+                    .replace('{icon}', tempDiffResult.icon) // Correctly replace icon
+                    .replace('{description}', tempDescriptionText)
+                    .replace('{value}', tempDiff.toFixed(1))
+                    .replace('{landTemp}', data.temperature_2m_max)
+                    .replace('{seaTemp}', data.sea_temp)
+                + ` (${tempDiffResult.score > 0 ? '+' : ''}${tempDiffResult.score} ${T.pointsSuffix || 'pts'})`
+            );
+
+            // Wind Speed Score (from API)
+            let windSpeedScore = 0;
+            let windSpeedIcon = '';
+            if (data.wind_speed_10m_max >= 15 && data.wind_speed_10m_max <= 30) { windSpeedScore = 2; windSpeedIcon = '✅'; }
+            else if (data.wind_speed_10m_max > 30 && data.wind_speed_10m_max <= 40) { windSpeedScore = 1; windSpeedIcon = '⚠️'; }
+            else if (data.wind_speed_10m_max < 15 && data.wind_speed_10m_max >=5) { windSpeedScore = 0; windSpeedIcon = '❌'; }
+            else if (data.wind_speed_10m_max < 5) { windSpeedScore = -1; windSpeedIcon = '❌'; }
+            else { windSpeedScore = -2; windSpeedIcon = '❌'; }
+            score += windSpeedScore;
+            details.push(T.windSpeedDetail.replace('{icon}', windSpeedIcon).replace('{value}', data.wind_speed_10m_max.toFixed(1)) + ` (${windSpeedScore > 0 ? '+' : ''}${windSpeedScore} ${T.pointsSuffix || 'pts'})`);
+
+            // Wind Direction Score
+            let windDirectionScore = 0;
+            let windDirIcon = '';
+            let windDirDescKey = ''; // Key for translation
+            const dir = data.wind_direction_10m_dominant;
+
+            if ((dir >= 45 && dir <= 135)) { // Onshore to side-onshore (E is 90)
+                windDirectionScore = 1; windDirIcon = '✅'; windDirDescKey = 'windDirOnshore';
+            } else if ((dir > 135 && dir <= 180) || (dir >= 0 && dir < 45)) { // Side-shore (S or N)
+                windDirectionScore = 0; windDirIcon = '⚠️'; windDirDescKey = 'windDirSideShore';
+            } else { // Offshore or side-offshore (Westerly components)
+                windDirectionScore = -1; windDirIcon = '❌'; windDirDescKey = 'windDirOffshore';
+            }
+            // Specific adjustments for Raches (East-facing spot)
+            if (dir > 180 && dir < 360) { // Westerly components are generally bad
+                 if (dir >= 225 && dir <= 315) { // Directly offshore W, NW, SW
+                    windDirectionScore = -2; windDirDescKey = 'windDirOffshoreBad'; // Use a more specific key if needed or append to existing
+                 } else { // Side-offshore (e.g. WNW, WSW)
+                    windDirectionScore = -1; windDirDescKey = 'windDirSideOff';
+                 }
+            }
+            score += windDirectionScore;
+            const windDirectionDescriptionText = T[windDirDescKey] || windDirDescKey; // Safety check
+            // Use the generic T.windDirDetail for structure
+            details.push(T.windDirDetail.replace('{icon}', windDirIcon).replace('{value}', dir).replace('{description}', windDirectionDescriptionText) + ` (${windDirectionScore > 0 ? '+' : ''}${windDirectionScore} ${T.pointsSuffix || 'pts'})`);
+
+            // Suck Effect Score
             let suckEffectIcon = '';
             if (suckEffectScore >= 2) { suckEffectIcon = '✅'; } 
             else if (suckEffectScore === 1) { suckEffectIcon = '⚠️'; } 
             else { suckEffectIcon = '❌'; }
-            details.push(T.suckEffectDetail.replace('{icon}', suckEffectIcon).replace('{value}', suckEffectScore));
+            details.push(T.suckEffectDetail.replace('{icon}', suckEffectIcon).replace('{value}', suckEffectScore) + ` (${suckEffectScore > 0 ? '+' : ''}${suckEffectScore} ${T.pointsSuffix || 'pts'})`);
     
-            const minScore = -3;
-            const maxScore = 10;
+            // Min/Max scores based on: Cloud (-3 to +5), TempDiff (-1 to +3.5), WindSpeed (-2 to +2), WindDir (-1 to +1), SuckEffect (0 to +3)
+            const minScore = -3 - 1 - 2 - 1 + 0; // = -7
+            const maxScore = 5 + 3.5 + 2 + 1 + 3;    // = 14.5
 
             let finalForecast = "";
-            if (score >= 7) finalForecast = T.forecastHigh;
-            else if (score >= 4) finalForecast = T.forecastMid;
-            else if (score >= 2) finalForecast = T.forecastLow;
+            // Adjusted thresholds based on new score range (-7 to 14.5)
+            if (score >= 10) finalForecast = T.forecastHigh;
+            else if (score >= 5) finalForecast = T.forecastMid;
+            else if (score >= 0) finalForecast = T.forecastLow;
             else finalForecast = T.forecastBad;
     
-            data.predicted_wind_range = predictWindSpeedRange(data.cloud_cover, tempDiff, data.wind_speed_10m_max, data.wind_direction_10m_dominant, suckEffectScore);
+            data.predicted_wind_range = predictWindSpeedRange(data.wind_speed_10m_max, score, suckEffectScore, data.wind_direction_10m_dominant);
     
             analysisResults.push({
                 date: date, score: score, minScore: minScore, maxScore: maxScore,
@@ -316,37 +430,93 @@ document.addEventListener('DOMContentLoaded', () => {
         return analysisResults;
     }
 
-    function predictWindSpeedRange(cloudCover, tempDiff, baseWindSpeed, windDirection, suckEffectScore) {
-        const baseWindKnots = baseWindSpeed * 0.539957;
-        let minKnots = baseWindKnots;
-        let maxKnots = baseWindKnots;
+    function predictWindSpeedRange(baseWindSpeedKmH, overallScore, suckEffectScore, windDirection) {
+        const baseKnots = baseWindSpeedKmH * 0.539957; // KNOTS_TO_MS is 0.539957 if converting kmh to knots
+        let thermalAdditiveKnots = 0;
         const T = translations[currentLang];
 
-        if (suckEffectScore === 3) { minKnots = 18; maxKnots = 24; } 
-        else if (suckEffectScore === 2) { minKnots = 16; maxKnots = 22; } 
-        else if (suckEffectScore === 1) { minKnots = baseWindKnots + 3; maxKnots = baseWindKnots + 7; }
+        // Determine thermal strength based on overallScore and suckEffectScore
+        const MIN_APP_SCORE = -7;
+        const MAX_APP_SCORE = 14.5;
+        const forecastHighThreshold = 10;
+        const forecastMidThreshold = 5;
+        const forecastLowThreshold = 0;
 
-        const isOptimalDirection = (windDirection >= 135 && windDirection <= 225);
-        if (isOptimalDirection && suckEffectScore >= 2) {
-            minKnots = Math.min(minKnots + 1, maxKnots);
+        let baseThermal_start, baseThermal_end, suckMultiplier_start, suckMultiplier_end;
+        let tier_lower_bound, tier_upper_bound;
+
+        if (overallScore >= forecastHighThreshold) { // High thermal potential
+            tier_lower_bound = forecastHighThreshold; tier_upper_bound = MAX_APP_SCORE;
+            baseThermal_start = 7.0; baseThermal_end = 8.0;
+            suckMultiplier_start = 2.5; suckMultiplier_end = 3.0;
+        } else if (overallScore >= forecastMidThreshold) { // Medium thermal potential
+            tier_lower_bound = forecastMidThreshold; tier_upper_bound = forecastHighThreshold;
+            baseThermal_start = 3.0; baseThermal_end = 6.0; // Ends below High's start
+            suckMultiplier_start = 1.5; suckMultiplier_end = 2.2; // Ends below High's start
+        } else if (overallScore >= forecastLowThreshold) { // Low thermal potential
+            tier_lower_bound = forecastLowThreshold; tier_upper_bound = forecastMidThreshold;
+            baseThermal_start = 1.0; baseThermal_end = 2.5; // Ends below Mid's start
+            suckMultiplier_start = 1.0; suckMultiplier_end = 1.2; // Ends below Mid's start
+        } else { // Bad thermal potential (overallScore < 0)
+            tier_lower_bound = MIN_APP_SCORE; tier_upper_bound = forecastLowThreshold;
+            baseThermal_start = 0.0; baseThermal_end = 0.5; // Ends below Low's start
+            suckMultiplier_start = 0.2; suckMultiplier_end = 0.8; // Ends below Low's start
+        }
+
+        let progress = 0;
+        const tier_span = tier_upper_bound - tier_lower_bound;
+        if (tier_span > 0) {
+            progress = (overallScore - tier_lower_bound) / tier_span;
+        }
+        progress = Math.min(1, Math.max(0, progress)); // Clamp progress to 0-1
+
+        const currentBaseThermal = baseThermal_start + progress * (baseThermal_end - baseThermal_start);
+        const currentSuckMultiplier = suckMultiplier_start + progress * (suckMultiplier_end - suckMultiplier_start);
+        
+        thermalAdditiveKnots = currentBaseThermal + suckEffectScore * currentSuckMultiplier;
+
+        // Adjusted spread factor: minKnots will be base + 60% of thermal, making range width 40% of thermal
+        let minKnots = baseKnots + thermalAdditiveKnots * 0.6;
+        let maxKnots = baseKnots + thermalAdditiveKnots;
+
+        if (baseKnots < 5 && thermalAdditiveKnots > 7) { // Strong thermal, low base
+            minKnots = Math.max(minKnots, thermalAdditiveKnots * 0.5);
+        }
+
+        const isOptimalDirection = (windDirection >= 135 && windDirection <= 225); // Onshore for Raches
+        if (isOptimalDirection && thermalAdditiveKnots >= 4) {
+            minKnots = Math.min(minKnots + 1, maxKnots -1); 
             maxKnots += 1;
         }
+        
+        const realisticMaxKnots = 28;
+        maxKnots = Math.min(maxKnots, realisticMaxKnots);
+        minKnots = Math.min(minKnots, maxKnots);
 
-        if (minKnots > maxKnots) minKnots = maxKnots - 2;
-        if (maxKnots - minKnots < 2 && maxKnots > 5) maxKnots = minKnots + 2;
-        if (minKnots < 0) minKnots = 0;
+        if (thermalAdditiveKnots < 3 && minKnots > baseKnots + 1.5) {
+             minKnots = baseKnots + 1.5;
+        }
+        minKnots = Math.max(minKnots, baseKnots); 
+        minKnots = Math.min(minKnots, maxKnots);
+
+        if (maxKnots - minKnots < 2 && thermalAdditiveKnots > 0.5) {
+            if (minKnots > baseKnots + 1 && minKnots > 2) minKnots = Math.max(0, maxKnots - 2);
+            else maxKnots = minKnots + 2;
+        }
+        if (maxKnots < minKnots) maxKnots = minKnots; 
 
         const finalMinKnots = Math.max(0, Math.round(minKnots));
-        const finalMaxKnots = Math.max(finalMinKnots, Math.round(maxKnots));
-        const KNOTS_TO_MS = 0.514444;
+        const finalMaxKnots = Math.max(0, Math.round(maxKnots));
 
-        if (finalMinKnots === 0 && finalMaxKnots === 0) {
-            return `0-0 ${T.knotsUnit} (0.0-0.0 ${T.msUnit})`;
+        if (finalMinKnots === 0 && finalMaxKnots === 0 && baseKnots < 1) {
+             return `0-0 ${T.knotsUnit} (0.0-0.0 ${T.msUnit})`;
         }
 
-        const finalMinMs = (finalMinKnots * KNOTS_TO_MS).toFixed(1);
-        const finalMaxMs = (finalMaxKnots * KNOTS_TO_MS).toFixed(1);
-        return `${finalMinKnots}-${finalMaxKnots} ${T.knotsUnit} (${finalMinMs}-${finalMaxMs} ${T.msUnit})`;
+        // Use global KNOTS_TO_MS for conversion from knots to m/s for display
+        const displayMinMs = (finalMinKnots * KNOTS_TO_MS).toFixed(1);
+        const displayMaxMs = (finalMaxKnots * KNOTS_TO_MS).toFixed(1);
+
+        return `${finalMinKnots}-${finalMaxKnots} ${T.knotsUnit} (${displayMinMs}-${displayMaxMs} ${T.msUnit})`;
     }
 
     function displayResults(analysisResults) {
