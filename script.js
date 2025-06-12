@@ -151,20 +151,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             details.push(`${windSpeedIcon} Макс. скорост на вятър: ${data.wind_speed_10m_max} km/h`);
     
-            // 4. Wind Direction
+            // 4. Wind Direction (calibrated for a South-facing beach like Raches/Kouvela)
             const windDir = data.wind_direction_10m_dominant;
             let windDirIcon = '';
-            if ((windDir >= 180 && windDir <= 315) || (windDir >= 0 && windDir <= 45)) {
+            // Ideal direction is onshore (SE to SW).
+            if (windDir >= 135 && windDir <= 225) { // Onshore (SE to SW)
                 score += 2; // Good direction
                 windDirIcon = '✅';
-                details.push(`${windDirIcon} Посока на вятър: ${windDir}° (Подходяща)`);
-            } else if ((windDir > 45 && windDir < 180)) {
-                score -= 1; // Less ideal direction
+                details.push(`${windDirIcon} Посока на вятър: ${windDir}° (Подходяща - Onshore)`);
+            } else if (windDir >= 315 || windDir <= 45) { // Offshore (NW to NE)
+                score -= 1; // Bad direction
                 windDirIcon = '❌';
-                details.push(`${windDirIcon} Посока на вятър: ${windDir}° (Неподходяща - към брега)`);
-            } else {
+                details.push(`${windDirIcon} Посока на вятър: ${windDir}° (Неподходяща - Offshore)`);
+            } else { // Side-shore
+                score += 1; // Neutral
                 windDirIcon = '⚠️';
-                details.push(`${windDirIcon} Посока на вятър: ${windDir}°`);
+                details.push(`${windDirIcon} Посока на вятър: ${windDir}° (Странична - Side-shore)`);
             }
     
             // 5. Suck Effect (Thermal Wind Potential)
