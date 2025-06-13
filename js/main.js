@@ -72,6 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await handleRemoteLoad();
 
     // Set initial language and render chart on load
-    setLanguage('bg');
+    const preferredLang = localStorage.getItem('preferredLang') || 'bg';
+    setLanguage(preferredLang);
     renderHistoricalChart();
 });

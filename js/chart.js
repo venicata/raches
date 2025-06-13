@@ -98,6 +98,24 @@ export async function renderHistoricalChart() {
                             return tooltipLines;
                         }
                     }
+                },
+                annotation: {
+                    annotations: {
+                        line1: {
+                            type: 'line',
+                            yScaleID: 'yKnots',
+                            yMin: 16,
+                            yMax: 16,
+                            borderColor: 'red',
+                            borderWidth: 2,
+                            label: {
+                                enabled: true,
+                                content: 'Good Wind (16 knots)',
+                                position: 'end',
+                                backgroundColor: 'rgba(255, 99, 132, 0.8)'
+                            }
+                        }
+                    }
                 }
             },
             scales: {

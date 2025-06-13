@@ -5,6 +5,7 @@ import { getCloudCoverScore, getTempDiffScore, getWindDirIcon, getSuckEffectIcon
 import { saveHistoricalEntry } from './api.js';
 
 export function setLanguage(lang) {
+    localStorage.setItem('preferredLang', lang);
     if (!translations[lang]) return;
     state.currentLang = lang;
     document.querySelectorAll('[data-lang-key]').forEach(element => {
@@ -82,7 +83,17 @@ export async function displayResults(analysisResults) {
         await saveHistoricalEntry(historicalEntry);
 
         const resultCard = document.createElement('div');
-        resultCard.className = 'result-card';
+        resultCard.classList.add('result-card');
+
+        if (result.finalForecast === T.forecastHigh) {
+            resultCard.classList.add('high');
+        } else if (result.finalForecast === T.forecastMid) {
+            resultCard.classList.add('mid');
+        } else if (result.finalForecast === T.forecastBad) {
+            resultCard.classList.add('bad');
+        } else {
+            resultCard.classList.add('low');
+        }
         if (result.finalForecast === T.forecastBad) resultCard.classList.add('not-suitable');
 
         let weatherInfoHtml = `
