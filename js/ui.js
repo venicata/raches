@@ -52,28 +52,52 @@ export async function displayResults(analysisResults) {
         const resultCard = document.createElement('div');
         resultCard.classList.add('result-card');
 
-        // Set card color
-        if (result.finalForecast === T.forecastHigh) resultCard.classList.add('high');
-        else if (result.finalForecast === T.forecastMid) resultCard.classList.add('mid');
-        else if (result.finalForecast === T.forecastBad) resultCard.classList.add('bad');
-        else resultCard.classList.add('low');
-        if (result.finalForecast === T.forecastBad) resultCard.classList.add('not-suitable');
+        // --- Determine forecast text, key, and class, with fallback for missing forecast strings ---
+        let finalForecastText = result.finalForecast;
+        let forecastKey = '';
+        let forecastClass = '';
 
-        // Get all the translated text components for the card
+        if (finalForecastText) {
+            // Determine key and class from the provided forecast string
+            if (finalForecastText === T.forecastHigh) { forecastKey = 'forecastHigh'; forecastClass = 'high'; }
+            else if (finalForecastText === T.forecastMid) { forecastKey = 'forecastMid'; forecastClass = 'mid'; }
+            else if (finalForecastText === T.forecastLow) { forecastKey = 'forecastLow'; forecastClass = 'low'; }
+            else if (finalForecastText === T.forecastBad) { forecastKey = 'forecastBad'; forecastClass = 'bad'; }
+        }
+        
+        // Fallback logic if forecast string is missing or doesn't match
+        if (!forecastKey) {
+            const score = result.score; // Assuming result.score is available
+            if (score > 10) { forecastKey = 'forecastHigh'; forecastClass = 'high'; }
+            else if (score >= 5) { forecastKey = 'forecastMid'; forecastClass = 'mid'; }
+            else if (score > 0) { forecastKey = 'forecastLow'; forecastClass = 'low'; }
+            else { forecastKey = 'forecastBad'; forecastClass = 'bad'; }
+            finalForecastText = T[forecastKey]; // Get the translated text from the key
+        }
+
+        // Set card class
+        if (forecastClass) {
+            resultCard.classList.add(forecastClass);
+            if (forecastClass === 'bad') {
+                resultCard.classList.add('not-suitable');
+            }
+        }
+
+        // --- Get all the translated text components for the card ---
         const pKnots = result.predicted_wind_knots || { min: 0, max: 0 };
         const pMs = result.predicted_wind_ms || { min: 0, max: 0 };
         const predictedWindText = `${T.predictedWindLabel} <b>${pKnots.min.toFixed(1)} - ${pKnots.max.toFixed(1)}</b> ${T.knotsUnit} (${pMs.min.toFixed(1)}-${pMs.max.toFixed(1)} ${T.msUnit})`;
-        const cloudCoverText = `${getCloudCoverScore(result.cloud_cover_value).icon} ${T.cloudCoverLabel} ${result.cloud_cover_value}% (+${result.cloud_cover_score} ${pointSuffix})`;
-        const tempDiffText = `${getTempDiffScore(result.temp_diff_value).icon} ${T.tempDiffDetail.replace('{description}', T[result.temp_diff_description_key] || result.temp_diff_description_key).replace('{value}', result.temp_diff_value.toFixed(1)).replace('{landTemp}', result.air_temp_value.toFixed(1)).replace('{seaTemp}', result.sea_temp_value.toFixed(1))} (+${result.temp_diff_score} ${pointSuffix})`;
-        const maxWindText = `${result.wind_speed_icon || '❓'} ${T.apiWindSpeedLabel} ${result.wind_speed_value.toFixed(1)} km/h (+${result.wind_speed_score} ${pointSuffix})`;
+        const cloudCoverText = `${getCloudCoverScore(result.cloud_cover_value).icon} ${T.cloudCoverLabel} ${result.cloud_cover_value}% (${result.cloud_cover_score > 0 ? '+' : ''}${result.cloud_cover_score} ${pointSuffix})`;
+        const tempDiffText = `${getTempDiffScore(result.temp_diff_value).icon} ${T.tempDiffDetail.replace('{description}', T[result.temp_diff_description_key] || result.temp_diff_description_key).replace('{value}', result.temp_diff_value.toFixed(1)).replace('{landTemp}', result.air_temp_value.toFixed(1)).replace('{seaTemp}', result.sea_temp_value.toFixed(1))} (${result.temp_diff_score > 0 ? '+' : ''}${result.temp_diff_score} ${pointSuffix})`;
+        const maxWindText = `${result.wind_speed_icon || '❓'} ${T.apiWindSpeedLabel} ${result.wind_speed_value.toFixed(1)} km/h (${result.wind_speed_score > 0 ? '+' : ''}${result.wind_speed_score} ${pointSuffix})`;
         const windDirResult = getWindDirectionScore(result.wind_direction_value);
-        const windDirText = `${getWindDirIcon(result.wind_direction_score)} ${T.windDirDetail.replace('{value}', result.wind_direction_value).replace('{description}', windDirResult.direction)} (+${result.wind_direction_score} ${pointSuffix})`;
-        const suckEffectText = `${getSuckEffectIcon(result.suck_effect_score_value)} ${T.suckEffectLabel} ${result.suck_effect_score_value}/3 (+${result.suck_effect_score_value} ${pointSuffix})`;
+        const windDirText = `${getWindDirIcon(result.wind_direction_score)} ${T.windDirDetail.replace('{value}', result.wind_direction_value).replace('{description}', windDirResult.direction)} (${result.wind_direction_score > 0 ? '+' : ''}${result.wind_direction_score} ${pointSuffix})`;
+        const suckEffectText = `${getSuckEffectIcon(result.suck_effect_score_value)} ${T.suckEffectLabel} ${result.suck_effect_score_value}/3 (${result.suck_effect_score_value > 0 ? '+' : ''}${result.suck_effect_score_value} ${pointSuffix})`;
 
-        // Assemble the card's HTML
+        // --- Assemble the card's HTML ---
         let weatherInfoHtml = `
             <h3>${new Date(result.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
-            <p class="forecast-label ${result.finalForecast === T.forecastBad ? 'bad' : ''}">${T.forecastLabel} ${result.finalForecast}</p>
+            <p class="forecast-label ${forecastClass === 'bad' ? 'bad' : ''}">${T.forecastLabel} ${finalForecastText}</p>
             <p>${result.scoreText}</p>
             <p>${predictedWindText}</p>
             <h4>${T.detailsLabel}</h4>
@@ -92,15 +116,9 @@ export async function displayResults(analysisResults) {
         state.resultsContainer.appendChild(resultCard);
 
         // --- Part 2: Prepare and save raw data for the chart ---
-        // Determine forecast key for dynamic translation in chart tooltips
-        let forecastKey = 'forecastLow'; // Default value
-        if (result.finalForecast === T.forecastHigh) forecastKey = 'forecastHigh';
-        else if (result.finalForecast === T.forecastMid) forecastKey = 'forecastMid';
-        else if (result.finalForecast === T.forecastBad) forecastKey = 'forecastBad';
-
         const historicalEntry = {
             date: result.date,
-            finalForecastKey: forecastKey, // Use the key for translation
+            finalForecastKey: forecastKey, // Use the unified key
             scoreText: result.scoreText,
             
             // Wind
