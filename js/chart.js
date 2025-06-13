@@ -87,6 +87,7 @@ export async function renderHistoricalChart() {
                             const dataIndex = context[0].dataIndex;
                             const entry = historicalData[dataIndex];
                             if (!entry) return '';
+
                             let tooltipLines = [];
                             tooltipLines.push(`\n${entry.forecastLabelText}`);
                             tooltipLines.push(entry.predictedWindText);

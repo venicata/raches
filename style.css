@@ -126,9 +126,9 @@ header h1 {
     font-weight: 700;
 }
 
-.high { background-color: #d4edda; color: #155724; }
-.medium { background-color: #fff3cd; color: #856404; }
-.low { background-color: #f8d7da; color: #721c24; }
+.high {  }
+.medium {  }
+.low {  }
 
 #results-container .placeholder {
     color: #888;
