@@ -1,5 +1,6 @@
 export const translations = {
     en: {
+        datePickerPlaceholder: 'Select dates...',
         title: "💨 Raches Thermal Wind Forecaster",
         subtitle: "AI Assistant for thermal wind forecast in Raches",
         instructions: "Double-click a date for a single day, or select a date range",
@@ -54,11 +55,18 @@ export const translations = {
         tempDiffHigh: "High",
         tempDiffMedium: "Medium",
         tempDiffLow: "Low",
-        tempDiffVeryLow: "Very Low"
+        tempDiffVeryLow: "Very Low",
+        legendTitle: "Scoring Legend (from -8.5 to 17.25)",
+        legendIntro: "The final score is a sum of points from the following criteria:",
+        legendCloudCover: "<b>Cloud Cover:</b> from +5 pts (clear) to -3 pts (overcast).",
+        legendTempDiff: "<b>Temp. Difference:</b> from +5.25 pts (>8°C) to -1.5 pts (<1°C).",
+        legendWindSpeed: "<b>Max Wind Speed:</b> +2 pts for ideal (15-30 km/h), negative points for too weak/strong.",
+        legendWindDir: "<b>Wind Direction:</b> +2 pts for E/SE, +1 for N/NE & S/SSE, 0 for S/SSW, -2 for W/SW/NW.",
+        legendSuckEffect: "<b>Suck Effect:</b> up to +3 pts for significant wind increase in the afternoon."
     },
     bg: {
         datePickerPlaceholder: 'Селектирайте дати...',
-        title: " Raches Thermal Wind Forecaster",
+        title: "💨 Raches Thermal Wind Forecaster",
         subtitle: "AI Асистент за прогноза на термичния вятър в Рахес",
         instructions: "Кликнете 2 пъти на една дата, или селектирайте период от дати",
         analyzeBtn: "Анализирай",
@@ -117,6 +125,13 @@ export const translations = {
         tempDiffHigh: "Висока",
         tempDiffMedium: "Средна",
         tempDiffLow: "Ниска",
-        tempDiffVeryLow: "Много ниска"
+        tempDiffVeryLow: "Много ниска",
+        legendTitle: "Легенда на Точкуването (от -8.5 до 17.25)",
+        legendIntro: "Крайната оценка е сбор от точки по следните критерии:",
+        legendCloudCover: "<b>Облачност:</b> от +5 т. (ясно) до -3 т. (облачно).",
+        legendTempDiff: "<b>Темп. Разлика:</b> от +5.25 т. (>8°C) до -1.5 т. (<1°C).",
+        legendWindSpeed: "<b>Макс. Скорост на Вятъра:</b> +2 т. за идеална (15-30 км/ч), отрицателни точки за твърде слаб/силен.",
+        legendWindDir: "<b>Посока на Вятъра:</b> +2 т. за E/SE, +1 за N/NE & S/SSE, 0 за S/SSW, -2 за W/SW/NW.",
+        legendSuckEffect: "<b>Suck Ефект:</b> до +3 т. за значително усилване на вятъра следобед.",
     }
 };

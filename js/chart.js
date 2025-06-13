@@ -99,9 +99,9 @@ export async function renderHistoricalChart() {
                             const getWindSpeedIcon = (score) => score > 0 ? '✅' : '⚠️';
 
                             // 1. Forecast Label & Score
-                            tooltipLines.push(`\n${T.forecastLabel} ${T[entry.finalForecastKey]}`);
+                            tooltipLines.push(`💨${T.forecastLabel} ${T[entry.finalForecastKey]}`);
                             if (entry.scoreText) {
-                                tooltipLines.push(entry.scoreText.replace(/<[^>]*>/g, ''));
+                                tooltipLines.push('❶  ' + entry.scoreText.replace(/<[^>]*>/g, ''));
                             }
 
                             // 2. Predicted Wind
@@ -144,13 +144,13 @@ export async function renderHistoricalChart() {
                         line1: {
                             type: 'line',
                             yScaleID: 'yKnots',
-                            yMin: 16,
-                            yMax: 16,
+                            yMin: 18,
+                            yMax: 18,
                             borderColor: 'red',
                             borderWidth: 2,
                             label: {
                                 enabled: true,
-                                content: 'Good Wind (16 knots)',
+                                content: 'Good Wind (18 knots)',
                                 position: 'end',
                                 backgroundColor: 'rgba(255, 99, 132, 0.8)'
                             }

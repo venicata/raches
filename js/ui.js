@@ -8,14 +8,26 @@ export function setLanguage(lang) {
     localStorage.setItem('preferredLang', lang);
     if (!translations[lang]) return;
     state.currentLang = lang;
+    document.documentElement.lang = lang;
+
+    const T = translations[state.currentLang];
+    // Display the scoring legend with the correct translation
+    displayScoringLegend(T);
+
     document.querySelectorAll('[data-lang-key]').forEach(element => {
         const key = element.getAttribute('data-lang-key');
         if (translations[lang][key]) {
-            const link = element.querySelector('a');
-            if (link) {
-                element.innerHTML = translations[lang][key].replace('{link}', link.outerHTML);
+            // Check if the element has a placeholder attribute to translate
+            if (element.hasAttribute('placeholder')) {
+                element.placeholder = translations[lang][key];
             } else {
-                element.innerHTML = translations[lang][key];
+                // Otherwise, translate the innerHTML
+                const link = element.querySelector('a');
+                if (link && translations[lang][key].includes('{link}')) {
+                    element.innerHTML = translations[lang][key].replace('{link}', link.outerHTML);
+                } else {
+                    element.innerHTML = translations[lang][key];
+                }
             }
         }
     });
@@ -97,7 +109,7 @@ export async function displayResults(analysisResults) {
         // --- Assemble the card's HTML ---
         let weatherInfoHtml = `
             <h3>${new Date(result.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
-            <p class="forecast-label ${forecastClass === 'bad' ? 'bad' : ''}">${T.forecastLabel} ${finalForecastText}</p>
+            <p class="forecast-label ${forecastClass === 'bad' ? 'bad' : ''}">💨 ${T.forecastLabel} ${finalForecastText}</p>
             <p>${result.scoreText}</p>
             <p>${predictedWindText}</p>
             <h4>${T.detailsLabel}</h4>
@@ -180,4 +192,24 @@ export function initModal() {
             modal.style.display = 'none';
         }
     };
+}
+
+// --- Function to display the scoring legend ---
+function displayScoringLegend(T) {
+    const legendContainer = document.getElementById('scoring-legend');
+    if (!legendContainer) return;
+
+    const legendHtml = `
+        <h4>${T.legendTitle}</h4>
+        <p>${T.legendIntro}</p>
+        <ul>
+            <li>${T.legendCloudCover}</li>
+            <li>${T.legendTempDiff}</li>
+            <li>${T.legendWindSpeed}</li>
+            <li>${T.legendWindDir}</li>
+            <li>${T.legendSuckEffect}</li>
+        </ul>
+    `;
+
+    legendContainer.innerHTML = legendHtml;
 }
