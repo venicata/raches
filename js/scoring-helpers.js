@@ -1,4 +1,13 @@
 // Helper icon functions
+
+export function getWindDirectionScore(degrees) {
+    const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    // Ensure degrees are within 0-359 range
+    const normalizedDegrees = (degrees % 360 + 360) % 360;
+    const index = Math.round(normalizedDegrees / 45) % 8;
+    const direction = directions[index];
+    return { direction: direction };
+}
 export function getWindDirIcon(score) { // Based on windDirectionScore logic
     if (score >= 1) return '✅';
     if (score === 0) return '⚠️'; // Neutral or warning for 0 score

@@ -88,14 +88,51 @@ export async function renderHistoricalChart() {
                             const entry = historicalData[dataIndex];
                             if (!entry) return '';
 
+                            // Dynamically build tooltip from raw data based on current language
+                            const T = translations[state.currentLang];
+                            const pointSuffix = T.pointsSuffix || 'pts';
                             let tooltipLines = [];
-                            tooltipLines.push(`\n${entry.forecastLabelText}`);
-                            tooltipLines.push(entry.predictedWindText);
-                            tooltipLines.push(entry.cloudCoverDetailText);
-                            tooltipLines.push(entry.tempDiffDetailText);
-                            tooltipLines.push(entry.maxWindSpeedApiDetailText);
-                            tooltipLines.push(entry.windDirectionDetailText);
-                            tooltipLines.push(entry.suckEffectDetailText);
+
+                            // Helper functions to get icons based on scores
+                            const getWindDirIcon = (score) => score > 0 ? '✅' : '⚠️';
+                            const getSuckEffectIcon = (val) => val >= 2 ? '✅' : '⚠️';
+                            const getWindSpeedIcon = (score) => score > 0 ? '✅' : '⚠️';
+
+                            // 1. Forecast Label & Score
+                            tooltipLines.push(`\n${T.forecastLabel} ${entry.finalForecast}`);
+                            tooltipLines.push(entry.scoreText);
+
+                            // 2. Predicted Wind
+                            const predictedWindKnotsText = `${entry.pKnots_min}-${entry.pKnots_max} ${T.knotsUnit}`;
+                            const predictedWindMsText = `(${(entry.pMs_min).toFixed(1)}-${(entry.pMs_max).toFixed(1)} ${T.msUnit})`;
+                            tooltipLines.push(`${T.predictedWindLabel} ${predictedWindKnotsText} ${predictedWindMsText}`);
+
+                            // 3. Cloud Cover
+                            tooltipLines.push(`${entry.cloud_cover_value > 30 ? '⚠️' : '✅'} ${T.cloudCoverLabel} ${entry.cloud_cover_value}% (+${entry.cloud_cover_score} ${pointSuffix})`);
+
+                            // 4. Temp Difference
+                            const tempDiffDescriptionText = T[entry.temp_diff_description_key] || entry.temp_diff_description_key;
+                            const tempDiffValueText = typeof entry.temp_diff_value === 'number' ? entry.temp_diff_value.toFixed(1) : 'N/A';
+                            const airTempValueText = typeof entry.air_temp_value === 'number' ? entry.air_temp_value.toFixed(1) : 'N/A';
+                            const seaTempValueText = typeof entry.sea_temp_value === 'number' ? entry.sea_temp_value.toFixed(1) : 'N/A';
+                            tooltipLines.push(`${entry.temp_diff_value >= 6 ? '✅' : '⚠️'} ${T.tempDiffDetail.replace('{description}', tempDiffDescriptionText).replace('{value}', tempDiffValueText).replace('{landTemp}', airTempValueText).replace('{seaTemp}', seaTempValueText)} (+${entry.temp_diff_score} ${pointSuffix})`);
+
+                            // 5. Max Wind Speed API
+                            const windSpeedValueText = typeof entry.wind_speed_value === 'number' ? entry.wind_speed_value.toFixed(1) : 'N/A';
+                            tooltipLines.push(`${getWindSpeedIcon(entry.wind_speed_score)} ${T.apiWindSpeedLabel} ${windSpeedValueText} km/h (+${entry.wind_speed_score} ${pointSuffix})`);
+
+                            // 6. Wind Direction
+                            tooltipLines.push(`${getWindDirIcon(entry.wind_direction_score)} ${T.windDirDetail.replace('{value}', entry.wind_direction_value).replace('{description}', entry.wind_direction_description)} (+${entry.wind_direction_score} ${pointSuffix})`);
+
+                            // 7. Suck Effect
+                            const suckEffectDisplay = `${entry.suck_effect_score_value}/3`;
+                            tooltipLines.push(`${getSuckEffectIcon(entry.suck_effect_score_value)} ${T.suckEffectLabel} ${suckEffectDisplay} (+${entry.suck_effect_score_value} ${pointSuffix})`);
+
+                            // 8. Water Temp
+                            if (entry.waterTemp !== undefined && entry.waterTemp !== null) {
+                                tooltipLines.push(`${T.waterTempLabel} ${entry.waterTemp.toFixed(1)}°C`);
+                            }
+
                             return tooltipLines;
                         }
                     }
