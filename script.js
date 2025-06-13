@@ -3,7 +3,7 @@ const KNOTS_TO_MS = 0.514444; // Define globally
 let historicalChartInstance = null; // Make it globally accessible
 const HISTORICAL_DATA_KEY = 'rachesForecastHistoryV2';
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Координати за Рахес
     const RACHES_LAT = 38.867085;
     const RACHES_LON = 22.759371;
@@ -604,7 +604,7 @@ function parsePredictedWindRange(rangeString, T_unused) { // T might not be need
         return `${finalMinKnots}-${finalMaxKnots} ${T.knotsUnit} (${displayMinMs}-${displayMaxMs} ${T.msUnit})`;
     }
 
-    function displayResults(analysisResults) {
+    async function displayResults(analysisResults) {
         // Ensure resultsContainer is defined and accessible, it's defined in DOMContentLoaded scope
         if (!analysisResults || analysisResults.length === 0) {
             resultsContainer.innerHTML = `<p class="placeholder">${translations[currentLang].placeholderDefault}</p>`;
@@ -617,7 +617,7 @@ function parsePredictedWindRange(rangeString, T_unused) { // T might not be need
         const T = translations[currentLang]; // Translations
         const pointSuffix = T.pointsSuffix || 'pts'; // Suffix for points
 
-        analysisResults.forEach(result => { // Changed 'data' to 'result' to match the loop variable
+        for (const result of analysisResults) { // Changed 'data' to 'result' and forEach to for...of
             // Prepare data for historical storage
             const historicalEntry = {};
             historicalEntry.date = result.date;
@@ -660,7 +660,7 @@ function parsePredictedWindRange(rangeString, T_unused) { // T might not be need
             const suckEffectDisplay = `${result.suck_effect_score_value}/3`;
             historicalEntry.suckEffectDetailText = `${getSuckEffectIcon(result.suck_effect_score_value)} ${T.suckEffectLabel} ${suckEffectDisplay} (+${result.suck_effect_score_value} ${pointSuffix})`;
             
-            saveHistoricalEntry(historicalEntry);
+            await saveHistoricalEntry(historicalEntry);
 
             // Create and append result card
             const resultCard = document.createElement('div');
@@ -690,50 +690,54 @@ function parsePredictedWindRange(rangeString, T_unused) { // T might not be need
 
             resultCard.innerHTML = weatherInfoHtml;
             resultsContainer.appendChild(resultCard);
-        });
+        }
 
-        renderHistoricalChart(); // Re-render chart after displaying new results
+        await renderHistoricalChart(); // Re-render chart after displaying new results
     }
 
     // Functions for historical data and chart rendering
-    function getHistoricalData() {
-        const data = localStorage.getItem(HISTORICAL_DATA_KEY);
+    async function getHistoricalData() {
         try {
-            return data ? JSON.parse(data) : [];
-        } catch (e) {
-            console.error("Error parsing historical data:", e);
-            return [];
+            const response = await fetch('/api/getHistory');
+            if (!response.ok) {
+                console.error("Failed to fetch historical data from API:", response.status, response.statusText);
+                // Potentially return a default or last known good state, or rethrow
+                return []; 
+            }
+            const data = await response.json();
+            return data && Array.isArray(data) ? data : []; // Ensure it's an array
+        } catch (error) {
+            console.error("Error fetching or parsing historical data from API:", error);
+            return []; // Fallback to empty array on error
         }
     }
 
-    function saveHistoricalEntry(entry) {
+    async function saveHistoricalEntry(entry) {
         if (!entry || !entry.date) {
-            console.error("Invalid entry for historical data:", entry);
-            return;
+            console.error("Invalid entry for historical data (client-side check):", entry);
+            return; // Basic client-side validation
         }
-        let historicalData = getHistoricalData();
-        const existingEntryIndex = historicalData.findIndex(item => item.date === entry.date);
-
-        if (existingEntryIndex !== -1) {
-            historicalData[existingEntryIndex] = entry; // Update existing entry
-        } else {
-            historicalData.push(entry); // Add new entry
+        try {
+            const response = await fetch('/api/saveHistory', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(entry),
+            });
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+                console.error("Failed to save historical entry to API:", response.status, response.statusText, errorData);
+            } else {
+                console.log("Historical entry saved successfully via API.");
+            }
+        } catch (error) {
+            console.error("Error sending historical entry to API:", error);
         }
-
-        // Sort by date (ascending)
-        historicalData.sort((a, b) => new Date(a.date) - new Date(b.date)); 
-
-        // Keep only the last MAX_HISTORY_DAYS entries (e.g., 90 days)
-        const MAX_HISTORY_DAYS = 180; 
-        if (historicalData.length > MAX_HISTORY_DAYS) {
-           historicalData = historicalData.slice(-MAX_HISTORY_DAYS);
-        }
-
-        localStorage.setItem(HISTORICAL_DATA_KEY, JSON.stringify(historicalData));
     }
 
-    function renderHistoricalChart() {
-        const historicalData = getHistoricalData();
+    async function renderHistoricalChart() {
+        const historicalData = await getHistoricalData();
         const chartSection = document.getElementById('chartSection');
         const chartCanvas = document.getElementById('historicalWindChart');
         const chartTitleEl = document.getElementById('historicalChartTitleKey');
