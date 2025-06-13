@@ -368,6 +368,23 @@ footer a {
         padding: 15px; 
     }
 
+    body {
+        padding: 0px;
+    }
+
+    #chartSection {
+        width: calc(100% + 30px) !important;
+        margin-left: -15px;
+    }
+
+    #historicalChartTitleKey {
+        padding: 0px 15px;
+    }
+
+    .controls {
+        padding: 0px 15px;
+    }
+    
     .controls {
         flex-direction: column; 
     }
