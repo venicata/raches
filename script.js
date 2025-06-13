@@ -505,13 +505,24 @@ function parsePredictedWindRange(rangeString, T_unused) { // T might not be need
 }
 
     function predictWindSpeedRange(baseWindSpeedKmH, overallScore, suckEffectScore, windDirection) {
+        const T = translations[currentLang]; // Ensure T is available for 'knots' translation
+
+        // Perfect day override: If score is very high, predict strong reliable thermal
+        const PERFECT_DAY_SCORE_THRESHOLD = 16; // Define what constitutes a 'perfect day'
+        if (overallScore >= PERFECT_DAY_SCORE_THRESHOLD) {
+            const minKnots = 20;
+            const maxKnots = 25;
+            const minMs = (minKnots * KNOTS_TO_MS).toFixed(1);
+            const maxMs = (maxKnots * KNOTS_TO_MS).toFixed(1);
+            return `${minKnots}-${maxKnots} ${T.knotsUnit} (${minMs}-${maxMs} ${T.msUnit})`;
+        }
+
         const baseKnots = baseWindSpeedKmH * 0.539957; // KNOTS_TO_MS is 0.539957 if converting kmh to knots
         let thermalAdditiveKnots = 0;
-        const T = translations[currentLang];
 
         // Determine thermal strength based on overallScore and suckEffectScore
-        const MIN_APP_SCORE = -7;
-        const MAX_APP_SCORE = 14.5;
+        const MIN_APP_SCORE = -8.5; // Should align with processWeatherData minScoreTotal
+        const MAX_APP_SCORE = 17.25; // Should align with processWeatherData maxScoreTotal
         const forecastHighThreshold = 10;
         const forecastMidThreshold = 5;
         const forecastLowThreshold = 0;
@@ -700,15 +711,25 @@ function parsePredictedWindRange(rangeString, T_unused) { // T might not be need
             console.error("Invalid entry for historical data:", entry);
             return;
         }
-        let history = getHistoricalData();
-        history = history.filter(item => item.date !== entry.date); // Remove old entry for the same date
-        history.push(entry);
-        history.sort((a, b) => new Date(a.date) - new Date(b.date)); 
-        const MAX_HISTORY_DAYS = 90;
-        if (history.length > MAX_HISTORY_DAYS) {
-           history = history.slice(-MAX_HISTORY_DAYS);
+        let historicalData = getHistoricalData();
+        const existingEntryIndex = historicalData.findIndex(item => item.date === entry.date);
+
+        if (existingEntryIndex !== -1) {
+            historicalData[existingEntryIndex] = entry; // Update existing entry
+        } else {
+            historicalData.push(entry); // Add new entry
         }
-        localStorage.setItem(HISTORICAL_DATA_KEY, JSON.stringify(history));
+
+        // Sort by date (ascending)
+        historicalData.sort((a, b) => new Date(a.date) - new Date(b.date)); 
+
+        // Keep only the last MAX_HISTORY_DAYS entries (e.g., 90 days)
+        const MAX_HISTORY_DAYS = 180; 
+        if (historicalData.length > MAX_HISTORY_DAYS) {
+           historicalData = historicalData.slice(-MAX_HISTORY_DAYS);
+        }
+
+        localStorage.setItem(HISTORICAL_DATA_KEY, JSON.stringify(historicalData));
     }
 
     function renderHistoricalChart() {
@@ -757,6 +778,7 @@ function parsePredictedWindRange(rangeString, T_unused) { // T might not be need
                     borderColor: 'rgb(255, 99, 132)',
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
                     yAxisID: 'yMs',
+                    hidden: true,
                     tension: 0.1
                 }
             ]
