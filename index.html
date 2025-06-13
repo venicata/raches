@@ -7,6 +7,7 @@
     <title>Рахес: Прогноза за Термичен Вятър | Твоят AI Кайт Спот Асистент</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -38,8 +39,13 @@
             <!-- Прогнозите ще се появят тук -->
         </div>
 
-        <footer>
-            <p data-lang-key="footerText">Created with AI assistant. Data from <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a>.</p>
+        <div class="container" id="chartSection" style="display: none; margin-top: 30px; width: calc(100% - 50px); height: 500px">
+            <h2 id="historicalChartTitleKey" class="section-title"></h2>
+            <canvas id="historicalWindChart"></canvas>
+        </div>
+
+        <footer style="margin-top: 70px; display: block;">
+            <p data-lang-key="footerText">Data from <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a>.</p>
         </footer>
     </div>
 

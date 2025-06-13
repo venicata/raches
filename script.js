@@ -1,5 +1,8 @@
 const KNOTS_TO_MS = 0.514444; // Define globally
 
+let historicalChartInstance = null; // Make it globally accessible
+const HISTORICAL_DATA_KEY = 'rachesForecastHistoryV2';
+
 document.addEventListener('DOMContentLoaded', () => {
     // Координати за Рахес
     const RACHES_LAT = 38.867085;
@@ -17,50 +20,54 @@ document.addEventListener('DOMContentLoaded', () => {
             subtitle: "AI Assistant for thermal wind forecast in Raches",
             instructions: "Double-click a date for a single day, or select a date range",
             analyzeBtn: "Analyze",
-            placeholderLoading: "Loading data and analyzing... 🧠",
+            placeholderLoading: "Loading data and analyzing... ",
             placeholderDefault: "Select a period and click 'Analyze' to see the forecast.",
             forecastHigh: "HIGH PROBABILITY OF GOOD CONDITIONS",
             forecastMid: "MEDIUM PROBABILITY OF GOOD CONDITIONS",
-            forecastLow: "LOW PROBABILITY OF GOOD CONDITIONS",
-            forecastBad: "NOT SUITABLE FOR KITING",
-            forecastLabel: "🎯 Forecast:",
-            scoreLabel: "📊 <b>Score: {score}</b> (from {minScore} to {maxScore})",
+            forecastBad: "LOW PROBABILITY / BAD CONDITIONS",
+            forecastNotSuitableKiting: "UNSUITABLE FOR KITING (Wind too low)",
+            forecastLabel: " Forecast:",
+            scoreLabel: " <b>Score: {score}</b> (from {minScore} to {maxScore})",
             predictedWindLabel: "Predicted Wind:",
             waterTempLabel: "Water Temperature:",
+            historicalChartTitleKey: "Historical Wind Overview",
+            knotsUnit: "knots",
+            msUnit: "m/s",
+            suckEffectStrengthLabel: "Suck Effect Strength:",
             apiWindSpeedLabel: "Max Wind Speed (API):",
             cloudCoverLabel: "Cloud Cover:",
             airTempLabel: "Air Temperature:",
             windDirLabel: "Wind Direction:",
             suckEffectLabel: "Suck Effect:",
             detailsLabel: "Details:",
-            cloudCoverDetail: "{icon} Cloud Cover: {value}%",
-            tempDiffDetail: "{icon} Temp Difference (Land-Sea): {description} ({value}°C) (Land: {landTemp}°C, Sea: {seaTemp})",
-            windSpeedDetail: "{icon} Max Wind Speed: {value} km/h",
-            windDirDetail: "{icon} Wind Direction: {value}° ({description})", // Generic wind direction detail
+            cloudCoverDetail: "Cloud Cover: {value}%",
+            tempDiffDetail: "Temp Difference (Land-Sea): {description} ({value}°C) (Land: {landTemp}°C, Sea: {seaTemp}°C)",
+            windSpeedDetail: "Max Wind Speed: {value} km/h",
+            windDirDetail: "Wind Direction: {value}° ({description})", // Generic wind direction detail
             windDirOnshore: "Suitable - Onshore",
             windDirOffshore: "Unsuitable - Offshore",
             windDirSideShore: "Side-shore",
             windDirOffshoreBad: "Unsuitable - Directly Offshore (Bad)",
             windDirSideOff: "Side-Offshore (Not Ideal)",
-            suckEffectDetail: "{icon} Suck Effect (Thermal Wind): {value}/3",
+            suckEffectDetail: "Suck Effect (Thermal Wind): {value}/3",
             knotsUnit: "knots",
             msUnit: "m/s",
             noData: "N/A",
-            mapLink: "📍 Map",
-            criteriaLink: "📋 Criteria",
+            mapLink: " Map",
+            criteriaLink: " Criteria",
             footerText: "Created with AI assistant. Data from <a href=\"https://open-meteo.com/\" target=\"_blank\">Open-Meteo</a>.",
             modalTitle: "Criteria for Thermal Wind in Raches",
             modalIntro: "In Raches, the thermal effect intensifies when the following 5 conditions are met simultaneously:",
-            criteria1Title: "✅ 1. Sunny and clear sky (no clouds until noon)",
-            criteria1Desc: "➡️ Windy: enable Clouds layer → look for very few clouds before 13:00. Why? The sun needs to heat the land to create a temperature difference between land and sea.",
-            criteria2Title: "✅ 2. Land-sea temperature difference",
-            criteria2Desc: "➡️ Windy: enable Airgram or Meteogram layer. Look for: Air temperature on land (e.g., 30°C). Sea temperature (usually 23–25°C). The greater the difference, the stronger the thermal breeze.",
-            criteria3Title: "✅ 3. Weak to moderate synoptic circulation from east or northeast (ENE/NE)",
-            criteria3Desc: "➡️ Windy: enable Wind layer → observe the arrows in the Raches area. The ideal scenario is 5–10 knots from ENE/NE in the morning (until noon). This \"helps\" the thermal effect without suppressing it.",
-            criteria4Title: "✅ 4. No strong west or south wind",
-            criteria4Desc: "➡️ It's important to have no wind against the thermal effect. Wind from W, SW, S will kill or reverse it. Avoid days with a forecast for west wind after 15:00.",
-            criteria5Title: "✅ 5. Local suction effect (you can ‘see’ it in Windy by wind acceleration around 14–16h)",
-            criteria5Desc: "➡️ Windy: in the Wind layer, place the cursor on the spot (Raches). If the wind sharply increases after 13:00 (e.g., from 6 to 15 knots), this is THERMAL INTENSIFICATION.",
+            criteria1Title: " 1. Sunny and clear sky (no clouds until noon)",
+            criteria1Desc: " Windy: enable Clouds layer → look for very few clouds before 13:00. Why? The sun needs to heat the land to create a temperature difference between land and sea.",
+            criteria2Title: " 2. Land-sea temperature difference",
+            criteria2Desc: " Windy: enable Airgram or Meteogram layer. Look for: Air temperature on land (e.g., 30°C). Sea temperature (usually 23–25°C). The greater the difference, the stronger the thermal breeze.",
+            criteria3Title: " 3. Weak to moderate synoptic circulation from east or northeast (ENE/NE)",
+            criteria3Desc: " Windy: enable Wind layer → observe the arrows in the Raches area. The ideal scenario is 5–10 knots from ENE/NE in the morning (until noon). This \"helps\" the thermal effect without suppressing it.",
+            criteria4Title: " 4. No strong west or south wind",
+            criteria4Desc: " It's important to have no wind against the thermal effect. Wind from W, SW, S will kill or reverse it. Avoid days with a forecast for west wind after 15:00.",
+            criteria5Title: " 5. Local suction effect (you can ‘see’ it in Windy by wind acceleration around 14–16h)",
+            criteria5Desc: " Windy: in the Wind layer, place the cursor on the spot (Raches). If the wind sharply increases after 13:00 (e.g., from 6 to 15 knots), this is THERMAL INTENSIFICATION.",
             pointsSuffix: "pts",
             tempDiffHigh: "High",
             tempDiffMedium: "Medium",
@@ -68,36 +75,45 @@ document.addEventListener('DOMContentLoaded', () => {
             tempDiffVeryLow: "Very Low"
         },
         bg: {
-            title: "💨 Raches Thermal Wind Forecaster",
+            title: " Raches Thermal Wind Forecaster",
             subtitle: "AI Асистент за прогноза на термичния вятър в Рахес",
             instructions: "Кликнете 2 пъти на една дата, или селектирайте период от дати",
             analyzeBtn: "Анализирай",
-            placeholderLoading: "Зареждам данни и анализирам... 🧠",
+            placeholderLoading: "Зареждам данни и анализирам... ",
             placeholderDefault: "Изберете период и натиснете 'Анализирай', за да видите прогнозата.",
             forecastHigh: "ВИСОКА ВЕРОЯТНОСТ ЗА ДОБРИ УСЛОВИЯ",
             forecastMid: "СРЕДНА ВЕРОЯТНОСТ ЗА ДОБРИ УСЛОВИЯ",
-            forecastLow: "НИСКА ВЕРОЯТНОСТ ЗА ДОБРИ УСЛОВИЯ",
-            forecastBad: "НЕ Е ПОДХОДЯЩО ЗА КАЙТ",
-            forecastLabel: "🎯 Прогноза:",
-            scoreLabel: "📊 <b>Оценка: {score}</b> (от {minScore} до {maxScore})",
+            forecastBad: "НИСКА ВЕРОЯТНОСТ / ЛОШИ УСЛОВИЯ",
+            forecastNotSuitableKiting: "НЕ Е ПОДХОДЯЩО ЗА КАЙТ (Слаб вятър)",
+            forecastLabel: " Прогноза:",
+            scoreLabel: " <b>Оценка: {score}</b> (от {minScore} до {maxScore})",
             predictedWindLabel: "Прогнозиран вятър:",
             waterTempLabel: "Температура на водата:",
+            historicalChartTitleKey: "Исторически Преглед на Вятъра",
+            knotsUnit: "възли",
+            msUnit: "м/с",
+            suckEffectStrengthLabel: "Сила на Suck ефекта:",
             apiWindSpeedLabel: "Макс. скорост на вятър (API):",
             cloudCoverLabel: "Облачност:",
             airTempLabel: "Температура на въздуха:",
             windDirLabel: "Посока на вятър:",
             suckEffectLabel: "Suck ефект:",
             detailsLabel: "Детайли:",
-            cloudCoverDetail: "{icon} Облачност: {value}%",
-            tempDiffDetail: "{icon} Температурна разлика (суша-море): {description} ({value}°C) (Суша: {landTemp}°C, Море: {seaTemp}°C)",
-            windSpeedDetail: "{icon} Макс. скорост на вятър: {value} km/h",
-            windDirDetail: "{icon} Посока на вятър: {value}° ({description})", // Общ ключ за посока на вятъра
+            cloudCoverDetail: "Облачност: {value}%",
+            tempDiffDetail: "Температурна разлика (суша-море): {description} ({value}°C) (Суша: {landTemp}°C, Море: {seaTemp}°C)",
+            windSpeedDetail: "Макс. скорост на вятър: {value} km/h",
+            windDirDetail: "Посока на вятър: {value}° ({description})", // Общ ключ за посока на вятъра
             windDirOnshore: "Подходяща - Onshore",
             windDirOffshore: "Неподходяща - Offshore",
             windDirSideShore: "Странична - Side-shore",
             windDirOffshoreBad: "Неподходяща - Директно Offshore (Лоша)",
             windDirSideOff: "Странично-Offshore (Не идеална)",
-            suckEffectDetail: "{icon} Suck ефект (термичен вятър): {value}/3",
+            windDirE_SE: "Източен, Югоизточен (Идеална)",
+            windDirS_SSE: "Южен, Юго-югоизточен (Приемлива)",
+            windDirN_NE: "Северен, Североизточен (Приемлива)",
+            windDirS_SSW: "Южен, Юго-югозападен (Неутрална)",
+            windDirW_SW_NW: "Западен, Югозападен, Северозападен (Лоша)",
+            suckEffectDetail: "Suck ефект (термичен вятър): {value}/3",
             knotsUnit: "възли",
             msUnit: "м/с",
             noData: "N/A",
@@ -130,15 +146,30 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('[data-lang-key]').forEach(element => {
             const key = element.getAttribute('data-lang-key');
             if (translations[lang][key]) {
-                element.innerHTML = translations[lang][key];
+                // Preserve child elements like links if they exist
+                const link = element.querySelector('a');
+                if (link) {
+                    element.innerHTML = translations[lang][key].replace('{link}', link.outerHTML);
+                } else {
+                    element.innerHTML = translations[lang][key];
+                }
             }
         });
         document.getElementById('lang-bg').classList.toggle('active', lang === 'bg');
         document.getElementById('lang-en').classList.toggle('active', lang === 'en');
         
-        const resultsContainer = document.getElementById('results-container');
-        if (resultsContainer.querySelector('.placeholder')) {
+        const resultsContainer = document.getElementById('results-container'); // Ensure resultsContainer is defined here
+        if (resultsContainer && resultsContainer.querySelector('.placeholder')) {
              resultsContainer.innerHTML = `<p class="placeholder">${translations[currentLang].placeholderDefault}</p>`;
+        }
+
+        // Update chart with new language
+        const chartTitleEl = document.getElementById('historicalChartTitleKey');
+        if (chartTitleEl) {
+            chartTitleEl.textContent = translations[currentLang].historicalChartTitleKey;
+        }
+        if (historicalChartInstance) { 
+            renderHistoricalChart();
         }
     };
 
@@ -211,6 +242,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Helper icon functions (simplified)
+    function getWindDirIcon(score) { // Based on windDirectionScore logic
+        if (score >= 1) return '✅';
+        if (score === 0) return '⚠️'; // Neutral or warning for 0 score
+        return '❌';
+    }
+    function getSuckEffectIcon(score) {
+        if (score >= 2) return '✅';
+        if (score === 1) return '⚠️';
+        return '❌';
+    }
+
     // Helper functions for granular scoring (re-implemented and detailed)
     function getCloudCoverScore(cloudCover) {
         if (cloudCover <= 5) return { score: 5, icon: '✅' };    // Max positive score +5
@@ -228,207 +271,238 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getTempDiffScore(tempDiff) {
-        if (tempDiff >= 8) return { score: 3.5, icon: '✅', textKey: 'tempDiffHigh' };
-        if (tempDiff >= 7) return { score: 3, icon: '✅', textKey: 'tempDiffHigh' };
-        if (tempDiff >= 6) return { score: 2.5, icon: '✅', textKey: 'tempDiffHigh' };
-        if (tempDiff >= 5) return { score: 2, icon: '✅', textKey: 'tempDiffHigh' };
-        if (tempDiff >= 4) return { score: 1.5, icon: '⚠️', textKey: 'tempDiffMedium' };
-        if (tempDiff >= 3) return { score: 1, icon: '⚠️', textKey: 'tempDiffMedium' };
-        if (tempDiff >= 2) return { score: 0.5, icon: '⚠️', textKey: 'tempDiffLow' }; // Added textKey for 0.5 score
-        if (tempDiff >= 1) return { score: 0, icon: '❌', textKey: 'tempDiffLow' }; // Changed icon for 0 score to neutral or slightly neg
-        return { score: -1, icon: '❌', textKey: 'tempDiffVeryLow' }; // < 1
+        if (tempDiff >= 8) return { score: 5.25, icon: '✅', textKey: 'tempDiffHigh' };    // 3.5 * 1.5
+        if (tempDiff >= 7) return { score: 4.5, icon: '✅', textKey: 'tempDiffHigh' };     // 3 * 1.5
+        if (tempDiff >= 6) return { score: 3.75, icon: '✅', textKey: 'tempDiffHigh' };   // 2.5 * 1.5
+        if (tempDiff >= 5) return { score: 3, icon: '✅', textKey: 'tempDiffHigh' };       // 2 * 1.5
+        if (tempDiff >= 4) return { score: 2.25, icon: '⚠️', textKey: 'tempDiffMedium' }; // 1.5 * 1.5
+        if (tempDiff >= 3) return { score: 1.5, icon: '⚠️', textKey: 'tempDiffMedium' };  // 1 * 1.5
+        if (tempDiff >= 2) return { score: 0.75, icon: '⚠️', textKey: 'tempDiffLow' };    // 0.5 * 1.5
+        if (tempDiff >= 1) return { score: 0, icon: '❌', textKey: 'tempDiffLow' };        // 0 * 1.5 remains 0
+        return { score: -1.5, icon: '❌', textKey: 'tempDiffVeryLow' }; // -1 * 1.5
     }
 
-    async function processWeatherData(weatherData, marineData) {
-        const dailyData = {};
-        weatherData.daily.time.forEach((date, index) => {
-            dailyData[date] = {
-                cloud_cover: weatherData.daily.cloud_cover_mean[index],
-                temperature_2m_max: weatherData.daily.temperature_2m_max[index],
-                wind_speed_10m_max: weatherData.daily.wind_speed_10m_max[index],
-                wind_direction_10m_dominant: weatherData.daily.wind_direction_10m_dominant[index],
-                sea_temp: undefined,
-                suck_effect_score: 0,
-                predicted_wind_range: "N/A"
-            };
+async function processWeatherData(weatherData, marineData) {
+    const dailyData = {};
+    weatherData.daily.time.forEach((date, index) => {
+        dailyData[date] = {
+            cloud_cover: weatherData.daily.cloud_cover_mean[index],
+            temperature_2m_max: weatherData.daily.temperature_2m_max[index],
+            wind_speed_10m_max: weatherData.daily.wind_speed_10m_max[index],
+            wind_direction_10m_dominant: weatherData.daily.wind_direction_10m_dominant[index],
+            sea_temp: undefined, // Will be filled or estimated
+            // Scores and detailed values will be added below
+        };
+    });
+
+    // Fill in sea temperatures from marine data if available
+    if (marineData && marineData.hourly && marineData.hourly.time && marineData.hourly.sea_surface_temperature) {
+        marineData.hourly.time.forEach((datetime, index) => {
+            const date = datetime.split('T')[0];
+            const hour = parseInt(datetime.split('T')[1].split(':')[0]);
+            if (hour === 13 && dailyData[date]) { // Use 1 PM sea temperature
+                dailyData[date].sea_temp = marineData.hourly.sea_surface_temperature[index];
+            }
         });
-    
-        if (marineData && marineData.hourly && marineData.hourly.time && marineData.hourly.sea_surface_temperature) {
-            marineData.hourly.time.forEach((datetime, index) => {
-                const date = datetime.split('T')[0];
-                const hour = parseInt(datetime.split('T')[1].split(':')[0]);
-                if (hour === 13 && dailyData[date]) {
-                    dailyData[date].sea_temp = marineData.hourly.sea_surface_temperature[index];
-                }
-            });
-        }
+    }
 
-        let lastKnownSeaTemp = null;
-        for (const date of weatherData.daily.time) {
-            if (dailyData[date] && dailyData[date].sea_temp !== undefined && dailyData[date].sea_temp !== null) {
-                lastKnownSeaTemp = dailyData[date].sea_temp;
-                break;
+    // Estimate missing sea temperatures
+    let lastKnownSeaTemp = null;
+    // First pass to find any known sea temperature
+    for (const date of weatherData.daily.time) {
+        if (dailyData[date] && dailyData[date].sea_temp !== undefined && dailyData[date].sea_temp !== null) {
+            lastKnownSeaTemp = dailyData[date].sea_temp;
+            break; // Found one, use it as a starting point
+        }
+    }
+    if (lastKnownSeaTemp === null) lastKnownSeaTemp = 15.0; // Default if no marine data at all
+
+    // Second pass to fill missing ones
+    for (const date of weatherData.daily.time) {
+        if (dailyData[date]) {
+            if (dailyData[date].sea_temp !== undefined && dailyData[date].sea_temp !== null) {
+                lastKnownSeaTemp = dailyData[date].sea_temp; // Update if a new known value is found
+            } else {
+                dailyData[date].sea_temp = lastKnownSeaTemp; // Fill with the last known
             }
         }
-        if (lastKnownSeaTemp === null) lastKnownSeaTemp = 15.0;
+    }
 
-        for (const date of weatherData.daily.time) {
-            if (dailyData[date]) {
-                if (dailyData[date].sea_temp !== undefined && dailyData[date].sea_temp !== null) {
-                    lastKnownSeaTemp = dailyData[date].sea_temp;
-                } else {
-                    dailyData[date].sea_temp = lastKnownSeaTemp;
-                }
-            }
-        }
-    
-        const analysisResults = [];
-    
-        for (const date in dailyData) {
-            const data = dailyData[date];
-            let details = [];
-            let score = 0;
-            let suckEffectScore = 0; // Initialize suckEffectScore for the current day
-            const T = translations[currentLang];
+    const analysisResults = [];
+    const T = translations[currentLang]; // Get translations once
 
-            // Calculate Suck Effect Score for the current date
-            // Find morning (e.g., 10:00) and afternoon (e.g., 16:00) wind speeds from weatherData.hourly
-            console.log(`Debugging Suck Effect for date: ${date}`); // Log date
-            let morningWindSpeed = null;
-            let afternoonWindSpeed = null;
+    for (const date in dailyData) {
+        const data = dailyData[date]; // This is the object for the current day
+        let score = 0;
 
-            if (weatherData.hourly && weatherData.hourly.time && weatherData.hourly.windspeed_10m) { // Corrected key
-                const hourlyTimes = weatherData.hourly.time;
-                const hourlyWindSpeeds = weatherData.hourly.windspeed_10m; // Corrected key
-
-                for (let i = 0; i < hourlyTimes.length; i++) {
-                    const hourlyDateTime = hourlyTimes[i];
-                    const entryDate = hourlyDateTime.split('T')[0];
-                    const entryHour = parseInt(hourlyDateTime.split('T')[1].split(':')[0]);
-
-                    if (entryDate === date) {
-                        if (entryHour >= 9 && entryHour <= 11) { // Capture around 10:00
-                            if (morningWindSpeed === null || hourlyWindSpeeds[i] > morningWindSpeed) {
-                                 // Take max in the morning window if multiple, or just first good one
-                                morningWindSpeed = hourlyWindSpeeds[i]; 
-                            }
+        // Suck Effect Score
+        let suckEffectScore = 0;
+        let morningWindSpeed = null;
+        let afternoonWindSpeed = null;
+        if (weatherData.hourly && weatherData.hourly.time && weatherData.hourly.windspeed_10m) {
+            const hourlyTimes = weatherData.hourly.time;
+            const hourlyWindSpeeds = weatherData.hourly.windspeed_10m;
+            for (let i = 0; i < hourlyTimes.length; i++) {
+                const hourlyDateTime = hourlyTimes[i];
+                const entryDate = hourlyDateTime.split('T')[0];
+                const entryHour = parseInt(hourlyDateTime.split('T')[1].split(':')[0]);
+                if (entryDate === date) {
+                    if (entryHour >= 9 && entryHour <= 11) { // Morning window 9-11 AM
+                        if (morningWindSpeed === null || hourlyWindSpeeds[i] > morningWindSpeed) {
+                            morningWindSpeed = hourlyWindSpeeds[i];
                         }
-                        if (entryHour >= 15 && entryHour <= 17) { // Capture around 16:00
-                            if (afternoonWindSpeed === null || hourlyWindSpeeds[i] > afternoonWindSpeed) {
-                                // Take max in the afternoon window
-                                afternoonWindSpeed = hourlyWindSpeeds[i]; 
-                            }
+                    }
+                    if (entryHour >= 15 && entryHour <= 17) { // Afternoon window 3-5 PM
+                        if (afternoonWindSpeed === null || hourlyWindSpeeds[i] > afternoonWindSpeed) {
+                            afternoonWindSpeed = hourlyWindSpeeds[i];
                         }
                     }
                 }
             }
-
-            console.log(morningWindSpeed, afternoonWindSpeed)
-            
-            if (morningWindSpeed !== null && afternoonWindSpeed !== null) {
-                const windIncreaseKmh = afternoonWindSpeed - morningWindSpeed;
-                console.log(`Suck Effect Calculation for ${date}: Morning Wind: ${morningWindSpeed} km/h, Afternoon Wind: ${afternoonWindSpeed} km/h, Increase: ${windIncreaseKmh} km/h`);
-                // Scoring based on wind increase (example thresholds, adjust as needed)
-                // Wind speeds are in km/h from API
-                if (windIncreaseKmh >= 15) { suckEffectScore = 3; }
-                else if (windIncreaseKmh >= 10) { suckEffectScore = 2; }
-                else if (windIncreaseKmh >= 5) { suckEffectScore = 1; }
-                else { suckEffectScore = 0; }
-                console.log(`Suck Effect Score for ${date}: ${suckEffectScore}`);
-            } else {
-                console.warn(`Suck Effect: Insufficient data for ${date} - Morning: ${morningWindSpeed}, Afternoon: ${afternoonWindSpeed}`);
-            }
-            score += suckEffectScore; // Add to total score
-            data.suck_effect_score = suckEffectScore; // Store it in the data object for display
-
-            // 1. Cloud Cover (Granular)
-            const cloudCoverResult = getCloudCoverScore(data.cloud_cover);
-            score += cloudCoverResult.score;
-            details.push(T.cloudCoverDetail.replace('{icon}', cloudCoverResult.icon).replace('{value}', data.cloud_cover) + ` (${cloudCoverResult.score > 0 ? '+' : ''}${cloudCoverResult.score} ${T.pointsSuffix || 'pts'})`);
-
-            // Temperature Difference Score
-            const tempDiff = data.temperature_2m_max - data.sea_temp;
-            const tempDiffResult = getTempDiffScore(tempDiff);
-            score += tempDiffResult.score;
-            const tempDescriptionText = T[tempDiffResult.textKey] || tempDiffResult.textKey; // Safety check
-            details.push(
-                T.tempDiffDetail
-                    .replace('{icon}', tempDiffResult.icon) // Correctly replace icon
-                    .replace('{description}', tempDescriptionText)
-                    .replace('{value}', tempDiff.toFixed(1))
-                    .replace('{landTemp}', data.temperature_2m_max)
-                    .replace('{seaTemp}', data.sea_temp)
-                + ` (${tempDiffResult.score > 0 ? '+' : ''}${tempDiffResult.score} ${T.pointsSuffix || 'pts'})`
-            );
-
-            // Wind Speed Score (from API)
-            let windSpeedScore = 0;
-            let windSpeedIcon = '';
-            if (data.wind_speed_10m_max >= 15 && data.wind_speed_10m_max <= 30) { windSpeedScore = 2; windSpeedIcon = '✅'; }
-            else if (data.wind_speed_10m_max > 30 && data.wind_speed_10m_max <= 40) { windSpeedScore = 1; windSpeedIcon = '⚠️'; }
-            else if (data.wind_speed_10m_max < 15 && data.wind_speed_10m_max >=5) { windSpeedScore = 0; windSpeedIcon = '❌'; }
-            else if (data.wind_speed_10m_max < 5) { windSpeedScore = -1; windSpeedIcon = '❌'; }
-            else { windSpeedScore = -2; windSpeedIcon = '❌'; }
-            score += windSpeedScore;
-            details.push(T.windSpeedDetail.replace('{icon}', windSpeedIcon).replace('{value}', data.wind_speed_10m_max.toFixed(1)) + ` (${windSpeedScore > 0 ? '+' : ''}${windSpeedScore} ${T.pointsSuffix || 'pts'})`);
-
-            // Wind Direction Score
-            let windDirectionScore = 0;
-            let windDirIcon = '';
-            let windDirDescKey = ''; // Key for translation
-            const dir = data.wind_direction_10m_dominant;
-
-            if ((dir >= 45 && dir <= 135)) { // Onshore to side-onshore (E is 90)
-                windDirectionScore = 1; windDirIcon = '✅'; windDirDescKey = 'windDirOnshore';
-            } else if ((dir > 135 && dir <= 180) || (dir >= 0 && dir < 45)) { // Side-shore (S or N)
-                windDirectionScore = 0; windDirIcon = '⚠️'; windDirDescKey = 'windDirSideShore';
-            } else { // Offshore or side-offshore (Westerly components)
-                windDirectionScore = -1; windDirIcon = '❌'; windDirDescKey = 'windDirOffshore';
-            }
-            // Specific adjustments for Raches (East-facing spot)
-            if (dir > 180 && dir < 360) { // Westerly components are generally bad
-                 if (dir >= 225 && dir <= 315) { // Directly offshore W, NW, SW
-                    windDirectionScore = -2; windDirDescKey = 'windDirOffshoreBad'; // Use a more specific key if needed or append to existing
-                 } else { // Side-offshore (e.g. WNW, WSW)
-                    windDirectionScore = -1; windDirDescKey = 'windDirSideOff';
-                 }
-            }
-            score += windDirectionScore;
-            const windDirectionDescriptionText = T[windDirDescKey] || windDirDescKey; // Safety check
-            // Use the generic T.windDirDetail for structure
-            details.push(T.windDirDetail.replace('{icon}', windDirIcon).replace('{value}', dir).replace('{description}', windDirectionDescriptionText) + ` (${windDirectionScore > 0 ? '+' : ''}${windDirectionScore} ${T.pointsSuffix || 'pts'})`);
-
-            // Suck Effect Score
-            let suckEffectIcon = '';
-            if (suckEffectScore >= 2) { suckEffectIcon = '✅'; } 
-            else if (suckEffectScore === 1) { suckEffectIcon = '⚠️'; } 
-            else { suckEffectIcon = '❌'; }
-            details.push(T.suckEffectDetail.replace('{icon}', suckEffectIcon).replace('{value}', suckEffectScore) + ` (${suckEffectScore > 0 ? '+' : ''}${suckEffectScore} ${T.pointsSuffix || 'pts'})`);
-    
-            // Min/Max scores based on: Cloud (-3 to +5), TempDiff (-1 to +3.5), WindSpeed (-2 to +2), WindDir (-1 to +1), SuckEffect (0 to +3)
-            const minScore = -3 - 1 - 2 - 1 + 0; // = -7
-            const maxScore = 5 + 3.5 + 2 + 1 + 3;    // = 14.5
-
-            let finalForecast = "";
-            // Adjusted thresholds based on new score range (-7 to 14.5)
-            if (score >= 10) finalForecast = T.forecastHigh;
-            else if (score >= 5) finalForecast = T.forecastMid;
-            else if (score >= 0) finalForecast = T.forecastLow;
-            else finalForecast = T.forecastBad;
-    
-            data.predicted_wind_range = predictWindSpeedRange(data.wind_speed_10m_max, score, suckEffectScore, data.wind_direction_10m_dominant);
-    
-            analysisResults.push({
-                date: date, score: score, minScore: minScore, maxScore: maxScore,
-                cloud_cover: data.cloud_cover, temperature_2m_max: data.temperature_2m_max,
-                sea_temp: data.sea_temp, wind_speed: data.wind_speed_10m_max,
-                wind_direction_10m_dominant: data.wind_direction_10m_dominant,
-                suck_effect_score: suckEffectScore, finalForecast: finalForecast,
-                predicted_wind_range: data.predicted_wind_range, details: details
-            });
         }
-        return analysisResults;
+        if (morningWindSpeed !== null && afternoonWindSpeed !== null) {
+            const windIncreaseKmh = afternoonWindSpeed - morningWindSpeed;
+            if (windIncreaseKmh >= 15) { suckEffectScore = 3; }
+            else if (windIncreaseKmh >= 10) { suckEffectScore = 2; }
+            else if (windIncreaseKmh >= 5) { suckEffectScore = 1; }
+        }
+        score += suckEffectScore;
+        data.suck_effect_score_value = suckEffectScore;
+
+        // 1. Cloud Cover
+        const cloudCoverResult = getCloudCoverScore(data.cloud_cover); // data.cloud_cover is mean cloud cover
+        score += cloudCoverResult.score;
+        data.cloud_cover_score = cloudCoverResult.score;
+        data.cloud_cover_value = data.cloud_cover;
+
+        // 2. Temperature Difference (Land - Sea)
+        data.air_temp_value = data.temperature_2m_max;
+        data.sea_temp_value = data.sea_temp; // Already populated or estimated
+        const tempDiff = data.air_temp_value - data.sea_temp_value;
+        data.temp_diff_value = tempDiff;
+        const tempDiffResult = getTempDiffScore(tempDiff);
+        score += tempDiffResult.score;
+        data.temp_diff_score = tempDiffResult.score;
+        data.temp_diff_description_key = tempDiffResult.textKey;
+
+        // 3. Wind Speed (from API) - Max daily wind speed
+        data.wind_speed_value = data.wind_speed_10m_max;
+        let windSpeedScore = 0;
+        let windSpeedIcon = '';
+        if (data.wind_speed_value >= 15 && data.wind_speed_value <= 30) { windSpeedScore = 2; windSpeedIcon = '✅'; }
+        else if (data.wind_speed_value > 30 && data.wind_speed_value <= 40) { windSpeedScore = 1; windSpeedIcon = '⚠️'; }
+        else if (data.wind_speed_value < 15 && data.wind_speed_value >= 5) { windSpeedScore = 0; windSpeedIcon = '❌'; } // Neutral/Low
+        else if (data.wind_speed_value < 5) { windSpeedScore = -1; windSpeedIcon = '❌'; } // Too low
+        else { windSpeedScore = -2; windSpeedIcon = '❌'; } // Too high (over 40)
+        score += windSpeedScore;
+        data.wind_speed_score = windSpeedScore;
+        data.wind_speed_icon = windSpeedIcon;
+
+        // 4. Wind Direction - Dominant daily wind direction
+        data.wind_direction_value = data.wind_direction_10m_dominant;
+        let windDirectionScore = 0;
+        let windDirDescKey = '';
+        const dir = data.wind_direction_value;
+        if ((dir >= 45 && dir <= 135)) { // E, SE (Ideal)
+            windDirectionScore = 2; windDirDescKey = 'windDirE_SE';
+        } else if ((dir > 135 && dir <= 170) || (dir >= 0 && dir < 45)) { // S-SSE, N-NE (Acceptable)
+            windDirectionScore = 1; windDirDescKey = (dir > 135 && dir <= 170) ? 'windDirS_SSE' : 'windDirN_NE';
+        } else if (dir > 170 && dir < 225) { // S, SSW (Neutral, can be tricky)
+            windDirectionScore = 0; windDirDescKey = 'windDirS_SSW';
+        } else { // W, SW, NW (Bad)
+            windDirectionScore = -2; windDirDescKey = 'windDirW_SW_NW';
+        }
+        score += windDirectionScore;
+        data.wind_direction_score = windDirectionScore;
+        data.wind_direction_description = T[windDirDescKey] || windDirDescKey; // Store translated description
+
+        // Final Score and Forecast Label
+        data.score = score;
+        const minScoreTotal = -8.5; // Cloud(-3) + TempDiff(-1.5) + WindSpeed(-2) + WindDir(-2) + Suck(0) = -8.5
+        const maxScoreTotal = 17.25; // Cloud(5) + TempDiff(5.25) + WindSpeed(2) + WindDir(2) + Suck(3) = 17.25
+        data.scoreText = T.scoreLabel.replace('{score}', score).replace('{minScore}', minScoreTotal).replace('{maxScore}', maxScoreTotal);
+
+        if (score >= 11) { data.forecastLabel = T.forecastHigh; }
+        else if (score >= 7) { data.forecastLabel = T.forecastMid; }
+        else if (score >= 2.5) { data.forecastLabel = T.forecastLow; }
+        else { data.forecastLabel = T.forecastBad; }
+
+        // Predict Wind Speed Range
+        const predictedWindText = predictWindSpeedRange(data.wind_speed_10m_max, score, suckEffectScore, data.wind_direction_10m_dominant);
+        const parsedWind = parsePredictedWindRange(predictedWindText, T); // Use the new helper
+        data.predicted_wind_knots = parsedWind.knots;
+        data.predicted_wind_ms = parsedWind.ms;
+
+        // Override forecast label if predicted wind is too low for kiting
+        const KITING_MIN_KNOTS = 16;
+        console.log(`Kiting Wind Check: Max Predicted Knots: ${data.predicted_wind_knots ? data.predicted_wind_knots.max : 'N/A'}, Threshold: ${KITING_MIN_KNOTS}`);
+        if (data.predicted_wind_knots && data.predicted_wind_knots.max > 0 && data.predicted_wind_knots.max < KITING_MIN_KNOTS) { // Check max > 0 to avoid overriding N/A cases incorrectly
+            data.forecastLabel = T.forecastNotSuitableKiting;
+        }
+
+        // Push all data needed by displayResults
+        analysisResults.push({
+            date: date,
+            score: data.score,
+            scoreText: data.scoreText,
+            finalForecast: data.forecastLabel, 
+            forecastLabel: data.forecastLabel, 
+
+            cloud_cover_value: data.cloud_cover_value,
+            cloud_cover_score: data.cloud_cover_score,
+            
+            temp_diff_value: data.temp_diff_value,
+            temp_diff_score: data.temp_diff_score,
+            temp_diff_description_key: data.temp_diff_description_key,
+            air_temp_value: data.air_temp_value,
+            sea_temp_value: data.sea_temp_value,
+            
+            wind_speed_value: data.wind_speed_value,
+            wind_speed_score: data.wind_speed_score,
+            wind_speed_icon: data.wind_speed_icon,
+            
+            wind_direction_value: data.wind_direction_value,
+            wind_direction_score: data.wind_direction_score,
+            wind_direction_description: data.wind_direction_description,
+            
+            suck_effect_score_value: data.suck_effect_score_value,
+            
+            predicted_wind_knots: data.predicted_wind_knots, 
+            predicted_wind_ms: data.predicted_wind_ms,     
+            
+            waterTemp: data.sea_temp_value 
+        });
     }
+    return analysisResults;
+}
+
+// Helper function to parse predicted wind range string
+function parsePredictedWindRange(rangeString, T_unused) { // T might not be needed if not using translations here
+    // Example input: "10-15 възли (5.1-7.7 м/с)" or "0-0 knots (0.0-0.0 m/s)"
+    const knotsPattern = /(\d+)-(\d+)\s*(?:knots|възли)/;
+    const msPattern = /\((\d+\.?\d*)-(\d+\.?\d*)\s*(?:m\/s|м\/с)\)/;
+
+    const knotsMatch = rangeString.match(knotsPattern);
+    const msMatch = rangeString.match(msPattern);
+
+    let knots = { min: 0, max: 0 };
+    let ms = { min: 0, max: 0 };
+
+    if (knotsMatch) {
+        knots.min = parseInt(knotsMatch[1], 10);
+        knots.max = parseInt(knotsMatch[2], 10);
+    }
+    if (msMatch) {
+        ms.min = parseFloat(msMatch[1]);
+        ms.max = parseFloat(msMatch[2]);
+    }
+    
+    return {
+        knots: knots,
+        ms: ms,
+        text: rangeString 
+    };
+}
 
     function predictWindSpeedRange(baseWindSpeedKmH, overallScore, suckEffectScore, windDirection) {
         const baseKnots = baseWindSpeedKmH * 0.539957; // KNOTS_TO_MS is 0.539957 if converting kmh to knots
@@ -520,54 +594,246 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayResults(analysisResults) {
-        const resultsDiv = document.getElementById('results-container');
-        resultsDiv.innerHTML = '';
-        const T = translations[currentLang];
-    
-        if (analysisResults.length === 0) {
-            resultsDiv.innerHTML = `<p>${T.placeholderDefault}</p>`;
+        // Ensure resultsContainer is defined and accessible, it's defined in DOMContentLoaded scope
+        if (!analysisResults || analysisResults.length === 0) {
+            resultsContainer.innerHTML = `<p class="placeholder">${translations[currentLang].placeholderDefault}</p>`;
+            const chartSection = document.getElementById('chartSection');
+            if (chartSection) chartSection.style.display = 'none';
             return;
         }
-    
-        analysisResults.forEach(result => {
+
+        resultsContainer.innerHTML = ''; // Clear previous results from the correct container
+        const T = translations[currentLang]; // Translations
+        const pointSuffix = T.pointsSuffix || 'pts'; // Suffix for points
+
+        analysisResults.forEach(result => { // Changed 'data' to 'result' to match the loop variable
+            // Prepare data for historical storage
+            const historicalEntry = {};
+            historicalEntry.date = result.date;
+            historicalEntry.forecastLabelText = result.forecastLabel;
+            
+            const pKnots = result.predicted_wind_knots || { min: 0, max: 0 };
+            const pMs = result.predicted_wind_ms || { min: 0, max: 0 };
+
+            if (!result.predicted_wind_knots) {
+                console.warn(`[displayResults] result.predicted_wind_knots was undefined for date ${result.date}. Using default {min:0, max:0}. Full result object:`, JSON.parse(JSON.stringify(result)));
+            }
+            // No separate warning for pMs, as it's usually paired; the log above shows the full result.
+
+            const predictedWindKnotsText = `${pKnots.min}-${pKnots.max} ${T.knotsUnit}`;
+            const predictedWindMsText = `(${(pMs.min).toFixed(1)}-${(pMs.max).toFixed(1)} ${T.msUnit})`;
+            historicalEntry.predictedWindText = `${T.predictedWindLabel} ${predictedWindKnotsText} ${predictedWindMsText}`;
+
+            historicalEntry.avgPredictedKnots = (pKnots.min + pKnots.max) / 2;
+            historicalEntry.avgPredictedMs = (pMs.min + pMs.max) / 2;
+
+            const cloudCoverResultForIcon = getCloudCoverScore(result.cloud_cover_value); // Get the full result for icon
+            const cloudCoverResult = getCloudCoverScore(result.cloud_cover_value); // From processWeatherData
+            historicalEntry.cloudCoverDetailText = `${cloudCoverResult.icon} ${T.cloudCoverLabel} ${result.cloud_cover_value}% (+${result.cloud_cover_score} ${pointSuffix})`;
+
+            const tempDiffResult = getTempDiffScore(result.temp_diff_value); // From processWeatherData
+            const tempDiffDescriptionText = T[result.temp_diff_description_key] || result.temp_diff_description_key; // Use the key from processWeatherData
+            const tempDiffValueText = typeof result.temp_diff_value === 'number' ? result.temp_diff_value.toFixed(1) : 'N/A';
+            const airTempValueText = typeof result.air_temp_value === 'number' ? result.air_temp_value.toFixed(1) : 'N/A';
+            const seaTempValueText = typeof result.sea_temp_value === 'number' ? result.sea_temp_value.toFixed(1) : 'N/A';
+            historicalEntry.tempDiffDetailText = `${tempDiffResult.icon} ${T.tempDiffDetail.replace('{description}', tempDiffDescriptionText).replace('{value}', tempDiffValueText).replace('{landTemp}', airTempValueText).replace('{seaTemp}', seaTempValueText)} (+${result.temp_diff_score} ${pointSuffix})`;
+            
+            // For wind speed, the icon is determined by the score in processWeatherData, let's assume it's passed or re-evaluate
+            // We need to ensure wind_speed_icon is part of 'result' or call getWindSpeedIcon(result.wind_speed_score)
+            // For now, let's assume processWeatherData adds wind_speed_icon to result
+            const windSpeedValueText = typeof result.wind_speed_value === 'number' ? result.wind_speed_value.toFixed(1) : 'N/A';
+            historicalEntry.maxWindSpeedApiDetailText = `${result.wind_speed_icon || '❓'} ${T.apiWindSpeedLabel} ${windSpeedValueText} km/h (+${result.wind_speed_score} ${pointSuffix})`;
+
+            historicalEntry.windDirectionDetailText = `${getWindDirIcon(result.wind_direction_score)} ${T.windDirDetail.replace('{value}', result.wind_direction_value).replace('{description}', result.wind_direction_description)} (+${result.wind_direction_score} ${pointSuffix})`;
+
+            const suckEffectDisplay = `${result.suck_effect_score_value}/3`;
+            historicalEntry.suckEffectDetailText = `${getSuckEffectIcon(result.suck_effect_score_value)} ${T.suckEffectLabel} ${suckEffectDisplay} (+${result.suck_effect_score_value} ${pointSuffix})`;
+            
+            saveHistoricalEntry(historicalEntry);
+
+            // Create and append result card
             const resultCard = document.createElement('div');
             resultCard.className = 'result-card';
             if (result.finalForecast === T.forecastBad) resultCard.classList.add('not-suitable');
-            else if (result.finalForecast === T.forecastLow) resultCard.classList.add('neutral');
-            else resultCard.classList.add('suitable');
-    
-            const scoreText = T.scoreLabel.replace('{score}', result.score).replace('{minScore}', result.minScore).replace('{maxScore}', result.maxScore);
-            const seaTempText = result.sea_temp !== undefined ? result.sea_temp + '°C' : T.noData;
-            const apiWindText = result.wind_speed !== undefined ? `${(result.wind_speed * 0.539957).toFixed(1)} ${T.knotsUnit} (${result.wind_speed} km/h)` : T.noData;
 
             let weatherInfoHtml = `
-                <h3>${result.date}</h3>
-                <p>${T.forecastLabel} ${result.finalForecast}</p>
-                <p>${scoreText}</p>
-                <p>${T.predictedWindLabel} <b>${result.predicted_wind_range}</b></p> 
-                <p>${T.waterTempLabel} ${seaTempText}</p>
-                <p>${T.apiWindSpeedLabel} ${apiWindText}</p>
-                <p>${T.cloudCoverLabel} ${result.cloud_cover}%</p>
-                <p>${T.airTempLabel} ${result.temperature_2m_max}°C</p>
-                <p>${T.windDirLabel} ${result.wind_direction_10m_dominant}°</p>
-                <p>${T.suckEffectLabel} ${result.suck_effect_score}</p>
+                <h3>${new Date(result.date).toLocaleDateString(currentLang === 'bg' ? 'bg-BG' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
+                <p class="forecast-label ${result.finalForecast === T.forecastBad ? 'bad' : (result.finalForecast === T.forecastHigh ? 'high' : (result.finalForecast === T.forecastMid ? 'mid' : 'low'))}">
+                    ${T.forecastLabel} ${result.finalForecast}
+                </p>
+                <p>${result.scoreText}</p>
+                <p>${historicalEntry.predictedWindText}</p>
+                <h4>${T.detailsLabel}</h4>
+                <ul>
+                    <li>${historicalEntry.cloudCoverDetailText}</li>
+                    <li>${historicalEntry.tempDiffDetailText}</li>
+                    <li>${historicalEntry.maxWindSpeedApiDetailText}</li>
+                    <li>${historicalEntry.windDirectionDetailText}</li>
+                    <li>${historicalEntry.suckEffectDetailText}</li>
+                </ul>
             `;
-    
-            if (result.details) {
-                weatherInfoHtml += `<h4>${T.detailsLabel}</h4><ul>`;
-                result.details.forEach(detail => {
-                    weatherInfoHtml += `<li>${detail}</li>`;
-                });
-                weatherInfoHtml += '</ul>';
+
+            if (result.waterTemp !== undefined && result.waterTemp !== null) {
+                weatherInfoHtml += `<p>${T.waterTempLabel} ${result.waterTemp.toFixed(1)}°C</p>`;
             }
-    
+
             resultCard.innerHTML = weatherInfoHtml;
-            resultsDiv.appendChild(resultCard);
+            resultsContainer.appendChild(resultCard);
         });
+
+        renderHistoricalChart(); // Re-render chart after displaying new results
     }
 
-    // Set initial language
-    setLanguage('bg');
+    // Functions for historical data and chart rendering
+    function getHistoricalData() {
+        const data = localStorage.getItem(HISTORICAL_DATA_KEY);
+        try {
+            return data ? JSON.parse(data) : [];
+        } catch (e) {
+            console.error("Error parsing historical data:", e);
+            return [];
+        }
+    }
+
+    function saveHistoricalEntry(entry) {
+        if (!entry || !entry.date) {
+            console.error("Invalid entry for historical data:", entry);
+            return;
+        }
+        let history = getHistoricalData();
+        history = history.filter(item => item.date !== entry.date); // Remove old entry for the same date
+        history.push(entry);
+        history.sort((a, b) => new Date(a.date) - new Date(b.date)); 
+        const MAX_HISTORY_DAYS = 90;
+        if (history.length > MAX_HISTORY_DAYS) {
+           history = history.slice(-MAX_HISTORY_DAYS);
+        }
+        localStorage.setItem(HISTORICAL_DATA_KEY, JSON.stringify(history));
+    }
+
+    function renderHistoricalChart() {
+        const historicalData = getHistoricalData();
+        const chartSection = document.getElementById('chartSection');
+        const chartCanvas = document.getElementById('historicalWindChart');
+        const chartTitleEl = document.getElementById('historicalChartTitleKey');
+
+        if (chartTitleEl) {
+            chartTitleEl.textContent = translations[currentLang].historicalChartTitleKey;
+        }
+
+        if (!historicalData || historicalData.length === 0) {
+            if (chartSection) chartSection.style.display = 'none';
+            if (historicalChartInstance) {
+                historicalChartInstance.destroy();
+                historicalChartInstance = null;
+            }
+            return;
+        }
+
+        if (chartSection) chartSection.style.display = 'block';
+
+        const labels = historicalData.map(entry => {
+            return new Date(entry.date).toLocaleDateString(currentLang === 'bg' ? 'bg-BG' : 'en-GB', {
+                month: 'short', day: 'numeric'
+            });
+        });
+        const avgKnotsData = historicalData.map(entry => entry.avgPredictedKnots);
+        const avgMsData = historicalData.map(entry => entry.avgPredictedMs);
+
+        const chartData = {
+            labels: labels,
+            datasets: [
+                {
+                    label: translations[currentLang].knotsUnit,
+                    data: avgKnotsData,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    yAxisID: 'yKnots',
+                    tension: 0.1
+                },
+                {
+                    label: translations[currentLang].msUnit,
+                    data: avgMsData,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    yAxisID: 'yMs',
+                    tension: 0.1
+                }
+            ]
+        };
+
+        if (historicalChartInstance) {
+            historicalChartInstance.destroy();
+        }
+
+        const ctx = chartCanvas.getContext('2d');
+        historicalChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: chartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                stacked: false,
+                plugins: {
+                    title: {
+                        display: false,
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function(context) {
+                                const dataIndex = context[0].dataIndex;
+                                const entryDate = historicalData[dataIndex].date;
+                                return new Date(entryDate).toLocaleDateString(currentLang === 'bg' ? 'bg-BG' : 'en-GB', {
+                                    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+                                });
+                            },
+                            afterBody: function(context) {
+                                const dataIndex = context[0].dataIndex;
+                                const entry = historicalData[dataIndex];
+                                if (!entry) return '';
+                                let tooltipLines = [];
+                                tooltipLines.push(`\n${entry.forecastLabelText}`);
+                                tooltipLines.push(entry.predictedWindText);
+                                tooltipLines.push(entry.cloudCoverDetailText);
+                                tooltipLines.push(entry.tempDiffDetailText);
+                                tooltipLines.push(entry.maxWindSpeedApiDetailText);
+                                tooltipLines.push(entry.windDirectionDetailText);
+                                tooltipLines.push(entry.suckEffectDetailText);
+                                return tooltipLines;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    yKnots: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: translations[currentLang].knotsUnit
+                        }
+                    },
+                    yMs: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: translations[currentLang].msUnit
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    }
+                }
+            }
+        });
+    }
 
     // Modal functionality
     const modal = document.getElementById('criteria-modal');
@@ -575,17 +841,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeButton = document.querySelector('.close-button');
 
     criteriaLink.onclick = function(event) {
-        event.preventDefault(); // Prevent page jump for # href
+        event.preventDefault();
         modal.style.display = 'block';
-    }
+    };
 
     closeButton.onclick = function() {
         modal.style.display = 'none';
-    }
+    };
 
     window.onclick = function(event) {
         if (event.target == modal) {
             modal.style.display = 'none';
         }
-    }
+    };
+
+    // Set initial language and render chart on load
+    setLanguage('bg');
+    renderHistoricalChart();
 });
