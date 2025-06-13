@@ -219,8 +219,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function fetchAndAnalyze(startDate, endDate) {
         resultsContainer.innerHTML = `<p class="placeholder">${translations[currentLang].placeholderLoading}</p>`;
         
-        const weatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${RACHES_LAT}&longitude=${RACHES_LON}&hourly=temperature_2m,cloudcover,windspeed_10m,winddirection_10m&daily=cloud_cover_mean,temperature_2m_max,wind_speed_10m_max,wind_direction_10m_dominant&timezone=auto&start_date=${startDate}&end_date=${endDate}`;
-        const marineApiUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${VOLOS_LAT}&longitude=${VOLOS_LON}&hourly=sea_surface_temperature&start_date=${startDate}&end_date=${endDate}&timezone=auto`;
+        const formattedStartDate = formatDate(startDate);
+        const formattedEndDate = formatDate(endDate);
+
+        const weatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${RACHES_LAT}&longitude=${RACHES_LON}&hourly=temperature_2m,cloudcover,windspeed_10m,winddirection_10m&daily=cloud_cover_mean,temperature_2m_max,wind_speed_10m_max,wind_direction_10m_dominant&timezone=auto&start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
+        const marineApiUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${VOLOS_LAT}&longitude=${VOLOS_LON}&hourly=sea_surface_temperature&start_date=${formattedStartDate}&end_date=${formattedEndDate}&timezone=auto`;
 
         try {
             const [weatherResponse, marineResponse] = await Promise.all([
@@ -782,7 +785,7 @@ function parsePredictedWindRange(rangeString, T_unused) { // T might not be need
                     borderColor: 'rgb(255, 99, 132)',
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
                     yAxisID: 'yMs',
-                    hidden: true,
+                    hidden: false,
                     tension: 0.1
                 }
             ]
@@ -880,6 +883,33 @@ function parsePredictedWindRange(rangeString, T_unused) { // T might not be need
             modal.style.display = 'none';
         }
     };
+
+        // Function to handle remote loading via URL parameter
+    async function handleRemoteLoad() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('load-remotely')) {
+            console.log("Remote load triggered. Fetching forecast for the next 7 days. Please wait...");
+
+            const analyzeBtn = document.getElementById('analyze-btn');
+            if (analyzeBtn) analyzeBtn.disabled = true;
+
+            const startDate = new Date();
+            const endDate = new Date();
+            endDate.setDate(startDate.getDate() + 3);
+
+            try {
+                await fetchAndAnalyze(startDate, endDate);
+                console.log("Remote load process completed successfully.");
+            } catch (error) {
+                console.error("Error during remote load process:", error);
+            } finally {
+                if (analyzeBtn) analyzeBtn.disabled = false;
+            }
+        }
+    }
+
+    // Handle remote loading first if the URL parameter is present
+    await handleRemoteLoad();
 
     // Set initial language and render chart on load
     setLanguage('bg');
