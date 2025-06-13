@@ -370,6 +370,8 @@ footer a {
 
     body {
         padding: 0px;
+        max-width: 100%;
+        overflow-x: hidden;
     }
 
     #chartSection {
