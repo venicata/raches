@@ -99,8 +99,10 @@ export async function renderHistoricalChart() {
                             const getWindSpeedIcon = (score) => score > 0 ? '✅' : '⚠️';
 
                             // 1. Forecast Label & Score
-                            tooltipLines.push(`\n${T.forecastLabel} ${entry.finalForecast}`);
-                            tooltipLines.push(entry.scoreText);
+                            tooltipLines.push(`\n${T.forecastLabel} ${T[entry.finalForecastKey]}`);
+                            if (entry.scoreText) {
+                                tooltipLines.push(entry.scoreText.replace(/<[^>]*>/g, ''));
+                            }
 
                             // 2. Predicted Wind
                             const predictedWindKnotsText = `${entry.pKnots_min}-${entry.pKnots_max} ${T.knotsUnit}`;

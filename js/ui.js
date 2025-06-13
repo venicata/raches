@@ -62,7 +62,7 @@ export async function displayResults(analysisResults) {
         // Get all the translated text components for the card
         const pKnots = result.predicted_wind_knots || { min: 0, max: 0 };
         const pMs = result.predicted_wind_ms || { min: 0, max: 0 };
-        const predictedWindText = `${T.predictedWindLabel} ${pKnots.min.toFixed(1)}-${pKnots.max.toFixed(1)} ${T.knotsUnit} (${pMs.min.toFixed(1)}-${pMs.max.toFixed(1)} ${T.msUnit})`;
+        const predictedWindText = `${T.predictedWindLabel} <b>${pKnots.min.toFixed(1)} - ${pKnots.max.toFixed(1)}</b> ${T.knotsUnit} (${pMs.min.toFixed(1)}-${pMs.max.toFixed(1)} ${T.msUnit})`;
         const cloudCoverText = `${getCloudCoverScore(result.cloud_cover_value).icon} ${T.cloudCoverLabel} ${result.cloud_cover_value}% (+${result.cloud_cover_score} ${pointSuffix})`;
         const tempDiffText = `${getTempDiffScore(result.temp_diff_value).icon} ${T.tempDiffDetail.replace('{description}', T[result.temp_diff_description_key] || result.temp_diff_description_key).replace('{value}', result.temp_diff_value.toFixed(1)).replace('{landTemp}', result.air_temp_value.toFixed(1)).replace('{seaTemp}', result.sea_temp_value.toFixed(1))} (+${result.temp_diff_score} ${pointSuffix})`;
         const maxWindText = `${result.wind_speed_icon || '❓'} ${T.apiWindSpeedLabel} ${result.wind_speed_value.toFixed(1)} km/h (+${result.wind_speed_score} ${pointSuffix})`;
@@ -92,10 +92,16 @@ export async function displayResults(analysisResults) {
         state.resultsContainer.appendChild(resultCard);
 
         // --- Part 2: Prepare and save raw data for the chart ---
+        // Determine forecast key for dynamic translation in chart tooltips
+        let forecastKey = 'forecastLow'; // Default value
+        if (result.finalForecast === T.forecastHigh) forecastKey = 'forecastHigh';
+        else if (result.finalForecast === T.forecastMid) forecastKey = 'forecastMid';
+        else if (result.finalForecast === T.forecastBad) forecastKey = 'forecastBad';
+
         const historicalEntry = {
             date: result.date,
-            finalForecast: result.finalForecast,
-            scoreText: result.scoreText, // Pass score text for tooltip
+            finalForecastKey: forecastKey, // Use the key for translation
+            scoreText: result.scoreText,
             
             // Wind
             pKnots_min: pKnots.min,

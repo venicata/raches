@@ -57,6 +57,7 @@ export const translations = {
         tempDiffVeryLow: "Very Low"
     },
     bg: {
+        datePickerPlaceholder: 'Селектирайте дати...',
         title: " Raches Thermal Wind Forecaster",
         subtitle: "AI Асистент за прогноза на термичния вятър в Рахес",
         instructions: "Кликнете 2 пъти на една дата, или селектирайте период от дати",

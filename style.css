@@ -292,7 +292,7 @@ footer a {
 }
 
 .result-card.low {
-    border-left: 5px solid #2196F3;
+    border-left: 5px solid #ff0000;
 }
 
 .result-card.bad {
