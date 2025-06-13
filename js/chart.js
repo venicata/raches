@@ -117,7 +117,7 @@ export async function renderHistoricalChart() {
                             const tempDiffValueText = typeof entry.temp_diff_value === 'number' ? entry.temp_diff_value.toFixed(1) : 'N/A';
                             const airTempValueText = typeof entry.air_temp_value === 'number' ? entry.air_temp_value.toFixed(1) : 'N/A';
                             const seaTempValueText = typeof entry.sea_temp_value === 'number' ? entry.sea_temp_value.toFixed(1) : 'N/A';
-                            tooltipLines.push(`${entry.temp_diff_value >= 6 ? '✅' : '⚠️'} ${T.tempDiffDetail.replace('{description}', tempDiffDescriptionText).replace('{value}', tempDiffValueText).replace('{landTemp}', airTempValueText).replace('{seaTemp}', seaTempValueText)} (${entry.temp_diff_score > 0 ? '+' : ''}${entry.temp_diff_score} ${pointSuffix})`);
+                            tooltipLines.push(`${entry.temp_diff_value >= 6 ? '✅' : '⚠️'} ${T.tempDiffDetailGraph.replace('{description}', tempDiffDescriptionText).replace('{value}', tempDiffValueText).replace('{landTemp}', airTempValueText).replace('{seaTemp}', seaTempValueText)} (${entry.temp_diff_score > 0 ? '+' : ''}${entry.temp_diff_score} ${pointSuffix})`);
 
                             // 5. Max Wind Speed API
                             const windSpeedValueText = typeof entry.wind_speed_value === 'number' ? entry.wind_speed_value.toFixed(1) : 'N/A';

@@ -27,6 +27,7 @@ export const translations = {
         detailsLabel: "Details:",
         cloudCoverDetail: "Cloud Cover: {value}%",
         tempDiffDetail: "Temp Difference (Land-Sea): {description} ({value}°C) (Land: {landTemp}°C, Sea: {seaTemp}°C)",
+        tempDiffDetailGraph: "Temp Diff (Land-Sea): {description} ({value}°C) Land: {landTemp}°C, Sea: {seaTemp}°C",
         windSpeedDetail: "Max Wind Speed: {value} km/h",
         windDirDetail: "Wind Direction: {value}° ({description})", // Generic wind direction detail
         windDirOnshore: "Suitable - Onshore",
@@ -92,6 +93,7 @@ export const translations = {
         detailsLabel: "Детайли:",
         cloudCoverDetail: "Облачност: {value}%",
         tempDiffDetail: "Температурна разлика (суша-море): {description} ({value}°C) (Суша: {landTemp}°C, Море: {seaTemp}°C)",
+        tempDiffDetailGraph: "Т разлика: {description} ({value}°C) Суша: {landTemp}°C, Море: {seaTemp}°C",
         windSpeedDetail: "Макс. скорост на вятър: {value} km/h",
         windDirDetail: "Посока на вятър: {value}° ({description})", // Общ ключ за посока на вятъра
         windDirOnshore: "Подходяща - Onshore",
