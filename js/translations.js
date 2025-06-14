@@ -75,6 +75,7 @@ export const translations = {
         placeholderDefault: "Изберете период и натиснете 'Анализирай', за да видите прогнозата.",
         forecastHigh: "ВИСОКА ВЕРОЯТНОСТ ЗА ДОБРИ УСЛОВИЯ",
         forecastMid: "СРЕДНА ВЕРОЯТНОСТ ЗА ДОБРИ УСЛОВИЯ",
+        forecastLow: "НИСКА ВЕРОЯТНОСТ ЗА ДОБРИ УСЛОВИЯ",
         forecastBad: "НИСКА ВЕРОЯТНОСТ / ЛОШИ УСЛОВИЯ",
         forecastNotSuitableKiting: "НЕ Е ПОДХОДЯЩО ЗА КАЙТ (Слаб вятър)",
         forecastLabel: " Прогноза:",
