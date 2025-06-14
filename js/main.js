@@ -20,6 +20,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         maxDate: new Date().fp_incr(15) // Позволява прогноза до 16 дни напред
     });
 
+    // Automatically select today and next 2 days and fetch data
+    const today = new Date();
+    const dayAfterTomorrow = new Date();
+    dayAfterTomorrow.setDate(today.getDate() + 2);
+
+    state.datePicker.setDate([today, dayAfterTomorrow], true);
+
+    const initialStartDate = formatDate(today);
+    const initialEndDate = formatDate(dayAfterTomorrow);
+    fetchAndAnalyze(initialStartDate, initialEndDate);
+
     const analyzeBtn = document.getElementById('analyze-btn');
     
     state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderDefault}</p>`;
