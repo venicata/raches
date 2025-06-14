@@ -12,12 +12,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('lang-en').addEventListener('click', () => setLanguage('en'));
     // --- END: Language and Translations ---
 
-    // Инициализация на календара
+    // Calendar initialization
     state.datePicker = flatpickr("#date-picker", {
         mode: "range",
         dateFormat: "Y-m-d",
         minDate: "today",
-        maxDate: new Date().fp_incr(15) // Позволява прогноза до 16 дни напред
+        maxDate: new Date().fp_incr(15) // Allows forecast up to 16 days ahead
     });
 
     // Automatically select today and next 2 days and fetch data
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await handleRemoteLoad();
 
     // Set initial language and render chart on load
-    const preferredLang = localStorage.getItem('preferredLang') || 'bg';
+    const preferredLang = localStorage.getItem('preferredLang') || 'en';
     setLanguage(preferredLang);
     renderHistoricalChart();
 });
