@@ -112,6 +112,11 @@ export function predictWindSpeedRange(baseWindSpeedKmH, overallScore, suckEffect
     }
     if (maxKnots < minKnots) maxKnots = minKnots; 
 
+    // --- Global adjustment requested by user ---
+    minKnots -= 2.5;
+    maxKnots -= 2.5;
+    // --- End of global adjustment ---
+
     const finalMinKnots = Math.max(0, Math.round(minKnots));
     const finalMaxKnots = Math.max(0, Math.round(maxKnots));
 
