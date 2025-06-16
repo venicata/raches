@@ -75,6 +75,10 @@ export async function displayResults(analysisResults) {
             else if (finalForecastText === T.forecastMid) { forecastKey = 'forecastMid'; forecastClass = 'mid'; }
             else if (finalForecastText === T.forecastLow) { forecastKey = 'forecastLow'; forecastClass = 'low'; }
             else if (finalForecastText === T.forecastBad) { forecastKey = 'forecastBad'; forecastClass = 'bad'; }
+            else if (finalForecastText === T.forecastNotSuitableKiting) { 
+                forecastKey = 'forecastNotSuitableKiting'; 
+                forecastClass = 'bad'; // Use 'bad' class to also trigger 'not-suitable' styling
+            }
         }
         
         // Fallback logic if forecast string is missing or doesn't match
