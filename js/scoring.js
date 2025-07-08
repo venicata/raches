@@ -137,7 +137,7 @@ export async function processWeatherData(weatherData, marineData) {
         else if (score >= 2.5) { data.forecastLabel = T.forecastLow; }
         else { data.forecastLabel = T.forecastBad; }
 
-        const predictedWindText = predictWindSpeedRange(data.wind_speed_10m_max, score, suckEffectScore, data.wind_direction_10m_dominant);
+        const predictedWindText = predictWindSpeedRange(score);
         const parsedWind = parsePredictedWindRange(predictedWindText);
         data.predicted_wind_knots = parsedWind.knots;
         data.predicted_wind_ms = parsedWind.ms;
