@@ -34,17 +34,18 @@ export function predictWindSpeedRange(baseWindSpeedKmH, overallScore, suckEffect
 
     const PERFECT_DAY_SCORE_THRESHOLD = 16;
     if (overallScore >= PERFECT_DAY_SCORE_THRESHOLD) {
-        const minKnots = 20;
-        const maxKnots = 25;
+        const minKnots = 17;
+        const maxKnots = 23;
         const minMs = (minKnots * KNOTS_TO_MS).toFixed(1);
         const maxMs = (maxKnots * KNOTS_TO_MS).toFixed(1);
         return `${minKnots}-${maxKnots} ${T.knotsUnit} (${minMs}-${maxMs} ${T.msUnit})`;
     }
 
-    const baseKnots = baseWindSpeedKmH * 0.539957;
+    // Reduce the influence of the base API wind and make the score the main driver.
+    const baseKnots = baseWindSpeedKmH * 0.2; // Drastically reduce base wind influence
     let thermalAdditiveKnots = 0;
 
-    const MIN_APP_SCORE = -8.5;
+    const MIN_APP_SCORE = -14.5;
     const MAX_APP_SCORE = 17.25;
     const forecastHighThreshold = 10;
     const forecastMidThreshold = 5;
@@ -112,10 +113,7 @@ export function predictWindSpeedRange(baseWindSpeedKmH, overallScore, suckEffect
     }
     if (maxKnots < minKnots) maxKnots = minKnots; 
 
-    // --- Global adjustment requested by user ---
-    minKnots -= 2.5;
-    maxKnots -= 2.5;
-    // --- End of global adjustment ---
+
 
     const finalMinKnots = Math.max(0, Math.round(minKnots));
     const finalMaxKnots = Math.max(0, Math.round(maxKnots));

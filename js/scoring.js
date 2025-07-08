@@ -121,14 +121,14 @@ export async function processWeatherData(weatherData, marineData) {
         } else if (dir > 170 && dir < 225) { // S, SSW (Neutral, can be tricky)
             windDirectionScore = 0; windDirDescKey = 'windDirS_SSW';
         } else { // W, SW, NW (Bad)
-            windDirectionScore = -2; windDirDescKey = 'windDirW_SW_NW';
+            windDirectionScore = -8; windDirDescKey = 'windDirW_SW_NW';
         }
         score += windDirectionScore;
         data.wind_direction_score = windDirectionScore;
         data.wind_direction_description = T[windDirDescKey] || windDirDescKey;
 
         data.score = score;
-        const minScoreTotal = -8.5;
+        const minScoreTotal = -14.5;
         const maxScoreTotal = 17.25;
         data.scoreText = T.scoreLabel.replace('{score}', score.toFixed(2)).replace('{minScore}', minScoreTotal).replace('{maxScore}', maxScoreTotal);
 
