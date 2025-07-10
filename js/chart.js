@@ -48,7 +48,7 @@ export async function renderHistoricalChart() {
                 borderColor: 'rgb(255, 99, 132)',
                 backgroundColor: 'rgba(255, 99, 132, 0.2)',
                 yAxisID: 'yMs',
-                hidden: false,
+                hidden: true,
                 tension: 0.1
             }
         ]
