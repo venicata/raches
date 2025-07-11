@@ -128,13 +128,13 @@ export async function processWeatherData(weatherData, marineData) {
         data.wind_direction_description = T[windDirDescKey] || windDirDescKey;
 
         data.score = score;
-        const minScoreTotal = -14.5;
+        const minScoreTotal = -13.5;
         const maxScoreTotal = 17.25;
         data.scoreText = T.scoreLabel.replace('{score}', score.toFixed(2)).replace('{minScore}', minScoreTotal).replace('{maxScore}', maxScoreTotal);
 
-        if (score >= 11) { data.forecastLabel = T.forecastHigh; }
-        else if (score >= 7) { data.forecastLabel = T.forecastMid; }
-        else if (score >= 2.5) { data.forecastLabel = T.forecastLow; }
+        if (score > 10) { data.forecastLabel = T.forecastHigh; }
+        else if (score >= 5) { data.forecastLabel = T.forecastMid; }
+        else if (score >= 0) { data.forecastLabel = T.forecastLow; }
         else { data.forecastLabel = T.forecastBad; }
 
         const predictedWindText = predictWindSpeedRange(score);
