@@ -92,7 +92,7 @@ export async function processWeatherData(weatherData, marineData) {
                 const entryDate = datetime.split('T')[0];
                 if (entryDate === date) {
                     const hour = parseInt(datetime.split('T')[1].split(':')[0]);
-                    if (hour >= 6 && hour <= 21) {
+                    if (hour >= 1 && hour <= 20) {
                         daytimeCloudCoverSum += weatherData.hourly.cloudcover[index];
                         daytimeHourCount++;
                     }

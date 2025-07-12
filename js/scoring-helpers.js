@@ -38,12 +38,12 @@ export function getCloudCoverScore(cloudCover) {
 
 export function getTempDiffScore(tempDiff) {
     if (tempDiff >= 8) return { score: 5.25, icon: '✅', textKey: 'tempDiffHigh' };    // 3.5 * 1.5
-    if (tempDiff >= 7) return { score: 5, icon: '✅', textKey: 'tempDiffHigh' };     // 3 * 1.5
-    if (tempDiff >= 6) return { score: 4.75, icon: '✅', textKey: 'tempDiffHigh' };   // 2.5 * 1.5
-    if (tempDiff >= 5) return { score: 4.25, icon: '✅', textKey: 'tempDiffHigh' };       // 2 * 1.5
-    if (tempDiff >= 4) return { score: 3.75, icon: '⚠️', textKey: 'tempDiffMedium' }; // 1.5 * 1.5
-    if (tempDiff >= 3) return { score: 3.25, icon: '⚠️', textKey: 'tempDiffMedium' };  // 1 * 1.5
-    if (tempDiff >= 2) return { score: 2.75, icon: '⚠️', textKey: 'tempDiffLow' };    // 0.5 * 1.5
-    if (tempDiff >= 1) return { score: 2.25, icon: '❌', textKey: 'tempDiffLow' };        // 0 * 1.5 remains 0
+    if (tempDiff >= 7) return { score: 4.75, icon: '✅', textKey: 'tempDiffHigh' };     // 3 * 1.5
+    if (tempDiff >= 6) return { score: 4.25, icon: '✅', textKey: 'tempDiffHigh' };   // 2.5 * 1.5
+    if (tempDiff >= 5) return { score: 3.75, icon: '✅', textKey: 'tempDiffHigh' };       // 2 * 1.5
+    if (tempDiff >= 4) return { score: 3.0, icon: '⚠️', textKey: 'tempDiffMedium' }; // 1.5 * 1.5
+    if (tempDiff >= 3) return { score: 2.75, icon: '⚠️', textKey: 'tempDiffMedium' };  // 1 * 1.5
+    if (tempDiff >= 2) return { score: 2.25, icon: '⚠️', textKey: 'tempDiffLow' };    // 0.5 * 1.5
+    if (tempDiff >= 1) return { score: 1.25, icon: '❌', textKey: 'tempDiffLow' };        // 0 * 1.5 remains 0
     return { score: -1.5, icon: '❌', textKey: 'tempDiffVeryLow' }; // -1 * 1.5
 }
