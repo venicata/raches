@@ -21,10 +21,6 @@ body {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
-#chartSection {
-    padding: 0px;
-}
-
 header {
     text-align: center;
     margin-bottom: 20px;
@@ -132,9 +128,7 @@ header h1 {
     font-weight: 700;
 }
 
-.high {  }
-.medium {  }
-.low {  }
+
 
 #results-container .placeholder {
     color: #888;
@@ -380,9 +374,7 @@ footer a {
         overflow-x: hidden;
     }
 
-    #chartSection {
 
-    }
 
     #historicalChartTitleKey {
         padding: 0px 15px;
@@ -401,6 +393,25 @@ footer a {
         width: 100%; 
         box-sizing: border-box; 
     }
+}
+
+/* Wind Arrow Styles */
+.wind-direction-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.wind-arrow {
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 19px solid #333; /* Arrow color */
+    transition: transform 0.3s ease;
+    margin: 0px 5px;
+    /* The rotation is set via inline style in JS */
 }
 
 @media (max-width: 480px) { 
