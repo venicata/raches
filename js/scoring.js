@@ -84,10 +84,28 @@ export async function processWeatherData(weatherData, marineData) {
         score += suckEffectScore;
         data.suck_effect_score_value = suckEffectScore;
 
-        const cloudCoverResult = getCloudCoverScore(data.cloud_cover);
+        // Calculate daytime cloud cover average (6 AM to 9 PM)
+        let daytimeCloudCoverSum = 0;
+        let daytimeHourCount = 0;
+        if (weatherData.hourly && weatherData.hourly.time && weatherData.hourly.cloudcover) {
+            weatherData.hourly.time.forEach((datetime, index) => {
+                const entryDate = datetime.split('T')[0];
+                if (entryDate === date) {
+                    const hour = parseInt(datetime.split('T')[1].split(':')[0]);
+                    if (hour >= 6 && hour <= 21) {
+                        daytimeCloudCoverSum += weatherData.hourly.cloudcover[index];
+                        daytimeHourCount++;
+                    }
+                }
+            });
+        }
+
+        const daytimeCloudCoverAvg = daytimeHourCount > 0 ? daytimeCloudCoverSum / daytimeHourCount : data.cloud_cover; // Fallback to daily mean
+
+        const cloudCoverResult = getCloudCoverScore(daytimeCloudCoverAvg);
         score += cloudCoverResult.score;
         data.cloud_cover_score = cloudCoverResult.score;
-        data.cloud_cover_value = data.cloud_cover;
+        data.cloud_cover_value = Math.round(daytimeCloudCoverAvg);
 
         data.air_temp_value = data.temperature_2m_max;
         data.sea_temp_value = data.sea_temp;
@@ -110,7 +128,7 @@ export async function processWeatherData(weatherData, marineData) {
         data.wind_speed_score = windSpeedScore;
         data.wind_speed_icon = windSpeedIcon;
 
-        data.wind_direction_value = data.wind_direction_10m_dominant;
+        data.wind_direction_value = Math.round(data.wind_direction_10m_dominant);
         let windDirectionScore = 0;
         let windDirDescKey = '';
         const dir = data.wind_direction_value;
