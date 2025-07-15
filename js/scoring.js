@@ -132,14 +132,22 @@ export async function processWeatherData(weatherData, marineData) {
         let windDirectionScore = 0;
         let windDirDescKey = '';
         const dir = data.wind_direction_value;
-        if ((dir >= 45 && dir <= 135)) { // E, SE (Ideal)
-            windDirectionScore = 2; windDirDescKey = 'windDirE_SE';
-        } else if ((dir > 135 && dir <= 170) || (dir >= 0 && dir < 45)) { // S-SSE, N-NE (Acceptable)
-            windDirectionScore = 1; windDirDescKey = (dir > 135 && dir <= 170) ? 'windDirS_SSE' : 'windDirN_NE';
-        } else if (dir > 170 && dir < 225) { // S, SSW (Neutral, can be tricky)
-            windDirectionScore = 0; windDirDescKey = 'windDirS_SSW';
-        } else { // W, SW, NW (Bad)
-            windDirectionScore = -8; windDirDescKey = 'windDirW_SW_NW';
+
+        if (dir >= 115 && dir <= 155) { // Ideal: SE
+            windDirectionScore = 2; 
+            windDirDescKey = 'windDirSE_Ideal';
+        } else if (dir >= 75 && dir < 115) { // Acceptable: E
+            windDirectionScore = 1.25; 
+            windDirDescKey = 'windDirE_Acceptable';
+        } else if (dir > 155 && dir <= 190) { // Acceptable: S/SSE
+            windDirectionScore = 1.25; 
+            windDirDescKey = 'windDirS_SSE_Acceptable';
+        } else if (dir >= 225 && dir <= 330) { // Bad: W, SW, NW
+            windDirectionScore = -8; 
+            windDirDescKey = 'windDirW_SW_NW_Bad';
+        } else { // Neutral for other directions (e.g., N, NNE, SSW)
+            windDirectionScore = 0;
+            windDirDescKey = 'windDirNeutral';
         }
         score += windDirectionScore;
         data.wind_direction_score = windDirectionScore;
