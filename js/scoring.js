@@ -32,7 +32,7 @@ export async function processWeatherData(weatherData, marineData) {
             break;
         }
     }
-    if (lastKnownSeaTemp === null) lastKnownSeaTemp = 15.0;
+    if (lastKnownSeaTemp === null) lastKnownSeaTemp = 26.0;
 
     for (const date of weatherData.daily.time) {
         if (dailyData[date]) {
