@@ -1,7 +1,33 @@
 import { translations } from './translations.js';
 import { state } from './state.js';
-import { getCloudCoverScore, getTempDiffScore } from './scoring-helpers.js';
+import { getCloudCoverScore, getTempDiffScore, getWindDirectionScore, getWindDirIcon, getSuckEffectIcon } from './scoring-helpers.js';
 import { predictWindSpeedRange, parsePredictedWindRange } from './wind-prediction.js';
+
+// Helper function to calculate the average of a set of angles (wind directions)
+function getAverageDirection(directions) {
+    if (!directions || directions.length === 0) return 0;
+
+    let sumSin = 0;
+    let sumCos = 0;
+
+    directions.forEach(dir => {
+        const rad = dir * (Math.PI / 180);
+        sumSin += Math.sin(rad);
+        sumCos += Math.cos(rad);
+    });
+
+    const avgSin = sumSin / directions.length;
+    const avgCos = sumCos / directions.length;
+
+    const avgDirRad = Math.atan2(avgSin, avgCos);
+    let avgDirDeg = avgDirRad * (180 / Math.PI);
+
+    if (avgDirDeg < 0) {
+        avgDirDeg += 360;
+    }
+
+    return avgDirDeg;
+}
 
 export async function processWeatherData(weatherData, marineData) {
     const dailyData = {};
@@ -128,26 +154,44 @@ export async function processWeatherData(weatherData, marineData) {
         data.wind_speed_score = windSpeedScore;
         data.wind_speed_icon = windSpeedIcon;
 
-        data.wind_direction_value = Math.round(data.wind_direction_10m_dominant);
+        // Calculate average wind direction for the thermal period (2 PM to 6 PM)
+        const afternoonWindDirections = [];
+        if (weatherData.hourly && weatherData.hourly.time && weatherData.hourly.winddirection_80m) {
+            weatherData.hourly.time.forEach((datetime, index) => {
+                const entryDate = datetime.split('T')[0];
+                if (entryDate === date) {
+                    const hour = parseInt(datetime.split('T')[1].split(':')[0]);
+                    if (hour >= 13 && hour <= 17) { // Thermal wind window
+                        afternoonWindDirections.push(weatherData.hourly.winddirection_80m[index]);
+                    }
+                }
+            });
+        }
+
+        // Use the calculated afternoon average, or fallback to the daily dominant if no hourly data is available
+        data.wind_direction_value = afternoonWindDirections.length > 0 
+            ? Math.round(getAverageDirection(afternoonWindDirections)) 
+            : Math.round(data.wind_direction_10m_dominant);
         let windDirectionScore = 0;
         let windDirDescKey = '';
         const dir = data.wind_direction_value;
-
-        if (dir >= 115 && dir <= 155) { // Ideal: SE
-            windDirectionScore = 2; 
-            windDirDescKey = 'windDirSE_Ideal';
-        } else if (dir >= 75 && dir < 115) { // Acceptable: E
-            windDirectionScore = 1.25; 
-            windDirDescKey = 'windDirE_Acceptable';
-        } else if (dir > 155 && dir <= 190) { // Acceptable: S/SSE
-            windDirectionScore = 1.25; 
-            windDirDescKey = 'windDirS_SSE_Acceptable';
-        } else if (dir >= 225 && dir <= 330) { // Bad: W, SW, NW
-            windDirectionScore = -8; 
-            windDirDescKey = 'windDirW_SW_NW_Bad';
-        } else { // Neutral for other directions (e.g., N, NNE, SSW)
-            windDirectionScore = 0;
-            windDirDescKey = 'windDirNeutral';
+        if (dir >= 45 && dir <= 90) { // NE-E (Ideal)
+            windDirectionScore = 3;
+            windDirDescKey = 'windDirNE_E_Ideal';
+        }
+        else if (dir >= 90 && dir <= 115) { // NE-E (almost Ideal)
+            windDirectionScore = 2;
+            windDirDescKey = 'windDirNE_E_Acceptable';
+        }
+        else if ((dir > 115 && dir <= 135) || (dir >= 0 && dir < 45)) { // E-SE and N-NE (Not good)
+            windDirectionScore = -2;
+            windDirDescKey = (dir > 90) ? 'windDirE_SE_Acceptable' : 'windDirN_NE_Acceptable';
+        } else if (dir > 135 && dir < 225) { // SE-S-SW (Not good at all)
+            windDirectionScore = -4;
+            windDirDescKey = 'windDirSE_S_SW_Neutral';
+        } else { // W, NW (Bad)
+            windDirectionScore = -8;
+            windDirDescKey = 'windDirW_NW_Bad';
         }
         score += windDirectionScore;
         data.wind_direction_score = windDirectionScore;
