@@ -120,8 +120,13 @@ export async function renderHistoricalChart() {
                             tooltipLines.push(`${entry.temp_diff_value >= 6 ? '✅' : '⚠️'} ${T.tempDiffDetailGraph.replace('{description}', tempDiffDescriptionText).replace('{value}', tempDiffValueText).replace('{landTemp}', airTempValueText).replace('{seaTemp}', seaTempValueText)} (${entry.temp_diff_score > 0 ? '+' : ''}${entry.temp_diff_score} ${pointSuffix})`);
 
                             // 5. Max Wind Speed API
-                            const windSpeedValueText = typeof entry.wind_speed_value === 'number' ? entry.wind_speed_value.toFixed(1) : 'N/A';
-                            tooltipLines.push(`${getWindSpeedIcon(entry.wind_speed_score)} ${T.apiWindSpeedLabel} ${windSpeedValueText} km/h (${entry.wind_speed_score > 0 ? '+' : ''}${entry.wind_speed_score} ${pointSuffix})`);
+                            if (typeof entry.wind_speed_value === 'number') {
+                                const windSpeedKnots = entry.wind_speed_value * 0.539957;
+                                const windSpeedMs = entry.wind_speed_value * 0.277778;
+                                tooltipLines.push(`${getWindSpeedIcon(entry.wind_speed_score)} ${T.apiWindSpeedLabel} ${windSpeedKnots.toFixed(1)} ${T.knotsUnit} (${windSpeedMs.toFixed(1)} ${T.msUnit}) (${entry.wind_speed_score > 0 ? '+' : ''}${entry.wind_speed_score} ${pointSuffix})`);
+                            } else {
+                                tooltipLines.push(`${getWindSpeedIcon(entry.wind_speed_score)} ${T.apiWindSpeedLabel} N/A`);
+                            }
 
                             // 6. Wind Direction
                             tooltipLines.push(`${getWindDirIcon(entry.wind_direction_score)} ${T.windDirDetail.replace('{value}', entry.wind_direction_value).replace('{description}', entry.wind_direction_description)} (${entry.wind_direction_score > 0 ? '+' : ''}${entry.wind_direction_score} ${pointSuffix})`);

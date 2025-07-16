@@ -118,7 +118,7 @@ export async function processWeatherData(weatherData, marineData) {
                 const entryDate = datetime.split('T')[0];
                 if (entryDate === date) {
                     const hour = parseInt(datetime.split('T')[1].split(':')[0]);
-                    if (hour >= 1 && hour <= 20) {
+                    if (hour >= 6 && hour <= 17) {
                         daytimeCloudCoverSum += weatherData.hourly.cloudcover[index];
                         daytimeHourCount++;
                     }
@@ -199,7 +199,7 @@ export async function processWeatherData(weatherData, marineData) {
 
         data.score = score;
         const minScoreTotal = -13.5;
-        const maxScoreTotal = 17.25;
+        const maxScoreTotal = 18.25;
         data.scoreText = T.scoreLabel.replace('{score}', score.toFixed(2)).replace('{minScore}', minScoreTotal).replace('{maxScore}', maxScoreTotal);
 
         if (score > 10) { data.forecastLabel = T.forecastHigh; }
