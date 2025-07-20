@@ -103,9 +103,9 @@ export async function processWeatherData(weatherData, marineData) {
         }
         if (morningWindSpeed !== null && afternoonWindSpeed !== null) {
             const windIncreaseKmh = afternoonWindSpeed - morningWindSpeed;
-            if (windIncreaseKmh >= 15) { suckEffectScore = 3; }
-            else if (windIncreaseKmh >= 10) { suckEffectScore = 2; }
-            else if (windIncreaseKmh >= 5) { suckEffectScore = 1; }
+            if (windIncreaseKmh >= 15) { suckEffectScore = 1.5; }
+            else if (windIncreaseKmh >= 10) { suckEffectScore = 1; }
+            else if (windIncreaseKmh >= 5) { suckEffectScore = 0.5; }
         }
         score += suckEffectScore;
         data.suck_effect_score_value = suckEffectScore;
@@ -145,11 +145,11 @@ export async function processWeatherData(weatherData, marineData) {
         data.wind_speed_value = data.wind_speed_10m_max;
         let windSpeedScore = 0;
         let windSpeedIcon = '';
-        if (data.wind_speed_value >= 15 && data.wind_speed_value <= 30) { windSpeedScore = 2; windSpeedIcon = '✅'; }
-        else if (data.wind_speed_value > 30 && data.wind_speed_value <= 40) { windSpeedScore = 1; windSpeedIcon = '⚠️'; }
-        else if (data.wind_speed_value < 15 && data.wind_speed_value >= 5) { windSpeedScore = 0; windSpeedIcon = '❌'; }
-        else if (data.wind_speed_value < 5) { windSpeedScore = -1; windSpeedIcon = '❌'; }
-        else { windSpeedScore = -2; windSpeedIcon = '❌'; }
+        if (data.wind_speed_value >= 15 && data.wind_speed_value <= 30) { windSpeedScore = 3.5; windSpeedIcon = '✅'; }
+        else if (data.wind_speed_value > 30 && data.wind_speed_value <= 40) { windSpeedScore = 2; windSpeedIcon = '⚠️'; }
+        else if (data.wind_speed_value < 15 && data.wind_speed_value >= 5) { windSpeedScore = 1; windSpeedIcon = '❌'; }
+        else if (data.wind_speed_value < 5) { windSpeedScore = 0; windSpeedIcon = '❌'; }
+        else { windSpeedScore = -1; windSpeedIcon = '❌'; }
         score += windSpeedScore;
         data.wind_speed_score = windSpeedScore;
         data.wind_speed_icon = windSpeedIcon;

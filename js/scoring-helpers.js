@@ -15,8 +15,8 @@ export function getWindDirIcon(score) { // Based on windDirectionScore logic
 }
 
 export function getSuckEffectIcon(score) {
-    if (score >= 2) return '✅';
-    if (score === 1) return '⚠️';
+    if (score >= 1.5 || score === 1) return '✅';
+    if (score === 0.5) return '⚠️';
     return '❌';
 }
 

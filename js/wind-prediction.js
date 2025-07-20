@@ -35,13 +35,13 @@ export function predictWindSpeedRange(overallScore) {
     // Define score-to-wind mapping points for interpolation.
     // Each point is [score, minKnots, maxKnots]
     const scoreToWindMap = [
-        [-14.5, 0, 4],   // Worst score
-        [-5, 2, 7],
-        [2.5, 4, 9],   // Low forecast threshold
-        [7, 8, 13],    // Mid forecast threshold
-        [11, 12, 17],  // High forecast threshold (Adjusted down)
-        [15, 15, 20],  // Near-Perfect day threshold (Adjusted)
-        [17.25, 18, 22] // Max possible score (Stays the same)
+        [-14.5, 0, 3],   // Worst score
+        [-5, 2, 6],
+        [2.5, 5, 9],   // Low forecast threshold
+        [7, 9, 14],    // Mid forecast threshold
+        [11, 13, 18],  // High forecast threshold
+        [15.5, 17, 22],  // Near-Perfect day threshold
+        [18.25, 20, 24] // Max possible score
     ];
 
     let minKnots, maxKnots;
