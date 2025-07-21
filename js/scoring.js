@@ -180,7 +180,7 @@ export async function processWeatherData(weatherData, marineData) {
             windDirDescKey = 'windDirNE_E_Ideal';
         }
         else if (dir >= 90 && dir <= 115) { // NE-E (almost Ideal)
-            windDirectionScore = 2;
+            windDirectionScore = 1;
             windDirDescKey = 'windDirNE_E_Acceptable';
         }
         else if ((dir > 115 && dir <= 135) || (dir >= 0 && dir < 45)) { // E-SE and N-NE (Not good)
