@@ -110,23 +110,23 @@ export async function processWeatherData(weatherData, marineData) {
         score += suckEffectScore;
         data.suck_effect_score_value = suckEffectScore;
 
-        // Calculate daytime cloud cover average (6 AM to 9 PM)
+        // Calculate daytime cloud cover average (5 AM to 4 PM)
         let daytimeCloudCoverSum = 0;
         let daytimeHourCount = 0;
-        if (weatherData.hourly && weatherData.hourly.time && weatherData.hourly.cloudcover) {
+        if (weatherData.hourly && weatherData.hourly.time && weatherData.hourly.cloud_cover_low) {
             weatherData.hourly.time.forEach((datetime, index) => {
                 const entryDate = datetime.split('T')[0];
                 if (entryDate === date) {
                     const hour = parseInt(datetime.split('T')[1].split(':')[0]);
-                    if (hour >= 6 && hour <= 17) {
-                        daytimeCloudCoverSum += weatherData.hourly.cloudcover[index];
+                    if (hour >= 5 && hour <= 16) {
+                        daytimeCloudCoverSum += weatherData.hourly.cloud_cover_low[index];
                         daytimeHourCount++;
                     }
                 }
             });
         }
 
-        const daytimeCloudCoverAvg = daytimeHourCount > 0 ? daytimeCloudCoverSum / daytimeHourCount : data.cloud_cover; // Fallback to daily mean
+        const daytimeCloudCoverAvg = daytimeHourCount > 0 ? daytimeCloudCoverSum / daytimeHourCount : data.cloud_cover_mean; // Fallback to daily mean
 
         const cloudCoverResult = getCloudCoverScore(daytimeCloudCoverAvg);
         score += cloudCoverResult.score;
