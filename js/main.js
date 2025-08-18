@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { translations } from './translations.js';
 import { setLanguage, displayResults, initModal } from './ui.js';
-import { fetchAndAnalyze, formatDate } from './api.js';
+import { fetchAndAnalyze, formatDate, triggerRealDataSync, getRealDataHistory, fetchAndDisplayRealWind } from './api.js';
 import { renderHistoricalChart } from './chart.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -86,4 +86,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     const preferredLang = localStorage.getItem('preferredLang') || 'en';
     setLanguage(preferredLang);
     renderHistoricalChart();
+
+    const syncBtn = document.getElementById('sync-btn');
+    syncBtn.addEventListener('click', async () => {
+        const T = translations[state.currentLang];
+        const originalText = T.syncBtn || 'Сравни с реални данни';
+        
+        syncBtn.textContent = T.syncing || 'Синхронизиране...';
+        syncBtn.disabled = true;
+
+        try {
+            // Стъпка 1: Задействаме обработката на сървъра
+            await triggerRealDataSync();
+
+            // Стъпка 2: Изтегляме обработените данни
+            await fetchAndDisplayRealWind();
+        } catch (error) {
+            console.error("Грешка при синхронизация и показване на реални данни:", error);
+            alert(T.syncError || "Възникна грешка при синхронизацията.");
+        } finally {
+            syncBtn.textContent = originalText;
+            syncBtn.disabled = false;
+        }
+    });
+
+
 });
+
+
+

@@ -1,6 +1,6 @@
 import { RACHES_LAT, RACHES_LON, VOLOS_LAT, VOLOS_LON } from './constants.js';
 import { processWeatherData } from './scoring.js';
-import { displayResults } from './ui.js';
+import { displayResults, displayRealWindData } from './ui.js';
 import { translations } from './translations.js';
 import { state } from './state.js';
 
@@ -36,8 +36,26 @@ export async function fetchAndAnalyze(startDate, endDate) {
 
         const analysisResults = await processWeatherData(weatherData, marineData);
         displayResults(analysisResults);
+        await fetchAndDisplayRealWind();
     } catch (error) {
         state.resultsContainer.innerHTML = `<p class="placeholder" style="color: red;">Грешка: ${error.message}</p>`;
+    }
+}
+
+/**
+ * Fetches the real wind history from the server and calls the display function.
+ */
+export async function fetchAndDisplayRealWind() {
+    try {
+        const history = await getRealDataHistory();
+        if (history && history.length > 0) {
+            displayRealWindData(history);
+        } else {
+            console.log('No historical wind data available to display.');
+        }
+    } catch (error) {
+        console.error('Error fetching or displaying real wind data:', error);
+        // Do not show an alert here, as this is a background process
     }
 }
 
@@ -52,6 +70,37 @@ export async function getHistoricalData() {
         return data && Array.isArray(data) ? data : [];
     } catch (error) {
         console.error("Error fetching or parsing historical data from API:", error);
+        return [];
+    }
+}
+
+export async function triggerRealDataSync() {
+    try {
+        const response = await fetch('/api/process-max-wind', {
+            method: 'POST', // Използваме POST, за да е ясно, че задействаме процес
+        });
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+            console.error("Failed to trigger real data sync:", response.status, response.statusText, errorData);
+            return null;
+        }
+        return response.json();
+    } catch (error) {
+        console.error("Error triggering real data sync:", error);
+        return null;
+    }
+}
+
+export async function getRealDataHistory() {
+    try {
+        const response = await fetch('/api/get-max-wind-history');
+        if (!response.ok) {
+            console.error("Failed to fetch real data history:", response.status, response.statusText);
+            return [];
+        }
+        return response.json();
+    } catch (error) {
+        console.error("Error fetching real data history:", error);
         return [];
     }
 }
