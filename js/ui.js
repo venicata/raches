@@ -47,6 +47,44 @@ export function setLanguage(lang) {
     }
 }
 
+/**
+ * Displays the real wind data by appending it to the corresponding forecast cards.
+ * @param {Array} history - An array of historical max wind records.
+ */
+export function displayRealWindData(history) {
+    const T = translations[state.currentLang];
+
+    history.forEach(record => {
+        const recordDate = record.timestamp.split('T')[0];
+        const resultCard = document.querySelector(`.result-card[data-date='${recordDate}']`);
+
+        if (resultCard) {
+            // Проверяваме дали данните вече не са добавени
+            if (resultCard.querySelector('.real-wind-data')) {
+                return; // Пропускаме, ако вече съществува
+            }
+
+            const realWindKnots = record.windSpeedKnots.toFixed(1);
+            const realWindGustKnots = record.windGustKnots.toFixed(1);
+            const realWindMs = (record.windSpeedKnots * 0.5144).toFixed(1);
+
+            const realWindText = `${T.realWindLabel} <b>${realWindKnots}</b> (пориви до <b>${realWindGustKnots}</b>) ${T.knotsUnit} (${realWindMs} ${T.msUnit})`;
+            
+            const p = document.createElement('p');
+            p.className = 'real-wind-data'; // Клас за идентификация
+            p.innerHTML = `🌬️ ${realWindText}`;
+
+            // Добавяме го след прогнозата за вятъра
+            const predictedWindElement = resultCard.querySelector('p:nth-of-type(3)');
+            if (predictedWindElement) {
+                predictedWindElement.insertAdjacentElement('afterend', p);
+            } else {
+                resultCard.appendChild(p);
+            }
+        }
+    });
+}
+
 export async function displayResults(analysisResults) {
     if (!analysisResults || analysisResults.length === 0) {
         state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderDefault}</p>`;
@@ -63,6 +101,7 @@ export async function displayResults(analysisResults) {
         // --- Part 1: Create and display the result card for the UI ---
         const resultCard = document.createElement('div');
         resultCard.classList.add('result-card');
+        resultCard.dataset.date = result.date; // Добавяме атрибут за лесно намиране
 
         // --- Determine forecast text, key, and class, with fallback for missing forecast strings ---
         let finalForecastText = result.finalForecast;

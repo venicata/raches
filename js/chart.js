@@ -1,9 +1,22 @@
-import { getHistoricalData } from './api.js';
+import { getHistoricalData, getRealDataHistory } from './api.js';
 import { translations } from './translations.js';
 import { state } from './state.js';
 
 export async function renderHistoricalChart() {
-    const historicalData = await getHistoricalData();
+    const [historicalData, realWindHistory] = await Promise.all([
+        getHistoricalData(),
+        getRealDataHistory()
+    ]);
+
+    const realWindMap = new Map(realWindHistory.map(r => [r.timestamp.split('T')[0], r]));
+
+    historicalData.forEach(entry => {
+        const realWindRecord = realWindMap.get(entry.date);
+        if (realWindRecord) {
+            entry.realWind = realWindRecord;
+        }
+    });
+
     const chartSection = document.getElementById('chartSection');
     const chartCanvas = document.getElementById('historicalWindChart');
     const chartTitleEl = document.getElementById('historicalChartTitleKey');
@@ -28,8 +41,8 @@ export async function renderHistoricalChart() {
             month: 'short', day: 'numeric'
         });
     });
-    const avgKnotsData = historicalData.map(entry => entry.avgPredictedKnots);
-    const avgMsData = historicalData.map(entry => entry.avgPredictedMs);
+    const avgKnotsData = historicalData.map(entry => entry.realWind ? entry.realWind.windSpeedKnots : entry.avgPredictedKnots);
+    const avgMsData = historicalData.map(entry => entry.realWind ? (entry.realWind.windSpeedKnots * 0.5144) : entry.avgPredictedMs);
 
     const chartData = {
         labels: labels,
@@ -109,6 +122,15 @@ export async function renderHistoricalChart() {
                             const predictedWindMsText = `(${(entry.pMs_min).toFixed(1)}-${(entry.pMs_max).toFixed(1)} ${T.msUnit})`;
                             tooltipLines.push(`${T.predictedWindLabel} ${predictedWindKnotsText} ${predictedWindMsText}`);
 
+                            // 9. Real Wind Data (if available)
+                            if (entry.realWind) {
+                                const realWindKnots = entry.realWind.windSpeedKnots.toFixed(1);
+                                const realWindGustKnots = entry.realWind.windGustKnots.toFixed(1);
+                                const realWindMs = (entry.realWind.windSpeedKnots * 0.5144).toFixed(1);
+                                const realWindText = `${T.realWindLabel} ${realWindKnots} (пориви до ${realWindGustKnots}) ${T.knotsUnit} (${realWindMs} ${T.msUnit})`;
+                                tooltipLines.push(`🌬️ ${realWindText}`);
+                            }
+
                             // 3. Cloud Cover
                             tooltipLines.push(`${entry.cloud_cover_value > 30 ? '⚠️' : '✅'} ${T.cloudCoverLabel} ${entry.cloud_cover_value}% (${entry.cloud_cover_score > 0 ? '+' : ''}${entry.cloud_cover_score} ${pointSuffix})`);
 
@@ -144,24 +166,7 @@ export async function renderHistoricalChart() {
                         }
                     }
                 },
-                annotation: {
-                    annotations: {
-                        line1: {
-                            type: 'line',
-                            yScaleID: 'yKnots',
-                            yMin: 18,
-                            yMax: 18,
-                            borderColor: 'red',
-                            borderWidth: 2,
-                            label: {
-                                enabled: true,
-                                content: 'Good Wind (18 knots)',
-                                position: 'end',
-                                backgroundColor: 'rgba(255, 99, 132, 0.8)'
-                            }
-                        }
-                    }
-                }
+
             },
             scales: {
                 yKnots: {
