@@ -1,4 +1,5 @@
 import { translations } from './translations.js';
+import { triggerModelCalculation } from './api.js';
 import { state } from './state.js';
 import { renderHistoricalChart } from './chart.js';
 import { getCloudCoverScore, getTempDiffScore, getWindDirectionScore, getWindDirIcon, getSuckEffectIcon } from './scoring-helpers.js';
@@ -139,9 +140,7 @@ export async function displayResults(analysisResults) {
         }
 
         // --- Get all the translated text components for the card ---
-        const pKnots = result.predicted_wind_knots || { min: 0, max: 0 };
-        const pMs = result.predicted_wind_ms || { min: 0, max: 0 };
-        const predictedWindText = `${T.predictedWindLabel} <b>${pKnots.min.toFixed(1)} - ${pKnots.max.toFixed(1)}</b> ${T.knotsUnit} (${pMs.min.toFixed(1)}-${pMs.max.toFixed(1)} ${T.msUnit})`;
+        const predictedWindText = `${T.predictedWindLabel} <b>${result.predicted_wind_knots}</b> ${T.knotsUnit} (${result.predicted_wind_ms} ${T.msUnit})`;
         const cloudCoverText = `${getCloudCoverScore(result.cloud_cover_value).icon} ${T.cloudCoverLabel} ${result.cloud_cover_value}% (${result.cloud_cover_score > 0 ? '+' : ''}${result.cloud_cover_score} ${pointSuffix})`;
         const tempDiffText = `${getTempDiffScore(result.temp_diff_value).icon} ${T.tempDiffDetail.replace('{description}', T[result.temp_diff_description_key] || result.temp_diff_description_key).replace('{value}', result.temp_diff_value.toFixed(1)).replace('{landTemp}', result.air_temp_value.toFixed(1)).replace('{seaTemp}', result.sea_temp_value.toFixed(1))} (${result.temp_diff_score > 0 ? '+' : ''}${result.temp_diff_score} ${pointSuffix})`;
         const windSpeedKnots = result.wind_speed_value * 0.539957;
@@ -179,12 +178,11 @@ export async function displayResults(analysisResults) {
             scoreText: result.scoreText,
             
             // Wind
-            pKnots_min: pKnots.min,
-            pKnots_max: pKnots.max,
-            pMs_min: pMs.min,
-            pMs_max: pMs.max,
-            avgPredictedKnots: (pKnots.min + pKnots.max) / 2,
-            avgPredictedMs: (pMs.min + pMs.max) / 2,
+            pKnots_min: result.pKnots_min,
+            pKnots_max: result.pKnots_max,
+            pMs_min: result.pKnots_min * 0.514444,
+            pMs_max: result.pKnots_max * 0.514444,
+            avgPredictedKnots: (result.pKnots_min + result.pKnots_max) / 2,
 
             // Cloud
             cloud_cover_value: result.cloud_cover_value,
@@ -216,6 +214,32 @@ export async function displayResults(analysisResults) {
     }
 
     await renderHistoricalChart();
+}
+
+export function initRecalibrateButton() {
+    const btn = document.getElementById('recalibrateModelBtn');
+    const statusEl = document.getElementById('recalibrateStatus');
+
+    if (!btn || !statusEl) return;
+
+    btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        statusEl.textContent = 'Изчисляване...';
+        statusEl.style.color = '#555';
+
+        try {
+            const result = await triggerModelCalculation();
+            statusEl.textContent = result.message || 'Готово!';
+            statusEl.style.color = 'green';
+            // Optionally, refresh the chart or data
+            // await fetchAndAnalyze(state.startDate, state.endDate);
+        } catch (error) {
+            statusEl.textContent = `Грешка: ${error.message}`;
+            statusEl.style.color = 'red';
+        } finally {
+            btn.disabled = false;
+        }
+    });
 }
 
 export function initModal() {

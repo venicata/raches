@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { translations } from './translations.js';
-import { setLanguage, displayResults, initModal } from './ui.js';
+import { setLanguage, displayResults, initModal, initRecalibrateButton } from './ui.js';
 import { fetchAndAnalyze, formatDate, triggerRealDataSync, getRealDataHistory, fetchAndDisplayRealWind } from './api.js';
 import { renderHistoricalChart } from './chart.js';
 
@@ -85,6 +85,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Set initial language and render chart on load
     const preferredLang = localStorage.getItem('preferredLang') || 'en';
     setLanguage(preferredLang);
+    initRecalibrateButton();
     renderHistoricalChart();
 
     const syncBtn = document.getElementById('sync-btn');
