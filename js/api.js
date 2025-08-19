@@ -14,6 +14,7 @@ export function formatDate(date) {
 
 export async function fetchAndAnalyze(startDate, endDate) {
     state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderLoading}</p>`;
+    state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderLoading}</p>`;
     
     const formattedStartDate = formatDate(startDate);
     const formattedEndDate = formatDate(endDate);
@@ -33,8 +34,9 @@ export async function fetchAndAnalyze(startDate, endDate) {
         
         const weatherData = await weatherResponse.json();
         const marineData = await marineResponse.json();
+        const correctionModel = await getCorrectionModel();
 
-        const analysisResults = await processWeatherData(weatherData, marineData);
+        const analysisResults = await processWeatherData(weatherData, marineData, correctionModel);
         displayResults(analysisResults);
         await fetchAndDisplayRealWind();
     } catch (error) {
@@ -88,6 +90,38 @@ export async function triggerRealDataSync() {
     } catch (error) {
         console.error("Error triggering real data sync:", error);
         return null;
+    }
+}
+
+export async function getCorrectionModel() {
+    try {
+        const response = await fetch('/api/get-correction-model');
+        if (!response.ok) {
+            console.error("Failed to fetch correction model:", response.status, response.statusText);
+            return {}; // Връщаме празен обект при грешка, за да не чупим логиката
+        }
+        return response.json();
+    } catch (error) {
+        console.error("Error fetching correction model:", error);
+        return {};
+    }
+}
+
+export async function triggerModelCalculation() {
+    try {
+        const response = await fetch('/api/calculate-correction-model', {
+            method: 'POST',
+        });
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+            console.error("Failed to trigger model calculation:", response.status, response.statusText, errorData);
+            // Rethrow to be caught by the caller
+            throw new Error(errorData.error || 'Failed to trigger model calculation');
+        }
+        return response.json();
+    } catch (error) {
+        console.error("Error triggering model calculation:", error);
+        throw error; // Rethrow to be caught by the caller
     }
 }
 

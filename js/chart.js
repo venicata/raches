@@ -118,9 +118,18 @@ export async function renderHistoricalChart() {
                             }
 
                             // 2. Predicted Wind
-                            const predictedWindKnotsText = `${entry.pKnots_min}-${entry.pKnots_max} ${T.knotsUnit}`;
-                            const predictedWindMsText = `(${(entry.pMs_min).toFixed(1)}-${(entry.pMs_max).toFixed(1)} ${T.msUnit})`;
-                            tooltipLines.push(`${T.predictedWindLabel} ${predictedWindKnotsText} ${predictedWindMsText}`);
+                            // Flexible check for both numbers and string representations from Redis
+                            if (entry.pKnots_min != null && entry.pKnots_max != null) {
+                                // Convert to numbers to be safe
+                                const pKnots_min = parseFloat(entry.pKnots_min);
+                                const pKnots_max = parseFloat(entry.pKnots_max);
+                                const pMs_min = parseFloat(entry.pMs_min);
+                                const pMs_max = parseFloat(entry.pMs_max);
+
+                                const predictedWindKnotsText = `${pKnots_min.toFixed(1)}-${pKnots_max.toFixed(1)} ${T.knotsUnit}`;
+                                const predictedWindMsText = `(${(pMs_min).toFixed(1)}-${(pMs_max).toFixed(1)} ${T.msUnit})`;
+                                tooltipLines.push(`${T.predictedWindLabel} ${predictedWindKnotsText} ${predictedWindMsText}`);
+                            }
 
                             // 9. Real Wind Data (if available)
                             if (entry.realWind) {

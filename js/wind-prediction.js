@@ -82,8 +82,8 @@ export function predictWindSpeedRange(overallScore) {
     // Ensure min is not greater than max
     const displayMinKnots = Math.min(finalMinKnots, finalMaxKnots);
 
-    const displayMinMs = (displayMinKnots * KNOTS_TO_MS).toFixed(1);
-    const displayMaxMs = (finalMaxKnots * KNOTS_TO_MS).toFixed(1);
-
-    return `${displayMinKnots}-${finalMaxKnots} ${T.knotsUnit} (${displayMinMs}-${displayMaxMs} ${T.msUnit})`;
+    return {
+        min: displayMinKnots,
+        max: finalMaxKnots
+    };
 }

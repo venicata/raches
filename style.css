@@ -192,6 +192,34 @@ footer a {
     border-left-color: #28a745; /* Green for suitable */
 }
 
+.manual-controls {
+    text-align: center;
+    padding: 20px;
+    margin-top: 30px;
+    border-top: 1px solid #ddd;
+    background-color: #f9f9f9;
+}
+
+#recalibrateModelBtn {
+    padding: 10px 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #e7e7e7;
+    transition: background-color 0.3s;
+}
+
+#recalibrateModelBtn:hover {
+    background-color: #ddd;
+}
+
+#recalibrateStatus {
+    margin-left: 15px;
+    font-style: italic;
+    color: #555;
+}
+
 .lang-switcher {
     display: flex;
     gap: 5px;

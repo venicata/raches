@@ -1,6 +1,23 @@
+// Helper function to calculate the average of a set of angles (wind directions)
+function getAverageDirection(angles) {
+    let sumX = 0;
+    let sumY = 0;
+
+    angles.forEach(angle => {
+        const rad = angle * (Math.PI / 180);
+        sumX += Math.cos(rad);
+        sumY += Math.sin(rad);
+    });
+
+    const avgRad = Math.atan2(sumY, sumX);
+    const avgDeg = avgRad * (180 / Math.PI);
+
+    return (avgDeg + 360) % 360; // Normalize to 0-360
+}
+
 // Helper icon functions
 
-export function getWindDirectionScore(degrees) {
+export function getWindDirectionName(degrees) {
     const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
     // Ensure degrees are within 0-359 range
     const normalizedDegrees = (degrees % 360 + 360) % 360;
@@ -12,6 +29,61 @@ export function getWindDirIcon(score) { // Based on windDirectionScore logic
     if (score >= 1) return '✅';
     if (score === 0) return '⚠️'; // Neutral or warning for 0 score
     return '❌';
+}
+
+export function getWindSpeedScore(windSpeed) {
+    let score = 0;
+    let icon = '';
+    if (windSpeed >= 15 && windSpeed <= 30) { score = 3.5; icon = '✅'; }
+    else if (windSpeed > 30 && windSpeed <= 40) { score = 2; icon = '⚠️'; }
+    else if (windSpeed < 15 && windSpeed >= 5) { score = 1; icon = '❌'; }
+    else if (windSpeed < 5) { score = 0; icon = '❌'; }
+    else { score = -1; icon = '❌'; }
+    return { score, icon };
+}
+
+export function getWindDirectionScore(dir) {
+    let score = 0;
+    let textKey = '';
+    if (dir >= 45 && dir <= 90) { // NE-E (Ideal)
+        score = 3;
+        textKey = 'windDirNE_E_Ideal';
+    }
+    else if (dir >= 90 && dir <= 115) { // NE-E (almost Ideal)
+        score = 1;
+        textKey = 'windDirNE_E_Acceptable';
+    }
+    else if ((dir > 115 && dir <= 135) || (dir >= 0 && dir < 45)) { // E-SE and N-NE (Not good)
+        score = -2;
+        textKey = (dir > 90) ? 'windDirE_SE_Acceptable' : 'windDirN_NE_Acceptable';
+    } else if (dir > 135 && dir < 225) { // SE-S-SW (Not good at all)
+        score = -4;
+        textKey = 'windDirSE_S_SW_Neutral';
+    } else { // W, NW (Bad)
+        score = -8;
+        textKey = 'windDirW_NW_Bad';
+    }
+    return { score, textKey };
+}
+
+export function calculateAfternoonWindDirection(weatherData, date) {
+    const afternoonWindDirections = [];
+    if (weatherData.hourly && weatherData.hourly.time && weatherData.hourly.winddirection_80m) {
+        weatherData.hourly.time.forEach((datetime, index) => {
+            const entryDate = datetime.split('T')[0];
+            if (entryDate === date) {
+                const hour = parseInt(datetime.split('T')[1].split(':')[0]);
+                if (hour >= 13 && hour <= 17) { // Thermal wind window
+                    afternoonWindDirections.push(weatherData.hourly.winddirection_80m[index]);
+                }
+            }
+        });
+    }
+
+    if (afternoonWindDirections.length > 0) {
+        return Math.round(getAverageDirection(afternoonWindDirections));
+    }
+    return null;
 }
 
 export function getSuckEffectIcon(score) {
