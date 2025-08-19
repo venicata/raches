@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { translations } from './translations.js';
 import { setLanguage, displayResults, initModal, initRecalibrateButton } from './ui.js';
-import { fetchAndAnalyze, formatDate, triggerRealDataSync, getRealDataHistory, fetchAndDisplayRealWind } from './api.js';
+import { fetchAndAnalyze, formatDate, triggerRealDataSync, fetchAndDisplayRealWind } from './api.js';
 import { renderHistoricalChart } from './chart.js';
 
 document.addEventListener('DOMContentLoaded', async () => {

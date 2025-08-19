@@ -49,7 +49,7 @@ export async function fetchAndAnalyze(startDate, endDate) {
  */
 export async function fetchAndDisplayRealWind() {
     try {
-        const history = await getRealDataHistory();
+        const { maxWindHistory: history } = await getAppData();
         if (history && history.length > 0) {
             displayRealWindData(history);
         } else {
@@ -61,20 +61,6 @@ export async function fetchAndDisplayRealWind() {
     }
 }
 
-export async function getHistoricalData() {
-    try {
-        const response = await fetch('/api/getHistory');
-        if (!response.ok) {
-            console.error("Failed to fetch historical data from API:", response.status, response.statusText);
-            return []; 
-        }
-        const data = await response.json();
-        return data && Array.isArray(data) ? data : [];
-    } catch (error) {
-        console.error("Error fetching or parsing historical data from API:", error);
-        return [];
-    }
-}
 
 export async function triggerRealDataSync() {
     try {
@@ -125,17 +111,17 @@ export async function triggerModelCalculation() {
     }
 }
 
-export async function getRealDataHistory() {
+export async function getAppData() {
     try {
-        const response = await fetch('/api/get-max-wind-history');
+        const response = await fetch('/api/get-app-data');
         if (!response.ok) {
-            console.error("Failed to fetch real data history:", response.status, response.statusText);
-            return [];
+            console.error("Failed to fetch app data:", response.status, response.statusText);
+            return { forecastHistory: [], maxWindHistory: [] };
         }
         return response.json();
     } catch (error) {
-        console.error("Error fetching real data history:", error);
-        return [];
+        console.error("Error fetching app data:", error);
+        return { forecastHistory: [], maxWindHistory: [] };
     }
 }
 

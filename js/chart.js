@@ -1,12 +1,9 @@
-import { getHistoricalData, getRealDataHistory } from './api.js';
+import { getAppData } from './api.js';
 import { translations } from './translations.js';
 import { state } from './state.js';
 
 export async function renderHistoricalChart() {
-    const [historicalData, realWindHistory] = await Promise.all([
-        getHistoricalData(),
-        getRealDataHistory()
-    ]);
+    const { forecastHistory: historicalData, maxWindHistory: realWindHistory } = await getAppData();
 
     const realWindMap = new Map(realWindHistory.map(r => [r.timestamp.split('T')[0], r]));
 
