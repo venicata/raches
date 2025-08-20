@@ -142,12 +142,11 @@ export async function displayResults(analysisResults) {
         // --- Get all the translated text components for the card ---
         const predictedWindText = `${T.predictedWindLabel} <b>${result.predicted_wind_knots}</b> ${T.knotsUnit} (${result.predicted_wind_ms} ${T.msUnit})`;
         const cloudCoverText = `${getCloudCoverScore(result.cloud_cover_value).icon} ${T.cloudCoverLabel} ${result.cloud_cover_value}% (${result.cloud_cover_score > 0 ? '+' : ''}${result.cloud_cover_score} ${pointSuffix})`;
-        const tempDiffText = `${getTempDiffScore(result.temp_diff_value).icon} ${T.tempDiffDetail.replace('{description}', T[result.temp_diff_description_key] || result.temp_diff_description_key).replace('{value}', result.temp_diff_value.toFixed(1)).replace('{landTemp}', result.air_temp_value.toFixed(1)).replace('{seaTemp}', result.sea_temp_value.toFixed(1))} (${result.temp_diff_score > 0 ? '+' : ''}${result.temp_diff_score} ${pointSuffix})`;
+        const tempDiffText = `${getTempDiffScore(result.temp_diff_value).icon} ${T.tempDiffDetail.replace('{description}', result.temp_diff_description).replace('{value}', result.temp_diff_value.toFixed(1)).replace('{landTemp}', result.air_temp_value.toFixed(1)).replace('{seaTemp}', result.sea_temp_value.toFixed(1))} (${result.temp_diff_score > 0 ? '+' : ''}${result.temp_diff_score} ${pointSuffix})`;
         const windSpeedKnots = result.wind_speed_value * 0.539957;
         const windSpeedMs = result.wind_speed_value * 0.277778;
         const maxWindText = `${result.wind_speed_icon || '❓'} ${T.apiWindSpeedLabel} <b>${windSpeedKnots.toFixed(1)}</b> ${T.knotsUnit} (${windSpeedMs.toFixed(1)} ${T.msUnit}) (${result.wind_speed_score > 0 ? '+' : ''}${result.wind_speed_score} ${pointSuffix})`;
-        const windDirResult = getWindDirectionScore(result.wind_direction_value);
-        const windDirText = `<div class="wind-direction-container">${getWindDirIcon(result.wind_direction_score)} <span class="wind-arrow" style="transform: rotate(${result.wind_direction_value + 180}deg);"></span> ${T.windDirDetail.replace('{value}', result.wind_direction_value).replace('{description}', windDirResult.direction)} (${result.wind_direction_score > 0 ? '+' : ''}${result.wind_direction_score} ${pointSuffix})</div>`;
+        const windDirText = `<div class="wind-direction-container">${getWindDirIcon(result.wind_direction_score)} <span class="wind-arrow" style="transform: rotate(${result.wind_direction_value + 180}deg);"></span> ${T.windDirDetail.replace('{value}', result.wind_direction_value).replace('{description}', result.wind_direction_description)} (${result.wind_direction_score > 0 ? '+' : ''}${result.wind_direction_score} ${pointSuffix})</div>`;
         const suckEffectText = `${getSuckEffectIcon(result.suck_effect_score_value)} ${T.suckEffectLabel} ${result.suck_effect_score_value}/3 (${result.suck_effect_score_value > 0 ? '+' : ''}${result.suck_effect_score_value} ${pointSuffix})`;
 
         // --- Assemble the card's HTML ---
@@ -190,7 +189,7 @@ export async function displayResults(analysisResults) {
 
             // Temp
             temp_diff_value: result.temp_diff_value,
-            temp_diff_description_key: result.temp_diff_description_key,
+            temp_diff_description: result.temp_diff_description,
             air_temp_value: result.air_temp_value,
             sea_temp_value: result.sea_temp_value,
             temp_diff_score: result.temp_diff_score,
@@ -201,7 +200,7 @@ export async function displayResults(analysisResults) {
 
             // Wind Dir
             wind_direction_value: result.wind_direction_value,
-            wind_direction_description: windDirResult.direction, // Use calculated direction
+            wind_direction_description: result.wind_direction_description,
             wind_direction_score: result.wind_direction_score,
 
             // Suck Effect

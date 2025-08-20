@@ -117,7 +117,7 @@ export async function processWeatherData(weatherData, marineData, correctionMode
         const tempDiffResult = getTempDiffScore(tempDiff);
         score += tempDiffResult.score;
         data.temp_diff_score = tempDiffResult.score;
-        data.temp_diff_description_key = tempDiffResult.textKey;
+                data.temp_diff_description = T[tempDiffResult.textKey] || tempDiffResult.textKey;
 
         data.wind_speed_value = data.wind_speed_10m_max;
         const windSpeedResult = getWindSpeedScore(data.wind_speed_value);
@@ -129,10 +129,10 @@ export async function processWeatherData(weatherData, marineData, correctionMode
         const afternoonDir = calculateAfternoonWindDirection(weatherData, date);
         data.wind_direction_value = afternoonDir !== null ? afternoonDir : Math.round(data.wind_direction_10m_dominant);
         
-        const windDirectionResult = getWindDirectionScore(data.wind_direction_value);
+                const windDirectionResult = getWindDirectionScore(data.wind_direction_value, T);
         score += windDirectionResult.score;
         data.wind_direction_score = windDirectionResult.score;
-        data.wind_direction_description = T[windDirectionResult.textKey] || windDirectionResult.textKey;
+        data.wind_direction_description = windDirectionResult.description;
 
         data.score = score;
         const minScoreTotal = -13.5;
@@ -144,74 +144,27 @@ export async function processWeatherData(weatherData, marineData, correctionMode
         else if (score >= 0) { data.forecastLabel = T.forecastLow; }
         else { data.forecastLabel = T.forecastBad; }
 
-        let predictedWindRange = predictWindSpeedRange(score);
+        const scores = {
+            overallScore: score,
+            cloud_cover_score: data.cloud_cover_score,
+            temp_diff_score: data.temp_diff_score,
+            wind_speed_score: data.wind_speed_score,
+            wind_direction_score: data.wind_direction_score,
+            suck_effect_score_value: data.suck_effect_score_value
+        };
 
-        // Прилагане на корекционния модел (v3)
-        if (correctionModel && correctionModel.weights) {
-            const corrections = [];
-            const weights = correctionModel.weights;
+        const windPrediction = predictWindSpeedRange(scores, correctionModel);
 
-            // 1. Събиране на корекциите от тежестите
-            // ... (логиката за събиране на корекции остава същата)
-            if (weights.tempDiff) {
-                const group = (data.temp_diff_value >= 6) ? 'high' : (data.temp_diff_value < 3) ? 'low' : 'medium';
-                if (typeof weights.tempDiff[group] === 'number') corrections.push(weights.tempDiff[group]);
-            }
-            if (weights.cloudCover) {
-                const group = (data.cloud_cover_value <= 30) ? 'low' : (data.cloud_cover_value > 70) ? 'high' : 'medium';
-                if (typeof weights.cloudCover[group] === 'number') corrections.push(weights.cloudCover[group]);
-            }
-            if (weights.suckEffect) {
-                const group = (data.suck_effect_score_value >= 1) ? 'high' : (data.suck_effect_score_value < 0.5) ? 'low' : 'medium';
-                if (typeof weights.suckEffect[group] === 'number') corrections.push(weights.suckEffect[group]);
-            }
-            if (weights.windSpeed) {
-                const group = (data.wind_speed_value >= 30) ? 'high' : (data.wind_speed_value < 15) ? 'low' : 'medium';
-                if (typeof weights.windSpeed[group] === 'number') corrections.push(weights.windSpeed[group]);
-            }
-            if (weights.windDirection) {
-                const group = (data.wind_direction_value >= 45 && data.wind_direction_value <= 115) ? 'ideal' : (data.wind_direction_value > 115 && data.wind_direction_value < 225) ? 'bad' : 'other';
-                if (typeof weights.windDirection[group] === 'number') corrections.push(weights.windDirection[group]);
-            }
-
-            // 2. Изчисляване на средната корекция
-            const averageCorrection = corrections.length > 0 ? corrections.reduce((a, b) => a + b, 0) / corrections.length : 0;
-
-            // 3. Прилагане на модела (v3)
-            if (correctionModel.version === 3 && typeof correctionModel.scalingFactor === 'number') {
-                const center = (predictedWindRange.min + predictedWindRange.max) / 2;
-                const spread = (predictedWindRange.max - predictedWindRange.min) / 2;
-                
-                const newSpread = spread * correctionModel.scalingFactor;
-                
-                predictedWindRange.min = center - newSpread;
-                predictedWindRange.max = center + newSpread;
-            }
-
-            // 4. Прилагане на финалната корекция за изместване
-            predictedWindRange.min += averageCorrection;
-            predictedWindRange.max += averageCorrection;
-
-        }
-
-        data.pKnots_min = Math.round(predictedWindRange.min * 10) / 10; // Закръгляне до 1 знак
-        data.pKnots_max = Math.round(predictedWindRange.max * 10) / 10;
-
-        // Форматиране на финалния текст СЛЕД прилагане на корекциите
-        const minMs = (data.pKnots_min * 0.514444).toFixed(1);
-        const maxMs = (data.pKnots_max * 0.514444).toFixed(1);
-
-        const pMs_min = data.pKnots_min * 0.514444;
-        const pMs_max = data.pKnots_max * 0.514444;
-
-        data.pMs_min = pMs_min;
-        data.pMs_max = pMs_max;
-
-        data.predicted_wind_knots = `${data.pKnots_min}-${data.pKnots_max}`;
-        data.predicted_wind_ms = `${pMs_min.toFixed(1)}-${pMs_max.toFixed(1)}`;
+        data.pKnots_min = windPrediction.pKnots_min;
+        data.pKnots_max = windPrediction.pKnots_max;
+        data.pMs_min = windPrediction.avgPredictedMs; // Note: using avg for min/max ms for simplicity
+        data.pMs_max = windPrediction.avgPredictedMs;
+        data.predicted_wind_knots = `${windPrediction.pKnots_min}-${windPrediction.pKnots_max}`;
+        data.predicted_wind_ms = `${(windPrediction.pKnots_min * 0.5144).toFixed(1)}-${(windPrediction.pKnots_max * 0.5144).toFixed(1)}`;
+        data.predicted_wind_text = windPrediction.text;
 
         const KITING_MIN_KNOTS = 16;
-        if (data.predicted_wind_knots && data.predicted_wind_knots.max > 0 && data.predicted_wind_knots.max < KITING_MIN_KNOTS) {
+                if (data.pKnots_max > 0 && data.pKnots_max < KITING_MIN_KNOTS) {
             data.forecastLabel = T.forecastNotSuitableKiting;
         }
 
@@ -225,7 +178,7 @@ export async function processWeatherData(weatherData, marineData, correctionMode
             cloud_cover_score: data.cloud_cover_score,
             temp_diff_value: data.temp_diff_value,
             temp_diff_score: data.temp_diff_score,
-            temp_diff_description_key: data.temp_diff_description_key,
+                        temp_diff_description: data.temp_diff_description,
             air_temp_value: data.air_temp_value,
             sea_temp_value: data.sea_temp_value,
             wind_speed_value: data.wind_speed_value,
