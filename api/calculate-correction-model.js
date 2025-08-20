@@ -2,8 +2,10 @@ import { Redis } from '@upstash/redis';
 import { create, all } from 'mathjs';
 
 const redis = Redis.fromEnv();
-const math = create(all);
-const { inv, multiply, transpose, flatten } = math;
+const math = create(all, {});
+math.config({
+    matrix: 'Matrix' // Configure math.js to use Matrix type
+});
 
 const FORECAST_HISTORY_KEY = 'rachesForecastHistory';
 const REAL_WIND_HISTORY_KEY = 'max_wind_history';
@@ -47,35 +49,43 @@ export default async function handler(request, response) {
                 const features = [
                     forecast.cloud_cover_score,
                     forecast.temp_diff_score,
+                    forecast.wind_speed_score, // Възстановен параметър
                     forecast.wind_direction_score,
                     forecast.suck_effect_score_value
-                ].map(v => (typeof v === 'number' ? v : 0)); // Default to 0 if not a number
+                ].map(v => (typeof v === 'number' ? v : 0));
+
+                const predictedKnots = forecast.avgPredictedKnots;
+                const wind_diff = realKnots - predictedKnots;
 
                 trainingData.push({
                     features: features,
-                    target: realKnots
+                    target: wind_diff // Целта отново е разликата
                 });
             }
         });
 
-        console.log(trainingData);
-
-        const NUM_FEATURES = 4;
+        const NUM_FEATURES = 5;
         if (trainingData.length < NUM_FEATURES + 1) {
             return response.status(200).json({ message: `Not enough matching data points. Need at least ${NUM_FEATURES + 1}, but have ${trainingData.length}.` });
         }
 
         // 3. Build matrices for linear regression
         // Add a bias term (column of 1s) to our features
-        const X = trainingData.map(d => [1, ...d.features]); // Matrix X
-        const y = trainingData.map(d => [d.target]);      // Vector y
+        const X = math.matrix(trainingData.map(d => [1, ...d.features])); // Matrix X
+        const y = math.matrix(trainingData.map(d => [d.target]));      // Vector y (wind_diff)
 
         // 4. Calculate coefficients using the Normal Equation: (X^T * X)^-1 * X^T * y
-        const Xt = transpose(X);
-        const XtX = multiply(Xt, X);
-                let XtX_inv;
+        const Xt = math.transpose(X);
+        let XtX = math.multiply(Xt, X);
+
+        // Ridge Regression: Add a small value (lambda * I) to the diagonal to prevent multicollinearity
+        const lambda = 0.1; // Regularization parameter
+        const I = math.identity(XtX.size()[0]);
+        XtX = math.add(XtX, math.multiply(I, lambda));
+
+        let XtX_inv;
         try {
-            XtX_inv = inv(XtX);
+            XtX_inv = math.inv(XtX);
         } catch (error) {
             console.error('Error inverting matrix:', error);
             return response.status(400).json({
@@ -83,8 +93,8 @@ export default async function handler(request, response) {
                 error: 'Matrix inversion failed. The data is likely not suitable for building a model (e.g., it might be collinear).'
             });
         }
-        const XtX_inv_Xt = multiply(XtX_inv, Xt);
-        const coefficients = flatten(multiply(XtX_inv_Xt, y)); // Flatten to get a simple array
+        const XtX_inv_Xt = math.multiply(XtX_inv, Xt);
+        const coefficients = math.flatten(math.multiply(XtX_inv_Xt, y)).toArray(); // Flatten to get a simple array
 
         // 5. Save the trained model to Redis
         const model = {
@@ -94,8 +104,9 @@ export default async function handler(request, response) {
                 intercept: coefficients[0],
                 cloud_cover: coefficients[1],
                 temp_diff: coefficients[2],
-                wind_direction: coefficients[3],
-                suck_effect: coefficients[4],
+                wind_speed: coefficients[3],
+                wind_direction: coefficients[4],
+                suck_effect: coefficients[5],
             },
             recordsAnalyzed: trainingData.length
         };
