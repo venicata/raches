@@ -29,61 +29,92 @@ export function parsePredictedWindRange(rangeString) {
     };
 }
 
-export function predictWindSpeedRange(overallScore) {
-    const T = translations[state.currentLang];
-
-    // Define score-to-wind mapping points for interpolation.
-    // Each point is [score, minKnots, maxKnots]
+// Fallback prediction logic using the old score-based map
+function predictWindSpeedWithScore(overallScore) {
     const scoreToWindMap = [
-        [-14.5, 0, 3],   // Worst score
-        [-5, 2, 6],
-        [2.5, 5, 9],   // Low forecast threshold
-        [7, 9, 14],    // Mid forecast threshold
-        [11, 13, 18],  // High forecast threshold
-        [15.5, 17, 22],  // Near-Perfect day threshold
-        [18.25, 20, 24] // Max possible score
+        [-15, 0, 3],
+        [-12, 1, 4],
+        [-9, 2, 5],
+        [-6, 3, 6],
+        [-3, 4, 7],
+        [0, 5, 8],
+        [3, 7, 10],
+        [6, 9, 12],
+        [9, 11, 14],
+        [12, 14, 17],
+        [15, 17, 20],
+        [18, 20, 23],
+        [21, 22, 25]
     ];
+    let p1 = scoreToWindMap[0], p2 = scoreToWindMap[scoreToWindMap.length - 1];
 
-    let minKnots, maxKnots;
+    if (overallScore <= p1[0]) return { min: p1[1], max: p1[2] };
+    if (overallScore >= p2[0]) return { min: p2[1], max: p2[2] };
 
-    // Find the two points to interpolate between
-    let p1 = scoreToWindMap[0];
-    let p2 = scoreToWindMap[scoreToWindMap.length - 1];
-
-    if (overallScore <= p1[0]) {
-        minKnots = p1[1];
-        maxKnots = p1[2];
-    } else if (overallScore >= p2[0]) {
-        minKnots = p2[1];
-        maxKnots = p2[2];
-    } else {
-        for (let i = 0; i < scoreToWindMap.length - 1; i++) {
-            if (overallScore >= scoreToWindMap[i][0] && overallScore < scoreToWindMap[i + 1][0]) {
-                p1 = scoreToWindMap[i];
-                p2 = scoreToWindMap[i + 1];
-                break;
-            }
+    for (let i = 0; i < scoreToWindMap.length - 1; i++) {
+        if (overallScore >= scoreToWindMap[i][0] && overallScore < scoreToWindMap[i + 1][0]) {
+            p1 = scoreToWindMap[i];
+            p2 = scoreToWindMap[i + 1];
+            break;
         }
-
-        const scoreRange = p2[0] - p1[0];
-        const progress = (overallScore - p1[0]) / scoreRange;
-
-        // Linear interpolation for min and max knots
-        const minKnotsRange = p2[1] - p1[1];
-        minKnots = p1[1] + (minKnotsRange * progress);
-
-        const maxKnotsRange = p2[2] - p1[2];
-        maxKnots = p1[2] + (maxKnotsRange * progress);
     }
 
-    const finalMinKnots = Math.round(minKnots);
-    const finalMaxKnots = Math.round(maxKnots);
+    const progress = (overallScore - p1[0]) / (p2[0] - p1[0]);
+    const minKnots = p1[1] + (p2[1] - p1[1]) * progress;
+    const maxKnots = minKnots + 3;
 
-    // Ensure min is not greater than max
-    const displayMinKnots = Math.min(finalMinKnots, finalMaxKnots);
+    return { min: minKnots, max: maxKnots };
+}
+
+// Main prediction function that uses the trained model
+function predictWindSpeedWithModel(scores, model) {
+    const coeffs = model.coefficients;
+    const features = [
+        scores.cloud_cover_score,
+        scores.temp_diff_score,
+        scores.wind_direction_score,
+        scores.suck_effect_score_value
+    ];
+
+    // Prediction = intercept + (coeff1 * feature1) + (coeff2 * feature2) + ...
+    const predictedKnots = (coeffs.intercept || 0) + 
+                           (coeffs.cloud_cover || 0) * features[0] +
+                           (coeffs.temp_diff || 0) * features[1] +
+                           (coeffs.wind_direction || 0) * features[2] +
+                           (coeffs.suck_effect || 0) * features[3];
+
+    // Define a spread (range) around the prediction. This can be refined later.
+    const minKnots = Math.max(0, predictedKnots - 1.5);
+    const maxKnots = minKnots + 3;
 
     return {
-        min: displayMinKnots,
-        max: finalMaxKnots
+        min: minKnots,
+        max: maxKnots
+    };
+}
+
+export function predictWindSpeedRange(scores, model) {
+    const T = translations[state.currentLang];
+    let windPrediction;
+
+    // Use the trained model if it exists and has coefficients
+    if (model && model.coefficients) {
+        windPrediction = predictWindSpeedWithModel(scores, model);
+    } else {
+        // Fallback to the old score-based system if no model is available
+        windPrediction = predictWindSpeedWithScore(scores.overallScore);
+    }
+
+    const finalMinKnots = Math.round(windPrediction.min);
+    const finalMaxKnots = Math.round(windPrediction.max);
+    const avgPredictedKnots = (finalMinKnots + finalMaxKnots) / 2;
+    const avgPredictedMs = avgPredictedKnots * 0.5144;
+
+    return {
+        pKnots_min: finalMinKnots,
+        pKnots_max: finalMaxKnots,
+        avgPredictedKnots,
+        avgPredictedMs,
+        text: `${finalMinKnots}-${finalMaxKnots} ${T.knotsUnit} (${avgPredictedMs.toFixed(1)} ${T.msUnit})`
     };
 }

@@ -4,6 +4,7 @@ import { displayResults, displayRealWindData } from './ui.js';
 import { translations } from './translations.js';
 import { state } from './state.js';
 
+
 export function formatDate(date) {
     const d = new Date(date),
             year = d.getFullYear(),
@@ -97,6 +98,9 @@ export async function triggerModelCalculation() {
     try {
         const response = await fetch('/api/calculate-correction-model', {
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
