@@ -68,23 +68,36 @@ function predictWindSpeedWithScore(overallScore) {
 
 // Main prediction function that uses the trained model
 function predictWindSpeedWithModel(scores, model) {
+    // 1. Get the baseline prediction from the score-based system
+    const baselinePrediction = predictWindSpeedWithScore(scores.overallScore);
+    const baselineAvgKnots = (baselinePrediction.min + baselinePrediction.max) / 2;
+
+    // 2. Calculate the correction from the model
     const coeffs = model.coefficients;
     const features = [
         scores.cloud_cover_score,
         scores.temp_diff_score,
+        scores.wind_speed_score, // Възстановен параметър
         scores.wind_direction_score,
         scores.suck_effect_score_value
     ];
 
-    // Prediction = intercept + (coeff1 * feature1) + (coeff2 * feature2) + ...
-    const predictedKnots = (coeffs.intercept || 0) + 
-                           (coeffs.cloud_cover || 0) * features[0] +
-                           (coeffs.temp_diff || 0) * features[1] +
-                           (coeffs.wind_direction || 0) * features[2] +
-                           (coeffs.suck_effect || 0) * features[3];
+    let correction = (coeffs.intercept || 0) +
+                       (coeffs.cloud_cover || 0) * features[0] +
+                       (coeffs.temp_diff || 0) * features[1] +
+                       (coeffs.wind_speed || 0) * features[2] +
+                       (coeffs.wind_direction || 0) * features[3] +
+                       (coeffs.suck_effect || 0) * features[4];
 
-    // Define a spread (range) around the prediction. This can be refined later.
-    const minKnots = Math.max(0, predictedKnots - 1.5);
+    // Clamp the correction to a reasonable range (e.g., +/- 5 knots) to prevent extreme adjustments
+    const MAX_CORRECTION = 5;
+    correction = Math.max(-MAX_CORRECTION, Math.min(MAX_CORRECTION, correction));
+
+    // 3. Apply the clamped correction to the baseline
+    const correctedKnots = baselineAvgKnots + correction;
+
+    // 4. Define the final range
+    const minKnots = Math.max(0, correctedKnots - 1.5);
     const maxKnots = minKnots + 3;
 
     return {
