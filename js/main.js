@@ -35,6 +35,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderDefault}</p>`;
 
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('admin') === 'true') {
+        document.querySelector('.controls').classList.remove('private-controls');
+        document.querySelector('.manual-controls').classList.remove('private-controls');
+    }
+    
     analyzeBtn.addEventListener('click', () => {
         const selectedDates = state.datePicker.selectedDates;
         if (selectedDates.length < 2) {
