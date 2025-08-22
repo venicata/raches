@@ -1,14 +1,6 @@
 {
   "crons": [
     {
-      "path": "/?load-remotely",
-      "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/process-max-wind",
-      "schedule": "0 16 * * *"
-    },
-    {
       "path": "/api/process-max-wind",
       "schedule": "0 20 * * *"
     },
