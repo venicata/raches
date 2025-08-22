@@ -347,6 +347,9 @@ footer a {
     margin-bottom: 5px;
 }
 
+.private-controls {
+    display: none;
+}
 
 /* Responsive adjustments for header */
 @media (max-width: 768px) { /* Adjusted breakpoint for better coverage */
@@ -401,8 +404,6 @@ footer a {
         max-width: 100%;
         overflow-x: hidden;
     }
-
-
 
     #historicalChartTitleKey {
         padding: 0px 15px;

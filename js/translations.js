@@ -114,7 +114,7 @@ export const translations = {
         windDirNE_E_Ideal: "Североизточен до Източен (Идеална)",
         windDirE_SE_Acceptable: "Източен до Югоизточен (Приемлива)",
         windDirN_NE_Acceptable: "Северен до Североизточен (Приемлива)",
-        windDirSE_S_SW_Neutral: "Югоизточен до Югозападен (Неутрална)",
+        windDirSE_S_SW_Neutral: "Югоизточен до Югозападен (Спираща термиката)",
         windDirW_NW_Bad: "Западен до Северозападен (Лоша)",
         suckEffectDetail: "Suck ефект (термичен вятър): {value}/3",
         noData: "N/A",
