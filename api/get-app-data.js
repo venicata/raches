@@ -6,6 +6,7 @@ const redis = Redis.fromEnv();
 
 const HISTORY_KEY = 'rachesForecastHistory';
 const MAX_WIND_HISTORY_KEY = 'max_wind_history';
+import md5 from 'md5';
 
 export default async function handler(request, response) {
 

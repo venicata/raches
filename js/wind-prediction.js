@@ -108,25 +108,37 @@ function predictWindSpeedWithModel(scores, model) {
 
 export function predictWindSpeedRange(scores, model) {
     const T = translations[state.currentLang];
-    let windPrediction;
 
-    // Use the trained model if it exists and has coefficients
+    // 1. Get the raw, score-based prediction first.
+    const rawPrediction = predictWindSpeedWithScore(scores.overallScore);
+    const rawMinKnots = Math.round(rawPrediction.min);
+    const rawMaxKnots = Math.round(rawPrediction.max);
+    const rawAvgPredictedKnots = (rawMinKnots + rawMaxKnots) / 2;
+
+    let finalPrediction;
+
+    // 2. Use the trained model to get the corrected prediction if it exists.
     if (model && model.coefficients) {
-        windPrediction = predictWindSpeedWithModel(scores, model);
+        console.log('Using model for prediction');
+        finalPrediction = predictWindSpeedWithModel(scores, model);
     } else {
-        // Fallback to the old score-based system if no model is available
-        windPrediction = predictWindSpeedWithScore(scores.overallScore);
+        // Fallback to the raw score-based system if no model is available.
+        console.log('Using score-based prediction');
+        finalPrediction = rawPrediction;
     }
 
-    const finalMinKnots = Math.round(windPrediction.min);
-    const finalMaxKnots = Math.round(windPrediction.max);
+    // 3. Finalize values for display.
+    const finalMinKnots = Math.round(finalPrediction.min);
+    const finalMaxKnots = Math.round(finalPrediction.max);
     const avgPredictedKnots = (finalMinKnots + finalMaxKnots) / 2;
     const avgPredictedMs = avgPredictedKnots * 0.5144;
 
+    // 4. Return both raw and corrected values.
     return {
         pKnots_min: finalMinKnots,
         pKnots_max: finalMaxKnots,
-        avgPredictedKnots,
+        avgPredictedKnots, // This is the corrected average
+        rawAvgPredictedKnots, // This is the raw, uncorrected average
         avgPredictedMs,
         text: `${finalMinKnots}-${finalMaxKnots} ${T.knotsUnit} (${avgPredictedMs.toFixed(1)} ${T.msUnit})`
     };
