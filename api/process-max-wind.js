@@ -1,3 +1,8 @@
+import dotenv from 'dotenv';
+import path from 'path';
+
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+
 // File: /Users/venelinvenelinov/Projects/raches/api/process-max-wind.js
 // Vercel Serverless Function to be triggered by a cron job.
 // It fetches weather observations, finds the one with the highest wind speed,
@@ -8,15 +13,16 @@ const redis = Redis.fromEnv();
 
 const API_URL = 'https://kiting.live/api/observations/history-5m';
 const MAX_WIND_HISTORY_KEY = 'max_wind_history';
-// ВАЖНО: Преместете API ключа в Environment Variables на Vercel под името KITING_LIVE_API_KEY
-const API_KEY = 'e1f10a1e78da46f5b10a1e78da96f525';
-const CLIENT_USERNAME = 'veniaminikus@gmail.com';
+// ВАЖНО: Стойностите за API_KEY и CLIENT_USERNAME се взимат от Environment Variables в Vercel.
+const API_KEY = process.env.KITING_LIVE_API_KEY;
+const CLIENT_USERNAME = process.env.KITING_LIVE_CLIENT_USERNAME;
 
 /**
  * Изтегля историческите данни от API-то на kiting.live.
  */
 async function fetchHistoricalData() {
     console.log('Изтегляне на исторически данни...');
+
     const response = await fetch(API_URL, {
         method: 'GET',
         headers: {
