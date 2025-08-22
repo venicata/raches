@@ -1,5 +1,6 @@
 import { Redis } from '@upstash/redis';
 import { create, all } from 'mathjs';
+import md5 from 'md5';
 
 const redis = Redis.fromEnv();
 const math = create(all, {});
@@ -39,11 +40,21 @@ export default async function handler(request, response) {
         }
 
         // 2. Combine and prepare data
-        const realWindMap = new Map(realWindHistory.map(r => [r.timestamp.split('T')[0], r.windSpeedKnots]));
+        // Ensure deterministic results by selecting the max wind speed for each day
+        const dailyMaxWind = {}; // Use a plain object for deterministic behavior
+        realWindHistory.forEach(r => {
+            const date = r.timestamp.split('T')[0];
+            const currentMax = dailyMaxWind[date] || -Infinity;
+            if (r.windSpeedKnots > currentMax) {
+                dailyMaxWind[date] = r.windSpeedKnots;
+            }
+        });
+
+        const realWindMap = dailyMaxWind;
         const trainingData = [];
 
         forecastHistory.forEach(forecast => {
-            const realKnots = realWindMap.get(forecast.date);
+            const realKnots = realWindMap[forecast.date];
             if (realKnots !== undefined && realKnots !== null) {
                 // These are the 5 features for our model
                 const features = [
@@ -54,7 +65,7 @@ export default async function handler(request, response) {
                     forecast.suck_effect_score_value
                 ].map(v => (typeof v === 'number' ? v : 0));
 
-                const predictedKnots = forecast.avgPredictedKnots;
+                const predictedKnots = forecast.rawAvgPredictedKnots || forecast.avgPredictedKnots;
                 const wind_diff = realKnots - predictedKnots;
 
                 trainingData.push({
@@ -64,6 +75,8 @@ export default async function handler(request, response) {
             }
         });
 
+        // Sort trainingData with a stable sort to ensure the matrix is built deterministically
+
         const NUM_FEATURES = 5;
         if (trainingData.length < NUM_FEATURES + 1) {
             return response.status(200).json({ message: `Not enough matching data points. Need at least ${NUM_FEATURES + 1}, but have ${trainingData.length}.` });
@@ -71,8 +84,8 @@ export default async function handler(request, response) {
 
         // 3. Build matrices for linear regression
         // Add a bias term (column of 1s) to our features
-        const X = math.matrix(trainingData.map(d => [1, ...d.features])); // Matrix X
-        const y = math.matrix(trainingData.map(d => [d.target]));      // Vector y (wind_diff)
+        const X = math.matrix(trainingData.map(d => [1, ...d.features]), 'dense'); // Matrix X
+        const y = math.matrix(trainingData.map(d => [d.target]), 'dense');      // Vector y (wind_diff)
 
         // 4. Calculate coefficients using the Normal Equation: (X^T * X)^-1 * X^T * y
         const Xt = math.transpose(X);

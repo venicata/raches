@@ -164,7 +164,7 @@ export async function processWeatherData(weatherData, marineData, correctionMode
         data.predicted_wind_text = windPrediction.text;
 
         const KITING_MIN_KNOTS = 16;
-                if (data.pKnots_max > 0 && data.pKnots_max < KITING_MIN_KNOTS) {
+        if (data.pKnots_max > 0 && data.pKnots_max < KITING_MIN_KNOTS) {
             data.forecastLabel = T.forecastNotSuitableKiting;
         }
 
@@ -172,13 +172,13 @@ export async function processWeatherData(weatherData, marineData, correctionMode
             date: date,
             score: data.score,
             scoreText: data.scoreText,
-            finalForecast: data.forecastLabel, 
-            forecastLabel: data.forecastLabel, 
+            finalForecast: data.forecastLabel,
+            forecastLabel: data.forecastLabel,
             cloud_cover_value: data.cloud_cover_value,
             cloud_cover_score: data.cloud_cover_score,
             temp_diff_value: data.temp_diff_value,
             temp_diff_score: data.temp_diff_score,
-                        temp_diff_description: data.temp_diff_description,
+            temp_diff_description: data.temp_diff_description,
             air_temp_value: data.air_temp_value,
             sea_temp_value: data.sea_temp_value,
             wind_speed_value: data.wind_speed_value,
@@ -190,10 +190,12 @@ export async function processWeatherData(weatherData, marineData, correctionMode
             suck_effect_score_value: data.suck_effect_score_value,
             predicted_wind_knots: data.predicted_wind_knots,
             predicted_wind_ms: data.predicted_wind_ms,
-            pKnots_min: data.pKnots_min, // Ensure raw data is saved
+            pKnots_min: data.pKnots_min,
             pKnots_max: data.pKnots_max,
             pMs_min: data.pMs_min,
             pMs_max: data.pMs_max,
+            avgPredictedKnots: windPrediction.avgPredictedKnots, // Corrected value
+            rawAvgPredictedKnots: windPrediction.rawAvgPredictedKnots, // Raw value
             waterTemp: data.sea_temp_value
         });
     }

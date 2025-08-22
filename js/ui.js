@@ -181,7 +181,8 @@ export async function displayResults(analysisResults) {
             pKnots_max: result.pKnots_max,
             pMs_min: result.pKnots_min * 0.514444,
             pMs_max: result.pKnots_max * 0.514444,
-            avgPredictedKnots: (result.pKnots_min + result.pKnots_max) / 2,
+            avgPredictedKnots: result.avgPredictedKnots, // Corrected prediction
+            rawAvgPredictedKnots: result.rawAvgPredictedKnots, // Raw prediction
 
             // Cloud
             cloud_cover_value: result.cloud_cover_value,
