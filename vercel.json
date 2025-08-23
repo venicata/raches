@@ -1,12 +1,12 @@
 {
   "crons": [
     {
-      "path": "/api/process-max-wind",
-      "schedule": "0 20 * * *"
+      "path": "/?load-remotely",
+      "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/calculate-correction-model",
-      "schedule": "5 20 * * *"
+      "path": "/api/run-nightly-tasks",
+      "schedule": "0 20 * * *"
     }
   ]
 }
