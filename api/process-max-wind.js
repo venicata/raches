@@ -60,7 +60,7 @@ function findMaxWindForEachDay(observations) {
     }, {});
 
     const dailyMaxRecords = Object.values(dailyObservations).map(dayObs => {
-        return dayObs.reduce((max, current) => 
+        return dayObs.reduce((max, current) =>
             (current.windSpeedKnots > max.windSpeedKnots) ? current : max,
             dayObs[0]
         );
@@ -111,16 +111,16 @@ async function saveRecordsToDatabase(records) {
 export async function processMaxWind() {
     const observations = await fetchHistoricalData();
     console.log(`Successfully fetched ${observations.length} records.`);
-    
+
     const maxWindRecords = findMaxWindForEachDay(observations);
-    
+
     if (maxWindRecords.length > 0) {
         console.log(`Found max wind records for ${maxWindRecords.length} days.`);
         const result = await saveRecordsToDatabase(maxWindRecords);
-        return { 
-            success: true, 
-            message: `Processing finished. ${result.savedCount} records were updated.`, 
-            data: maxWindRecords 
+        return {
+            success: true,
+            message: `Processing finished. ${result.savedCount} records were updated.`,
+            data: maxWindRecords
         };
     } else {
         console.log('No records found for processing.');
