@@ -102,10 +102,10 @@ export function getCloudCoverScore(cloudCover) {
     if (cloudCover <= 10) return { score: 4.5, icon: '✅' };
     if (cloudCover <= 15) return { score: 4, icon: '✅' };
     if (cloudCover <= 20) return { score: 4, icon: '✅' };
-    if (cloudCover <= 30) return { score: 3.5, icon: '✅' }; 
+    if (cloudCover <= 30) return { score: 3.5, icon: '✅' };
     if (cloudCover <= 40) return { score: 3, icon: '⚠️' };
     if (cloudCover <= 50) return { score: 2, icon: '⚠️' };
-    if (cloudCover <= 60) return { score: 1, icon: '⚠️' }; 
+    if (cloudCover <= 60) return { score: 1, icon: '⚠️' };
     if (cloudCover <= 70) return { score: 0, icon: '❌' };
     if (cloudCover <= 80) return { score: -1, icon: '❌' };
     if (cloudCover <= 90) return { score: -1.5, icon: '❌' };
