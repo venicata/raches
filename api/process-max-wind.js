@@ -106,35 +106,37 @@ async function saveRecordsToDatabase(records) {
 }
 
 /**
- * Основен handler за Vercel Serverless Function.
+ * Core logic for processing max wind data.
+ */
+export async function processMaxWind() {
+    const observations = await fetchHistoricalData();
+    console.log(`Successfully fetched ${observations.length} records.`);
+    
+    const maxWindRecords = findMaxWindForEachDay(observations);
+    
+    if (maxWindRecords.length > 0) {
+        console.log(`Found max wind records for ${maxWindRecords.length} days.`);
+        const result = await saveRecordsToDatabase(maxWindRecords);
+        return { 
+            success: true, 
+            message: `Processing finished. ${result.savedCount} records were updated.`, 
+            data: maxWindRecords 
+        };
+    } else {
+        console.log('No records found for processing.');
+        return { success: true, message: 'No new records found.' };
+    }
+}
+
+/**
+ * Vercel Serverless Function handler.
  */
 export default async function handler(request, response) {
-    // По желание: Добавете проверка за сигурност, за да сте сигурни, че заявката идва от Vercel Cron
-    // if (request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
-    //     return response.status(401).json({ error: 'Unauthorized' });
-    // }
-
     try {
-        const observations = await fetchHistoricalData();
-        console.log(`Успешно изтеглени ${observations.length} записа.`);
-        
-        const maxWindRecords = findMaxWindForEachDay(observations);
-        
-        if (maxWindRecords.length > 0) {
-            console.log(`Намерени са записи с максимален вятър за ${maxWindRecords.length} дни.`);
-            const result = await saveRecordsToDatabase(maxWindRecords);
-            return response.status(200).json({ 
-                success: true, 
-                message: `Обработката завърши. ${result.savedCount} записа бяха обновени.`, 
-                data: maxWindRecords 
-            });
-        } else {
-            console.log('Няма намерени записи за обработка.');
-            return response.status(200).json({ success: true, message: 'Няма намерени записи.' });
-        }
-
+        const result = await processMaxWind();
+        return response.status(200).json(result);
     } catch (error) {
-        console.error('Възникна грешка в крон джоба:', error);
-        return response.status(500).json({ success: false, message: 'Вътрешна сървърна грешка', error: error.message });
+        console.error('Error in process-max-wind cron job:', error);
+        return response.status(500).json({ success: false, message: 'Internal Server Error', error: error.message });
     }
 }
