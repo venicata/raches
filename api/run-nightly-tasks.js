@@ -1,14 +1,19 @@
 // File: /api/run-nightly-tasks.js
 // This script orchestrates the nightly cron jobs for processing wind data and recalculating the model.
 
+import dotenv from 'dotenv';
+import path from 'path';
+
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+
 import { processMaxWind } from './process-max-wind.js';
 import { calculateCorrectionModel } from './calculate-correction-model.js';
 
 export default async function handler(request, response) {
     // Optional: Add security check for Vercel Cron
-    // if (request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
-    //     return response.status(401).json({ error: 'Unauthorized' });
-    // }
+    if (request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
+        return response.status(401).json({ error: 'Unauthorized' });
+    }
 
     console.log('Starting nightly tasks...');
     const results = {};
@@ -27,17 +32,17 @@ export default async function handler(request, response) {
         console.log('calculateCorrectionModel finished.');
 
         console.log('Nightly tasks completed successfully.');
-        return response.status(200).json({ 
-            success: true, 
+        return response.status(200).json({
+            success: true,
             message: 'All nightly tasks completed successfully.',
-            results 
+            results
         });
 
     } catch (error) {
         console.error('An error occurred during nightly tasks:', error);
-        return response.status(500).json({ 
-            success: false, 
-            message: 'An error occurred during the execution of nightly tasks.', 
+        return response.status(500).json({
+            success: false,
+            message: 'An error occurred during the execution of nightly tasks.',
             error: error.message,
             results // Return partial results if any
         });

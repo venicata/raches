@@ -18,7 +18,7 @@ export default async function handler(request, response) {
         const pipeline = redis.pipeline();
         pipeline.get(HISTORY_KEY);
         pipeline.get(MAX_WIND_HISTORY_KEY);
-        
+
         const [historyResult, maxWindHistoryResult] = await pipeline.exec();
 
         // Process forecast history

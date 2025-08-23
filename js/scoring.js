@@ -117,7 +117,7 @@ export async function processWeatherData(weatherData, marineData, correctionMode
         const tempDiffResult = getTempDiffScore(tempDiff);
         score += tempDiffResult.score;
         data.temp_diff_score = tempDiffResult.score;
-                data.temp_diff_description = T[tempDiffResult.textKey] || tempDiffResult.textKey;
+        data.temp_diff_description = T[tempDiffResult.textKey] || tempDiffResult.textKey;
 
         data.wind_speed_value = data.wind_speed_10m_max;
         const windSpeedResult = getWindSpeedScore(data.wind_speed_value);
@@ -128,8 +128,8 @@ export async function processWeatherData(weatherData, marineData, correctionMode
         // Calculate and set wind direction
         const afternoonDir = calculateAfternoonWindDirection(weatherData, date);
         data.wind_direction_value = afternoonDir !== null ? afternoonDir : Math.round(data.wind_direction_10m_dominant);
-        
-                const windDirectionResult = getWindDirectionScore(data.wind_direction_value, T);
+
+        const windDirectionResult = getWindDirectionScore(data.wind_direction_value, T);
         score += windDirectionResult.score;
         data.wind_direction_score = windDirectionResult.score;
         data.wind_direction_description = windDirectionResult.description;
