@@ -2,7 +2,7 @@ import { translations } from './translations.js';
 import { triggerModelCalculation } from './api.js';
 import { state } from './state.js';
 import { renderHistoricalChart } from './chart.js';
-import { getCloudCoverScore, getTempDiffScore, getWindDirectionScore, getWindDirIcon, getSuckEffectIcon } from './scoring-helpers.js';
+import { getCloudCoverScore, getTempDiffScore, getWindDirectionScore, getWindDirIcon, getSuckEffectIcon, getPressureDropScore, getHumidityScore, getPrecipitationScore } from './scoring-helpers.js';
 import { saveHistoricalEntry } from './api.js';
 
 export function setLanguage(lang) {
@@ -148,6 +148,9 @@ export async function displayResults(analysisResults) {
         const maxWindText = `${result.wind_speed_icon || '❓'} ${T.apiWindSpeedLabel} <b>${windSpeedKnots.toFixed(1)}</b> ${T.knotsUnit} (${windSpeedMs.toFixed(1)} ${T.msUnit}) (${result.wind_speed_score > 0 ? '+' : ''}${result.wind_speed_score} ${pointSuffix})`;
         const windDirText = `<div class="wind-direction-container">${getWindDirIcon(result.wind_direction_score)} <span class="wind-arrow" style="transform: rotate(${result.wind_direction_value + 180}deg);"></span> ${T.windDirDetail.replace('{value}', result.wind_direction_value).replace('{description}', result.wind_direction_description)} (${result.wind_direction_score > 0 ? '+' : ''}${result.wind_direction_score} ${pointSuffix})</div>`;
         const suckEffectText = `${getSuckEffectIcon(result.suck_effect_score_value)} ${T.suckEffectLabel} ${result.suck_effect_score_value}/3 (${result.suck_effect_score_value > 0 ? '+' : ''}${result.suck_effect_score_value} ${pointSuffix})`;
+        const pressureDropText = `${getPressureDropScore(result.pressure_drop_value).icon} ${T.pressureDropLabel} ${result.pressure_drop_value} hPa (${result.pressure_drop_score > 0 ? '+' : ''}${result.pressure_drop_score} ${pointSuffix})`;
+        const humidityText = `${getHumidityScore(result.humidity_value).icon} ${T.humidityLabel} ${result.humidity_value}% (${result.humidity_score > 0 ? '+' : ''}${result.humidity_score} ${pointSuffix})`;
+        const precipitationText = `${getPrecipitationScore(result.precipitation_probability_value).icon} ${T.precipitationLabel} ${result.precipitation_probability_value}% (${result.precipitation_probability_score > 0 ? '+' : ''}${result.precipitation_probability_score} ${pointSuffix})`;
 
         // --- Assemble the card's HTML ---
         let weatherInfoHtml = `
@@ -157,11 +160,14 @@ export async function displayResults(analysisResults) {
             <p>${predictedWindText}</p>
             <h4>${T.detailsLabel}</h4>
             <ul>
-                <li>${cloudCoverText}</li>
-                <li>${tempDiffText}</li>
-                <li>${maxWindText}</li>
-                <li>${windDirText}</li>
-                <li>${suckEffectText}</li>
+                <li title="${T.criteria1Title} - ${T.criteria1Desc}">${cloudCoverText}</li>
+                <li title="${T.criteria2Title} - ${T.criteria2Desc}">${tempDiffText}</li>
+                <li title="${T.criteria3Title} - ${T.criteria3Desc}">${maxWindText}</li>
+                <li title="${T.criteria4Title} - ${T.criteria4Desc}">${windDirText}</li>
+                <li title="${T.criteria5Title} - ${T.criteria5Desc}">${suckEffectText}</li>
+                <li title="${T.criteria6Title} - ${T.criteria6Desc}">${pressureDropText}</li>
+                <li title="${T.criteria7Title} - ${T.criteria7Desc}">${humidityText}</li>
+                <li title="${T.criteria8Title} - ${T.criteria8Desc}">${precipitationText}</li>
             </ul>
         `;
         if (result.waterTemp !== undefined && result.waterTemp !== null) {
@@ -206,6 +212,14 @@ export async function displayResults(analysisResults) {
 
             // Suck Effect
             suck_effect_score_value: result.suck_effect_score_value,
+
+            // New Params (ensuring they are numbers)
+            pressure_drop_value: parseFloat(result.pressure_drop_value),
+            pressure_drop_score: parseFloat(result.pressure_drop_score),
+            humidity_value: parseFloat(result.humidity_value),
+            humidity_score: parseFloat(result.humidity_score),
+            precipitation_probability_value: parseFloat(result.precipitation_probability_value),
+            precipitation_probability_score: parseFloat(result.precipitation_probability_score),
             
             // Water Temp
             waterTemp: result.waterTemp
@@ -277,6 +291,9 @@ function displayScoringLegend(T) {
             <li>${T.legendWindSpeed}</li>
             <li>${T.legendWindDir}</li>
             <li>${T.legendSuckEffect}</li>
+            <li>${T.legendPressureDrop}</li>
+            <li>${T.legendHumidity}</li>
+            <li>${T.legendPrecipitation}</li>
         </ul>
     `;
 

@@ -141,11 +141,16 @@ export async function renderHistoricalChart() {
                             tooltipLines.push(`${entry.cloud_cover_value > 30 ? '⚠️' : '✅'} ${T.cloudCoverLabel} ${entry.cloud_cover_value}% (${entry.cloud_cover_score > 0 ? '+' : ''}${entry.cloud_cover_score} ${pointSuffix})`);
 
                             // 4. Temp Difference
-                            const tempDiffDescriptionText = T[entry.temp_diff_description_key] || entry.temp_diff_description_key;
+                            const tempDiffDescriptionText = T[entry.temp_diff_description_key] || entry.temp_diff_description_key || '';
                             const tempDiffValueText = typeof entry.temp_diff_value === 'number' ? entry.temp_diff_value.toFixed(1) : 'N/A';
                             const airTempValueText = typeof entry.air_temp_value === 'number' ? entry.air_temp_value.toFixed(1) : 'N/A';
                             const seaTempValueText = typeof entry.sea_temp_value === 'number' ? entry.sea_temp_value.toFixed(1) : 'N/A';
-                            tooltipLines.push(`${entry.temp_diff_value >= 6 ? '✅' : '⚠️'} ${T.tempDiffDetailGraph.replace('{description}', tempDiffDescriptionText).replace('{value}', tempDiffValueText).replace('{landTemp}', airTempValueText).replace('{seaTemp}', seaTempValueText)} (${entry.temp_diff_score > 0 ? '+' : ''}${entry.temp_diff_score} ${pointSuffix})`);
+                            const tempDiffText = T.tempDiffDetailGraph
+                                .replace('{description}', tempDiffDescriptionText)
+                                .replace('{value}', tempDiffValueText)
+                                .replace('{landTemp}', airTempValueText)
+                                .replace('{seaTemp}', seaTempValueText);
+                            tooltipLines.push(`${entry.temp_diff_value >= 6 ? '✅' : '⚠️'} ${tempDiffText} (${entry.temp_diff_score > 0 ? '+' : ''}${entry.temp_diff_score} ${pointSuffix})`);
 
                             // 5. Max Wind Speed API
                             if (typeof entry.wind_speed_value === 'number') {
@@ -162,6 +167,17 @@ export async function renderHistoricalChart() {
                             // 7. Suck Effect
                             const suckEffectDisplay = `${entry.suck_effect_score_value}/3`;
                             tooltipLines.push(`${getSuckEffectIcon(entry.suck_effect_score_value)} ${T.suckEffectLabel} ${suckEffectDisplay} (${entry.suck_effect_score_value > 0 ? '+' : ''}${entry.suck_effect_score_value} ${pointSuffix})`);
+
+                            // New Parameters
+                            if (entry.pressure_drop_value != null) {
+                                tooltipLines.push(`${entry.pressure_drop_score >= 1 ? '✅' : '⚠️'} ${T.pressureDropLabel} ${entry.pressure_drop_value.toFixed(1)} hPa (${entry.pressure_drop_score > 0 ? '+' : ''}${entry.pressure_drop_score} ${pointSuffix})`);
+                            }
+                            if (entry.humidity_value != null) {
+                                tooltipLines.push(`${entry.humidity_score >= 0 ? '✅' : '⚠️'} ${T.humidityLabel} ${entry.humidity_value.toFixed(0)}% (${entry.humidity_score > 0 ? '+' : ''}${entry.humidity_score} ${pointSuffix})`);
+                            }
+                            if (entry.precipitation_probability_value != null) {
+                                tooltipLines.push(`${entry.precipitation_probability_score > 0 ? '✅' : '⚠️'} ${T.precipitationLabel} ${entry.precipitation_probability_value}% (${entry.precipitation_probability_score > 0 ? '+' : ''}${entry.precipitation_probability_score} ${pointSuffix})`);
+                            }
 
                             // 8. Water Temp
                             if (entry.waterTemp !== undefined && entry.waterTemp !== null) {
