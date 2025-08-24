@@ -21,11 +21,11 @@ export function parsePredictedWindRange(rangeString) {
         ms.min = parseFloat(msMatch[1]);
         ms.max = parseFloat(msMatch[2]);
     }
-    
+
     return {
         knots: knots,
         ms: ms,
-        text: rangeString 
+        text: rangeString
     };
 }
 
@@ -77,17 +77,23 @@ function predictWindSpeedWithModel(scores, model) {
     const features = [
         scores.cloud_cover_score,
         scores.temp_diff_score,
-        scores.wind_speed_score, // Възстановен параметър
+        scores.wind_speed_score,
         scores.wind_direction_score,
-        scores.suck_effect_score_value
+        scores.suck_effect_score_value,
+        scores.pressure_drop_score, // New
+        scores.humidity_score, // New
+        scores.precipitation_probability_score // New
     ];
 
     let correction = (coeffs.intercept || 0) +
-                       (coeffs.cloud_cover || 0) * features[0] +
-                       (coeffs.temp_diff || 0) * features[1] +
-                       (coeffs.wind_speed || 0) * features[2] +
-                       (coeffs.wind_direction || 0) * features[3] +
-                       (coeffs.suck_effect || 0) * features[4];
+        (coeffs.cloud_cover || 0) * features[0] +
+        (coeffs.temp_diff || 0) * features[1] +
+        (coeffs.wind_speed || 0) * features[2] +
+        (coeffs.wind_direction || 0) * features[3] +
+        (coeffs.suck_effect || 0) * features[4] +
+        (coeffs.pressure_drop || 0) * features[5] + // New
+        (coeffs.humidity || 0) * features[6] + // New
+        (coeffs.precipitation || 0) * features[7]; // New
 
     // Clamp the correction to a reasonable range (e.g., +/- 5 knots) to prevent extreme adjustments
     const MAX_CORRECTION = 4;
