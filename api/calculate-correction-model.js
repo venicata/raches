@@ -10,7 +10,7 @@ math.config({
 
 const FORECAST_HISTORY_KEY = 'rachesForecastHistory';
 const REAL_WIND_HISTORY_KEY = 'max_wind_history';
-const MODEL_KEY = 'prediction_model_v4'; // New model key to avoid conflicts
+const MODEL_KEY = 'prediction_model_v5'; // New model key to avoid conflicts
 
 /**
  * Core logic for calculating the correction model.
@@ -51,7 +51,10 @@ export async function calculateCorrectionModel() {
                 forecast.temp_diff_score,
                 forecast.wind_speed_score,
                 forecast.wind_direction_score,
-                forecast.suck_effect_score_value
+                forecast.suck_effect_score_value,
+                forecast.pressure_drop_score,
+                forecast.humidity_score,
+                forecast.precipitation_probability_score
             ].map(v => (typeof v === 'number' ? v : 0));
 
             const predictedKnots = forecast.rawAvgPredictedKnots || forecast.avgPredictedKnots;
@@ -61,7 +64,7 @@ export async function calculateCorrectionModel() {
         }
     });
 
-    const NUM_FEATURES = 5;
+    const NUM_FEATURES = 8;
     if (trainingData.length < NUM_FEATURES + 1) {
         return { success: true, message: `Not enough matching data points. Need at least ${NUM_FEATURES + 1}, but have ${trainingData.length}.` };
     }
@@ -89,7 +92,7 @@ export async function calculateCorrectionModel() {
 
     // 5. Save the trained model
     const model = {
-        version: '4.0-linear-regression',
+        version: '5.0-linear-regression',
         lastUpdated: new Date().toISOString(),
         coefficients: {
             intercept: coefficients[0],
@@ -98,6 +101,9 @@ export async function calculateCorrectionModel() {
             wind_speed: coefficients[3],
             wind_direction: coefficients[4],
             suck_effect: coefficients[5],
+            pressure_drop: coefficients[6],
+            humidity: coefficients[7],
+            precipitation: coefficients[8],
         },
         recordsAnalyzed: trainingData.length
     };

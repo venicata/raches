@@ -1,7 +1,7 @@
 import { Redis } from '@upstash/redis';
 
 const redis = Redis.fromEnv();
-const MODEL_KEY = 'prediction_model_v4';
+const MODEL_KEY = 'prediction_model_v5';
 
 export default async function handler(request, response) {
     if (request.method !== 'GET') {

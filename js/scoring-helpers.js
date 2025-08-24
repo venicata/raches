@@ -123,3 +123,42 @@ export function getTempDiffScore(tempDiff) {
     if (tempDiff >= 1) return { score: 1.25, icon: '❌', textKey: 'tempDiffLow' };        // 0 * 1.5 remains 0
     return { score: -1.5, icon: '❌', textKey: 'tempDiffVeryLow' }; // -1 * 1.5
 }
+
+/**
+ * Scores the pressure drop between morning and afternoon.
+ * A larger drop indicates a stronger thermal effect.
+ * @param {number} pressureDrop - The difference in hPa.
+ * @returns {object} { score, icon }
+ */
+export function getPressureDropScore(pressureDrop) {
+    if (pressureDrop >= 4) return { score: 3, icon: '✅' };    // Strong thermal effect
+    if (pressureDrop >= 2) return { score: 1.5, icon: '✅' };  // Moderate thermal effect
+    if (pressureDrop >= 0) return { score: 0, icon: '⚠️' };   // Weak or no effect
+    return { score: -2, icon: '❌' }; // Negative effect (e.g., frontal system)
+}
+
+/**
+ * Scores the average afternoon humidity.
+ * Lower humidity allows for faster heating of the land.
+ * @param {number} humidity - Average afternoon humidity in %.
+ * @returns {object} { score, icon }
+ */
+export function getHumidityScore(humidity) {
+    if (humidity < 40) return { score: 2, icon: '✅' };      // Very dry, good for heating
+    if (humidity < 60) return { score: 1, icon: '✅' };      // Moderately dry
+    if (humidity < 80) return { score: -1, icon: '⚠️' };     // Quite humid, may inhibit heating
+    return { score: -2, icon: '❌' };      // Very humid, bad for thermal
+}
+
+/**
+ * Scores the maximum precipitation probability in the afternoon.
+ * Rain is a thermal killer.
+ * @param {number} probability - Max probability in %.
+ * @returns {object} { score, icon }
+ */
+export function getPrecipitationScore(probability) {
+    if (probability <= 10) return { score: 1, icon: '✅' };   // Very unlikely to rain
+    if (probability <= 30) return { score: 0, icon: '⚠️' };   // Low chance
+    if (probability <= 50) return { score: -2, icon: '❌' };  // Possible rain, concerning
+    return { score: -4, icon: '❌' };  // High chance of rain, very bad
+}
