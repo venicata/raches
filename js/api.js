@@ -152,3 +152,19 @@ export async function saveHistoricalEntry(entry) {
         console.error("Error sending historical entry to API:", error);
     }
 }
+
+export async function triggerNightlyTasks() {
+    try {
+        const response = await fetch('/api/run-nightly-tasks', {
+            method: 'GET'
+        });
+        const responseData = await response.json();
+        if (!response.ok) {
+            throw new Error(responseData.error || `HTTP error! status: ${response.status}`);
+        }
+        return responseData;
+    } catch (error) {
+        console.error("Error triggering nightly tasks:", error);
+        throw error;
+    }
+}
