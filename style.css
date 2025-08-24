@@ -401,7 +401,7 @@ footer a {
 
     body {
         padding: 0px;
-        max-width: 100%;
+        max-width: calc(100% - 16px);
         overflow-x: hidden;
     }
 
