@@ -6,192 +6,100 @@ https://raches.vercel.app/
 
 ## 🎯 About the Project
 
-5 Criteria by which the script evaluates the wind forecast
+**Raches Thermal Wind Forecaster** is a web application that provides a specialized forecast for the thermal wind in Raches, Greece – a popular destination for kitesurfing and windsurfing. The goal is to give riders a more accurate and easy-to-understand forecast by analyzing key meteorological factors that influence the local thermal wind.
 
-In Raches, the thermal wind intensifies when the following 5 conditions are present simultaneously:
+The forecast is based on **8 key criteria** for thermal wind intensification:
 
-✅ 1. Sunny and clear sky (no clouds until noon)
-
-➡️ Windy: enable the Clouds layer → look for very few clouds before 13:00.
-Why? The sun needs to warm the land to create a temperature difference between land and sea.
-
----
-
-✅ 2. Land-sea temperature difference
-
-➡️ Windy: enable the Airgram or Meteogram layer.
-Look for:
-
-Air temperature on land (e.g., 30°C)
-
-Sea temperature (usually 23–25°C)
-
-
-The greater the difference, the stronger the thermal breeze.
-
----
-
-✅ 3. Weak to moderate synoptic circulation from the east or northeast (ENE/NE)
-
-➡️ Windy: enable the Wind layer → observe the arrows in the Raches area
-
-The ideal scenario is 5–10 knots from ENE/NE in the morning (until noon)
-
-This "helps" the thermal wind without suppressing it
-
----
-
-✅ 4. No strong west or south wind
-
-➡️ It is important that there is no wind against the thermal.
-
-Wind from W, SW, S will kill or reverse it.
-
-Avoid days with a forecast for west wind after 15:00.
-
----
-
-✅ 5. Local suction effect (you can "see" it in Windy by the wind accelerating around 14–16h)
-
-➡️ Windy: in the Wind layer, place the cursor on the spot's location (Raches)
-
-If the wind sharply increases after 13:00 (e.g., from 6 to 15 knots), this is THERMAL INTENSIFICATION.
-
-
----------------------------------------------------------------------------
-
-**Raches Thermal Wind Forecaster** is a web application, created with the help of an AI assistant, that provides a specialized forecast for the thermal wind in Raches, Greece – a popular destination for kitesurfing and windsurfing.
-
-The goal of the project is to give riders a more accurate and easy-to-understand forecast by analyzing key meteorological factors that influence the local thermal wind (known as the "suck effect").
+1.  **☀️ Sunny and clear sky:** Allows the sun to heat the land.
+2.  **🌡️ Land-sea temperature difference:** The main driver of the thermal breeze.
+3.  **💨 Weak E/NE synoptic wind:** Helps the thermal without overpowering it.
+4.  **🌬️ No opposing W/S wind:** Winds from the west or south can cancel the thermal effect.
+5.  **⚡ Local suction effect:** A sharp increase in wind speed in the afternoon indicates thermal intensification.
+6.  **📉 Drop in atmospheric pressure:** A drop of 2-3 hPa during the day is a good indicator.
+7.  **💧 Low relative humidity:** Dry air allows the land to heat up more intensely.
+8.  **🌧️ No precipitation:** Rain cools the ground and stops the thermal effect.
 
 ## ✨ Main Features
 
-*   **Period Selection:** Ability to select a single date or a period for analysis.
-*   **Complex Analysis:** The application analyzes 5 key factors:
-    1.  **Cloud Cover:** Fewer clouds mean stronger sun and a greater thermal effect.
-    2.  **Temperature Difference (land-sea):** The main driver of thermal wind.
-    3.  **Base Wind Speed:** Data from the global model.
-    4.  **Wind Direction:** Assessment of whether the direction is suitable for the spot.
-    5.  **"Suck" Effect:** Assessment of the potential for thermal wind.
-*   **Calibrated Wind Forecast:** Predicts a wind speed range in **knots**, calibrated according to real observations for the spot (target: 18-24 knots on good days).
-*   **Visual Indicators:** Each forecast is accompanied by icons (✅, ⚠️, ❌) that provide a quick visual assessment of the conditions.
-*   **Clear and Modern Design:** Results are presented in easy-to-read "cards," one for each day, with a stylized design for better clarity.
+*   **8-Factor Analysis:** The application analyzes 8 key meteorological factors for a comprehensive forecast.
+*   **Self-Correcting AI Model:** Uses historical forecast data and real wind observations to continuously calibrate its prediction model, improving accuracy over time.
+*   **Historical Data Chart:** Visualizes past forecasts against real wind data, helping to track model performance.
+*   **Interactive UI:**
+    *   Detailed explanations for each scoring criterion are available on hover (tooltips).
+    *   A modal window explains the criteria for thermal wind.
+*   **Visual Indicators:** Each forecast is accompanied by icons (✅, ⚠️, ❌) for a quick visual assessment.
+*   **Bilingual Interface:** Available in English and Bulgarian.
 
 ## 🛠️ Technologies
 
-*   **Frontend:** HTML5, CSS3, JavaScript (Vanilla)
+*   **Frontend:** HTML5, CSS3, Vanilla JavaScript
+*   **Backend:** Node.js Serverless Functions
+*   **Database:** Upstash Redis (for storing the AI correction model)
+*   **Deployment:** Vercel
 *   **Libraries:**
-    *   [Flatpickr.js](https://flatpickr.js.org/) - for the calendar and date selection.
-*   **API:**
-    *   [Open-Meteo API](https://open-meteo.com/) - for meteorological and marine data.
+    *   [Flatpickr.js](https://flatpickr.js.org/) - for the calendar.
+    *   [Chart.js](https://www.chartjs.org/) - for the historical data chart.
+*   **APIs:**
+    *   [Open-Meteo API](https://open-meteo.com/) - for meteorological data.
 
 ## 🚀 How to use?
 
-1.  Open the `index.html` file in your web browser.
-2.  Use the calendar to select a date (double-click) or a date range.
+1.  Visit the live site: [raches.vercel.app](https://raches.vercel.app/)
+2.  Use the calendar to select a date or a date range.
 3.  Press the **"Analyze"** button.
 4.  Review the detailed forecast for each selected day.
 
 ## 💡 How does it work?
 
-The script (`script.js`) sends requests to two Open-Meteo API endpoints (`forecast` and `marine`) to collect data on air temperature, cloud cover, wind, and sea water temperature.
+The application fetches weather data from the Open-Meteo API. A set of serverless functions (`/api`) processes this data, applying a scoring system based on the 8 criteria. A machine learning model, stored in Redis, corrects the final wind prediction based on past performance. The results, including a detailed breakdown and a historical chart, are displayed on the frontend.
 
-Then, the `processWeatherData` function processes this data by applying a scoring system to evaluate the five key factors. A final forecast is generated based on the total score.
-
-
+---
 
 ## 🎯 За Проекта
 
-5 Критерия по които скрипта оценява прогнозата за вятъра
+**Raches Thermal Wind Forecaster** е уеб приложение, което предоставя специализирана прогноза за термичния вятър в Рахес, Гърция. Целта е да даде на карачите по-точна и лесна за разбиране прогноза, като анализира ключови метеорологични фактори.
 
-В Рахес термиката се засилва, когато са налице следните 5 условия едновременно:
+Прогнозата се базира на **8 ключови критерия** за засилване на термичния вятър:
 
-✅ 1. Слънчево и ясно небе (без облаци до обяд)
-
-➡️ Windy: включи слоя Clouds → търси много малко облаци преди 13:00.
-Защо? Слънцето трябва да затопли сушата, за да се създаде температурна разлика между суша и море.
-
----
-
-✅ 2. Температурна разлика суша-море
-
-➡️ Windy: включи слоя Airgram или Meteogram.
-Търси:
-
-Температура на въздуха на сушата (примерно 30°C)
-
-Температура на морето (обикновено 23–25°C)
-
-
-Колкото по-голяма е разликата, толкова по-силен е термичният бриз.
-
----
-
-✅ 3. Слаба до умерена синоптична циркулация от изток или североизток (ENE/NE)
-
-➡️ Windy: включи слоя Wind → наблюдавай стрелките в района на Raches
-
-Идеалният сценарий е 5–10 възела от ENE/NE сутринта (до обяд)
-
-Това "помага" на термиката, без да я задушава
-
----
-
-✅ 4. Без силен западен или южен вятър
-
-➡️ Важно е да няма вятър срещу термиката.
-
-Вятър от W, SW, S ще я убие или обърне.
-
-Избягвай дни с прогноза за западен вятър след 15:00.
-
----
-
-✅ 5. Местен ефект на засмукване (можеш да го „видиш“ в Windy по ускоряване на вятъра около 14–16 ч.)
-
-➡️ Windy: в слоя Wind, постави курсора на мястото на спота (Raches)
-
-Ако след 13:00 вятърът рязко се усилва (примерно от 6 на 15 възела), това е ТЕРМИЧНО ЗАСИЛВАНЕ.
-
-
----------------------------------------------------------------------------
-
-**Raches Thermal Wind Forecaster** е уеб приложение, създадено с помощта на AI асистент, което предоставя специализирана прогноза за термичния вятър в Рахес, Гърция – популярна дестинация за кайтсърф и уиндсърф.
-
-Целта на проекта е да даде на карачите по-точна и лесна за разбиране прогноза, като анализира ключови метеорологични фактори, които влияят на локалния термичен вятър (известен като "suck effect").
+1.  **☀️ Слънчево и ясно небе:** Позволява на слънцето да нагрее сушата.
+2.  **🌡️ Температурна разлика суша-море:** Основният двигател на термичния бриз.
+3.  **💨 Слаб източен/североизточен синоптичен вятър:** Подпомага термиката, без да я надделява.
+4.  **🌬️ Липса на противоположен западен/южен вятър:** Ветрове от запад или юг могат да неутрализират термичния ефект.
+5.  **⚡ Местен ефект на засмукване:** Рязкото усилване на вятъра следобед е индикатор за термично засилване.
+6.  **📉 Спад в атмосферното налягане:** Спад от 2-3 hPa през деня е добър индикатор.
+7.  **💧 Ниска относителна влажност:** Сухият въздух позволява на сушата да се нагрее по-интензивно.
+8.  **🌧️ Липса на валежи:** Дъждът охлажда земята и спира термичния ефект.
 
 ## ✨ Основни Функционалности
 
-*   **Избор на период:** Възможност за избор на единична дата или период за анализ.
-*   **Комплексен анализ:** Приложението анализира 5 ключови фактора:
-    1.  **Облачност:** По-малко облаци означават по-силно слънце и по-голям термичен ефект.
-    2.  **Температурна разлика (суша-море):** Основен двигател на термичния вятър.
-    3.  **Базова скорост на вятъра:** Данни от глобалния модел.
-    4.  **Посока на вятъра:** Оценка дали посоката е подходяща за спота.
-    5.  **"Suck" ефект:** Оценка на потенциала за термичен вятър.
-*   **Калибрирана прогноза за вятъра:** Прогнозира диапазон на скоростта на вятъра в **възли**, калибриран според реалните наблюдения за спота (цел: 18-24 възела в добрите дни).
-*   **Визуални индикатори:** Всяка прогноза е придружена от икони (✅, ⚠️, ❌), които дават бърза визуална оценка на условията.
-*   **Ясен и модерен дизайн:** Резултатите са представени в лесни за четене "карти", по една за всеки ден, със стилизиран дизайн за по-добра прегледност.
+*   **Анализ по 8 фактора:** Приложението анализира 8 ключови метеорологични фактора за пълна прогноза.
+*   **Самокоригиращ се AI модел:** Използва исторически данни от прогнози и реални наблюдения на вятъра, за да калибрира непрекъснато своя модел за прогнозиране, подобрявайки точността с времето.
+*   **Графика с исторически данни:** Визуализира минали прогнози спрямо реални данни за вятъра, помагайки за проследяване на ефективността на модела.
+*   **Интерактивен интерфейс:**
+    *   Подробни обяснения за всеки критерий за точкуване са достъпни при посочване с мишката (tooltips).
+    *   Модален прозорец обяснява критериите за термичен вятър.
+*   **Визуални индикатори:** Всяка прогноза е придружена от икони (✅, ⚠️, ❌) за бърза визуална оценка.
+*   **Двуезичен интерфейс:** Наличен на английски и български език.
 
 ## 🛠️ Технологии
 
-*   **Frontend:** HTML5, CSS3, JavaScript (Vanilla)
+*   **Frontend:** HTML5, CSS3, Vanilla JavaScript
+*   **Backend:** Node.js Serverless Functions
+*   **База данни:** Upstash Redis (за съхранение на AI корекционния модел)
+*   **Deployment:** Vercel
 *   **Библиотеки:**
-    *   [Flatpickr.js](https://flatpickr.js.org/) - за календара и избор на дати.
+    *   [Flatpickr.js](https://flatpickr.js.org/) - за календара.
+    *   [Chart.js](https://www.chartjs.org/) - за графиката с исторически данни.
 *   **API:**
-    *   [Open-Meteo API](https://open-meteo.com/) - за метеорологични и морски данни.
+    *   [Open-Meteo API](https://open-meteo.com/) - за метеорологични данни.
 
 ## 🚀 Как да използвам?
 
-1.  Отворете файла `index.html` във вашия уеб браузър.
-2.  Използвайте календара, за да изберете дата (кликнете два пъти) или период от дати.
+1.  Посетете сайта: [raches.vercel.app](https://raches.vercel.app/)
+2.  Използвайте календара, за да изберете дата или период.
 3.  Натиснете бутона **"Анализирай"**.
 4.  Разгледайте детайлната прогноза за всеки избран ден.
 
 ## 💡 Как работи?
 
-Скриптът (`script.js`) изпраща заявки до два endpoint-а на Open-Meteo API (`forecast` и `marine`), за да събере данни за температура на въздуха, облачност, вятър и температура на морската вода.
-
-След това, функцията `processWeatherData` обработва тези данни, като прилага точкова система за оценка на петте ключови фактора. На база на общия брой точки се генерира финална прогноза.
-
-Функцията `predictWindSpeedRange` използва базовия вятър от API-то и го надгражда със стойности, базирани на силата на "suck" ефекта, за да даде по-реалистична прогноза за силата на вятъра в Рахес.
+Приложението извлича метеорологични данни от Open-Meteo API. Набор от serverless функции (`/api`) обработва тези данни, като прилага точкова система, базирана на 8-те критерия. Модел за машинно обучение, съхранен в Redis, коригира финалната прогноза за вятъра на базата на минали резултати. Резултатите, включително подробна разбивка и историческа графика, се показват на фронтенда.
