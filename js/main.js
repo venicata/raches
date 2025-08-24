@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     state.datePicker = flatpickr("#date-picker", {
         mode: "range",
         dateFormat: "Y-m-d",
-        minDate: "today",
+        minDate: new Date().fp_incr(-1), // Allow selecting yesterday
         maxDate: new Date().fp_incr(15) // Allows forecast up to 16 days ahead
     });
 
@@ -32,14 +32,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     fetchAndAnalyze(initialStartDate, initialEndDate);
 
     const analyzeBtn = document.getElementById('analyze-btn');
-    
+
     state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderDefault}</p>`;
 
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('admin') === 'true') {
         document.querySelectorAll('.private-controls').forEach(el => el.classList.remove('private-controls'));
     }
-    
+
     analyzeBtn.addEventListener('click', () => {
         const selectedDates = state.datePicker.selectedDates;
         if (selectedDates.length < 2) {
@@ -50,10 +50,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
         }
-        
+
         const startDate = formatDate(state.datePicker.selectedDates[0]);
         const endDate = formatDate(state.datePicker.selectedDates[1]);
-        
+
         fetchAndAnalyze(startDate, endDate);
     });
 
@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     syncBtn.addEventListener('click', async () => {
         const T = translations[state.currentLang];
         const originalText = T.syncBtn || 'Сравни с реални данни';
-        
+
         syncBtn.textContent = T.syncing || 'Синхронизиране...';
         syncBtn.disabled = true;
 
