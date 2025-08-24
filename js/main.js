@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { translations } from './translations.js';
 import { setLanguage, displayResults, initModal, initRecalibrateButton } from './ui.js';
-import { fetchAndAnalyze, formatDate, triggerRealDataSync, fetchAndDisplayRealWind } from './api.js';
+import { fetchAndAnalyze, formatDate, triggerRealDataSync, fetchAndDisplayRealWind, triggerNightlyTasks } from './api.js';
 import { renderHistoricalChart } from './chart.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -116,7 +116,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    const refreshBtn = document.getElementById('refreshBtn');
+    refreshBtn.addEventListener('click', async () => {
+        const statusSpan = document.getElementById('recalibrateStatus');
+        statusSpan.textContent = 'Refreshing data...';
+        refreshBtn.disabled = true;
 
+        try {
+            const result = await triggerNightlyTasks();
+            statusSpan.textContent = result.message || 'Data refreshed successfully!';
+            alert('Success: ' + (result.message || 'Data refreshed successfully!'));
+        } catch (error) {
+            console.error('Failed to refresh data:', error);
+            statusSpan.textContent = `Error: ${error.message}`;
+            alert(`Error: ${error.message}`);
+        } finally {
+            refreshBtn.disabled = false;
+        }
+    });
 });
 
 

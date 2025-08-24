@@ -10,10 +10,10 @@ import { processMaxWind } from './process-max-wind.js';
 import { calculateCorrectionModel } from './calculate-correction-model.js';
 
 export default async function handler(request, response) {
-    // Optional: Add security check for Vercel Cron
-    if (request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
-        return response.status(401).json({ error: 'Unauthorized' });
-    }
+    // Security check for Vercel Cron is disabled for manual triggering.
+    // if (request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
+    //     return response.status(401).json({ error: 'Unauthorized' });
+    // }
 
     console.log('Starting nightly tasks...');
     const results = {};
