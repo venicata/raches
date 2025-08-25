@@ -87,8 +87,16 @@ export function renderRealWindChart() {
         });
 
     } else { // Daily view
-        labels = state.realWindHistory.map(d => new Date(d.timestamp).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { month: 'short', day: 'numeric' }));
-        realWindData = state.realWindHistory.map(d => d.windSpeedKnots);
+        let dataToRender = state.realWindHistory;
+        // On mobile (screen width < 768px), show only the last 30 days
+        if (window.innerWidth < 768) {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            dataToRender = state.realWindHistory.filter(d => new Date(d.timestamp) >= thirtyDaysAgo);
+        }
+
+        labels = dataToRender.map(d => new Date(d.timestamp).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { month: 'short', day: 'numeric' }));
+        realWindData = dataToRender.map(d => d.windSpeedKnots);
     }
 
     const ctx = chartCanvas.getContext('2d');
@@ -128,8 +136,6 @@ export function renderRealWindChart() {
 export function renderHistoricalChart() {
     const historicalData = state.historicalForecastData || [];
     const realWindHistory = state.realWindHistory || [];
-
-    console.error(historicalData, realWindHistory);
 
     const realWindMap = new Map(realWindHistory.map(r => [r.timestamp.split('T')[0], r]));
 
@@ -218,10 +224,18 @@ export function renderHistoricalChart() {
         });
 
     } else { // Daily view
-        labels = historicalData.map(d => new Date(d.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { month: 'short', day: 'numeric' }));
-        forecastData = historicalData.map(d => d.avgPredictedKnots);
-        avgMsData = historicalData.map(d => d.avgPredictedMs);
-        realWindComparisonData = historicalData.map(d => d.realWind ? d.realWind.windSpeedKnots : null);
+        let dataToRender = historicalData;
+        // On mobile (screen width < 768px), show only the last 30 days
+        if (window.innerWidth < 768) {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            dataToRender = historicalData.filter(d => new Date(d.date) >= thirtyDaysAgo);
+        }
+
+        labels = dataToRender.map(d => new Date(d.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { month: 'short', day: 'numeric' }));
+        forecastData = dataToRender.map(d => d.avgPredictedKnots);
+        avgMsData = dataToRender.map(d => d.avgPredictedMs);
+        realWindComparisonData = dataToRender.map(d => d.realWind ? d.realWind.windSpeedKnots : null);
     }
 
     const chartData = {
