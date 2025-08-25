@@ -44,14 +44,37 @@ export async function trainAndSavePeakTimeModel() {
         }
     }
 
-    // 3. Calculate the average peak hour for each month
+    // 3. Calculate the average peak hour for each month, filtering outliers
     const monthlyAverages = {};
     let totalRecordsAnalyzed = 0;
     for (const month in monthlyPeakHours) {
         const hours = monthlyPeakHours[month];
-        const averageHour = hours.reduce((a, b) => a + b, 0) / hours.length;
-        monthlyAverages[month] = parseFloat(averageHour.toFixed(2)); // Store as number e.g., 14.5
-        totalRecordsAnalyzed += hours.length;
+
+        // Can't calculate outliers without a reasonable sample size
+        if (hours.length < 3) {
+            const averageHour = hours.reduce((a, b) => a + b, 0) / hours.length;
+            monthlyAverages[month] = parseFloat(averageHour.toFixed(2));
+            totalRecordsAnalyzed += hours.length;
+            continue;
+        }
+
+        // Step 1: Calculate initial mean and standard deviation
+        const mean = hours.reduce((a, b) => a + b, 0) / hours.length;
+        const stdDev = Math.sqrt(hours.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / hours.length);
+
+        // Step 2: Filter out outliers (more than 3 standard deviations from the mean)
+        const filteredHours = hours.filter(hour => Math.abs(hour - mean) <= 3 * stdDev);
+
+        // Step 3: Recalculate average with the filtered data
+        if (filteredHours.length > 0) {
+            const newAverageHour = filteredHours.reduce((a, b) => a + b, 0) / filteredHours.length;
+            monthlyAverages[month] = parseFloat(newAverageHour.toFixed(2));
+            totalRecordsAnalyzed += filteredHours.length;
+        } else {
+            // Fallback to original average if all data is filtered out (unlikely but safe)
+            monthlyAverages[month] = parseFloat(mean.toFixed(2));
+            totalRecordsAnalyzed += hours.length;
+        }
     }
 
 
