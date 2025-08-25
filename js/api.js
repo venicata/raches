@@ -3,8 +3,13 @@ import { processWeatherData } from './scoring.js';
 import { displayResults, displayRealWindData } from './ui.js';
 import { translations } from './translations.js';
 import { state } from './state.js';
+import { renderHistoricalChart, renderRealWindChart } from './chart.js';
 
-
+/**
+ * Formats a date string into the format 'YYYY-MM-DD'.
+ * @param {string} date - The date string to format.
+ * @returns {string} The formatted date string.
+ */
 export function formatDate(date) {
     const d = new Date(date),
             year = d.getFullYear(),
@@ -13,6 +18,11 @@ export function formatDate(date) {
     return [year, month, day].join('-');
 }
 
+/**
+ * Fetches weather and marine data from the API, processes it, and displays the results.
+ * @param {string} startDate - The start date for the data.
+ * @param {string} endDate - The end date for the data.
+ */
 export async function fetchAndAnalyze(startDate, endDate) {
     state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderLoading}</p>`;
     state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderLoading}</p>`;
@@ -62,7 +72,9 @@ export async function fetchAndDisplayRealWind() {
     }
 }
 
-
+/**
+ * Triggers the real data sync process.
+ */
 export async function triggerRealDataSync() {
     try {
         const response = await fetch('/api/process-max-wind', {
@@ -80,6 +92,9 @@ export async function triggerRealDataSync() {
     }
 }
 
+/**
+ * Fetches the correction model from the server.
+ */
 export async function getCorrectionModel() {
     try {
         const response = await fetch('/api/get-correction-model');
@@ -94,6 +109,9 @@ export async function getCorrectionModel() {
     }
 }
 
+/**
+ * Triggers the model calculation process.
+ */
 export async function triggerModelCalculation() {
     try {
         const response = await fetch('/api/calculate-correction-model', {
@@ -115,6 +133,9 @@ export async function triggerModelCalculation() {
     }
 }
 
+/**
+ * Fetches the application data from the server.
+ */
 export async function getAppData() {
     try {
         const response = await fetch('/api/get-app-data');
@@ -122,13 +143,23 @@ export async function getAppData() {
             console.error("Failed to fetch app data:", response.status, response.statusText);
             return { forecastHistory: [], maxWindHistory: [] };
         }
-        return response.json();
+        const data = await response.json();
+        state.historicalForecastData = data.forecastHistory || [];
+        state.realWindHistory = (data.maxWindHistory || []).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+        renderHistoricalChart(); // Render the main chart
+        renderRealWindChart(); // Render the new real wind chart
+        return data;
     } catch (error) {
         console.error("Error fetching app data:", error);
         return { forecastHistory: [], maxWindHistory: [] };
     }
 }
 
+/**
+ * Saves a historical entry to the server.
+ * @param {object} entry - The historical entry to save.
+ */
 export async function saveHistoricalEntry(entry) {
     if (!entry || !entry.date) {
         console.error("Invalid entry for historical data (client-side check):", entry);
@@ -153,16 +184,24 @@ export async function saveHistoricalEntry(entry) {
     }
 }
 
+/**
+ * Triggers the nightly tasks process.
+ */
 export async function triggerNightlyTasks() {
     try {
         const response = await fetch('/api/run-nightly-tasks', {
             method: 'GET'
         });
-        const responseData = await response.json();
+        const data = await response.json();
         if (!response.ok) {
-            throw new Error(responseData.error || `HTTP error! status: ${response.status}`);
+            throw new Error(data.error || `HTTP error! status: ${response.status}`);
         }
-        return responseData;
+        state.historicalForecastData = data.forecastHistory || [];
+        state.realWindHistory = (data.maxWindHistory || []).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+        renderHistoricalChart(); // Render the main chart
+        renderRealWindChart(); // Render the new real wind chart
+        return data;
     } catch (error) {
         console.error("Error triggering nightly tasks:", error);
         throw error;
