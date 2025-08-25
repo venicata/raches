@@ -13,7 +13,7 @@ body {
 }
 
 .chart-container {
-    width: 100%;
+    width: calc(100% - 20px);
     padding: 20px;
     background-color: #ffffff;
     border-radius: 8px;
@@ -96,6 +96,7 @@ header h1 {
 }
 
 canvas {
+    width: calc(100% - 20px) !important;
     height: 500px !important;
 }
 
@@ -463,6 +464,14 @@ footer a {
         display: flex;
         flex-direction: column;
         align-items: center;
+    }
+
+    .chart-container {
+        padding: 0px;
+    }
+
+    .chart-container h2 {
+        margin: 0px 10px;
     }
 
     .header-controls {
