@@ -45,11 +45,22 @@
             <!-- Прогнозите ще се появят тук -->
         </div>
 
-        <h2 id="historicalChartTitleKey" class="section-title"></h2>
-
-        <div class="container" id="chartSection" style="display: none; margin-top: 30px; width: calc(94%); height: 500px">
+        <div class="chart-container">
+            <h2 id="historicalChartTitleKey">Исторически данни за прогнозата</h2>
             <canvas id="historicalWindChart"></canvas>
         </div>
+
+        <div class="chart-container">
+             <div class="chart-header">
+                 <h2 id="realWindChartTitleKey">Реални данни за вятъра</h2>
+                 <div class="chart-controls">
+                     <button id="real-wind-daily-btn" class="active" data-lang-key="dailyView">Дневен</button>
+                                         <button id="real-wind-weekly-btn" data-lang-key="weeklyView">Седмичен</button>
+                     <button id="real-wind-monthly-btn" data-lang-key="monthlyView">Месечен</button>
+                                                           </div>
+             </div>
+             <canvas id="realWindChart"></canvas>
+         </div>
         <div id="scoring-legend"></div>
 
         <footer style="margin-top: 70px; display: block;">

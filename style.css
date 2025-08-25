@@ -12,6 +12,37 @@ body {
     overflow-x: hidden;
 }
 
+.chart-container {
+    width: 100%;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    margin-bottom: 25px;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.chart-controls button {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    background-color: #f0f0f0;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-left: 5px;
+}
+
+.chart-controls button.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
 .container {
     width: 100%;
     max-width: 800px;
@@ -62,6 +93,10 @@ header h1 {
     display: flex;
     gap: 10px;
     margin-bottom: 25px;
+}
+
+canvas {
+    height: 500px !important;
 }
 
 #date-picker {
@@ -136,6 +171,10 @@ header h1 {
     padding: 40px;
 }
 
+#results-container {
+    margin-left: 6px;
+}
+
 footer {
     text-align: center;
     margin-top: 30px;
@@ -161,6 +200,72 @@ footer a {
 
 .result-card:hover {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Enhanced shadow on hover */
+}
+
+.result-card ul li {
+    display: flex;
+    align-items: flex-start; /* Align items to the top */
+    margin-bottom: 12px;
+    line-height: 1.6;
+    font-size: 1.0em;
+    color: #555;
+    position: relative;
+    cursor: pointer;
+}
+
+.result-card ul li > span {
+
+}
+
+.info-icon {
+    font-family: 'Arial', sans-serif; /* Fallback font */
+    font-style: normal;
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    border-radius: 50%;
+    background-color: #ccc;
+    color: white;
+    font-size: 12px;
+    margin-left: 8px;
+    cursor: pointer;
+    user-select: none; /* Prevent text selection */
+}
+
+.custom-tooltip {
+    visibility: hidden;
+    opacity: 0;
+    width: 220px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px;
+    position: absolute;
+    z-index: 10;
+    bottom: 125%; /* Position above the li */
+    left: 50%;
+    margin-left: -110px; /* Use half of the width to center */
+    transition: opacity 0.3s, visibility 0.3s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.custom-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%; /* At the bottom of the tooltip */
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+}
+
+.result-card ul li.show-tooltip .custom-tooltip {
+    visibility: visible;
+    opacity: 1;
 }
 
 .result-card h3 {

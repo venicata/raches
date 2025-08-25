@@ -2,8 +2,132 @@ import { getAppData } from './api.js';
 import { translations } from './translations.js';
 import { state } from './state.js';
 
-export async function renderHistoricalChart() {
-    const { forecastHistory: historicalData, maxWindHistory: realWindHistory } = await getAppData();
+// Helper to get the week number for a given date
+function getWeekNumber(d) {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return [d.getUTCFullYear(), weekNo];
+}
+
+export function renderRealWindChart() {
+    const T = translations[state.currentLang];
+    const chartSection = document.getElementById('realWindChartSection');
+    const chartCanvas = document.getElementById('realWindChart');
+    const chartTitleEl = document.getElementById('realWindChartTitleKey');
+
+    if (chartTitleEl) {
+        chartTitleEl.textContent = T.realWindChartTitleKey || 'Real Wind';
+    }
+
+    if (!state.realWindHistory || state.realWindHistory.length === 0) {
+        if (chartSection) chartSection.style.display = 'none';
+        if (state.realWindChartInstance) {
+            state.realWindChartInstance.destroy();
+            state.realWindChartInstance = null;
+        }
+        return;
+    }
+
+    if (chartSection) chartSection.style.display = 'block';
+
+    if (state.realWindChartInstance) {
+        state.realWindChartInstance.destroy();
+    }
+
+    let labels;
+    let realWindData;
+
+    if (state.realWindChartView === 'weekly') {
+        const weeklyData = state.realWindHistory.reduce((acc, d) => {
+            const [year, week] = getWeekNumber(new Date(d.timestamp));
+            const key = `${year}-W${week}`;
+            if (!acc[key]) {
+                acc[key] = { windSpeeds: [], count: 0, startDate: new Date(d.timestamp) };
+            }
+            acc[key].windSpeeds.push(d.windSpeedKnots);
+            acc[key].count++;
+            return acc;
+        }, {});
+
+        labels = Object.keys(weeklyData).sort((a, b) => new Date(weeklyData[a].startDate) - new Date(weeklyData[b].startDate)).map(key => {
+            const startDate = weeklyData[key].startDate;
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+            const lang = state.currentLang === 'bg' ? 'bg-BG' : 'en-CA';
+            return `${startDate.toLocaleDateString(lang, { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString(lang, { month: 'short', day: 'numeric' })}`;
+        });
+        realWindData = Object.keys(weeklyData).sort((a, b) => new Date(weeklyData[a].startDate) - new Date(weeklyData[b].startDate)).map(key => {
+            const week = weeklyData[key];
+            const sum = week.windSpeeds.reduce((a, b) => a + b, 0);
+            return sum / week.count;
+        });
+
+    } else if (state.realWindChartView === 'monthly') {
+        const monthlyData = state.realWindHistory.reduce((acc, d) => {
+            const date = new Date(d.timestamp);
+            const key = `${date.getFullYear()}-${date.getMonth()}`;
+            if (!acc[key]) {
+                acc[key] = { windSpeeds: [], count: 0, date: date };
+            }
+            acc[key].windSpeeds.push(d.windSpeedKnots);
+            acc[key].count++;
+            return acc;
+        }, {});
+
+        labels = Object.keys(monthlyData).sort((a, b) => monthlyData[a].date - monthlyData[b].date).map(key => {
+            const date = monthlyData[key].date;
+            return date.toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { year: 'numeric', month: 'long' });
+        });
+        realWindData = Object.keys(monthlyData).sort((a, b) => monthlyData[a].date - monthlyData[b].date).map(key => {
+            const month = monthlyData[key];
+            const sum = month.windSpeeds.reduce((a, b) => a + b, 0);
+            return sum / month.count;
+        });
+
+    } else { // Daily view
+        labels = state.realWindHistory.map(d => new Date(d.timestamp).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { month: 'short', day: 'numeric' }));
+        realWindData = state.realWindHistory.map(d => d.windSpeedKnots);
+    }
+
+    const ctx = chartCanvas.getContext('2d');
+    state.realWindChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: T.knotsUnit || 'knots',
+                data: realWindData,
+                backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    display: false // Hides the legend
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: T.knotsUnit || 'knots'
+                    }
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+
+export function renderHistoricalChart() {
+    const historicalData = state.historicalForecastData || [];
+    const realWindHistory = state.realWindHistory || [];
 
     const realWindMap = new Map(realWindHistory.map(r => [r.timestamp.split('T')[0], r]));
 
@@ -86,14 +210,14 @@ export async function renderHistoricalChart() {
                 },
                 tooltip: {
                     callbacks: {
-                        title: function(context) {
+                        title: function (context) {
                             const dataIndex = context[0].dataIndex;
                             const entryDate = historicalData[dataIndex].date;
                             return new Date(entryDate).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-GB', {
                                 weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
                             });
                         },
-                        afterBody: function(context) {
+                        afterBody: function (context) {
                             const dataIndex = context[0].dataIndex;
                             const entry = historicalData[dataIndex];
                             if (!entry) return '';

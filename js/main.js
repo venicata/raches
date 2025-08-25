@@ -2,7 +2,14 @@ import { state } from './state.js';
 import { translations } from './translations.js';
 import { setLanguage, displayResults, initModal, initRecalibrateButton } from './ui.js';
 import { fetchAndAnalyze, formatDate, triggerRealDataSync, fetchAndDisplayRealWind, triggerNightlyTasks } from './api.js';
-import { renderHistoricalChart } from './chart.js';
+import { renderHistoricalChart, renderRealWindChart } from './chart.js';
+
+// Hide tooltips when clicking anywhere else on the page
+document.addEventListener('click', () => {
+    document.querySelectorAll('.result-card ul li.show-tooltip').forEach(item => {
+        item.classList.remove('show-tooltip');
+    });
+});
 
 document.addEventListener('DOMContentLoaded', async () => {
     state.resultsContainer = document.getElementById('results-container');
@@ -90,6 +97,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Set initial language and render chart on load
     const preferredLang = localStorage.getItem('preferredLang') || 'en';
     setLanguage(preferredLang);
+        // Real wind chart view toggle
+    const dailyBtn = document.getElementById('real-wind-daily-btn');
+    const realWindWeeklyBtn = document.getElementById('real-wind-weekly-btn');
+    const realWindMonthlyBtn = document.getElementById('real-wind-monthly-btn');
+
+    dailyBtn.addEventListener('click', () => {
+        if (state.realWindChartView === 'daily') return; // Do nothing if already active
+        state.realWindChartView = 'daily';
+        dailyBtn.classList.add('active');
+        realWindWeeklyBtn.classList.remove('active');
+        realWindMonthlyBtn.classList.remove('active');
+        renderRealWindChart();
+    });
+
+    realWindWeeklyBtn.addEventListener('click', () => {
+        if (state.realWindChartView === 'weekly') return; // Do nothing if already active
+        state.realWindChartView = 'weekly';
+        realWindWeeklyBtn.classList.add('active');
+        dailyBtn.classList.remove('active');
+        realWindMonthlyBtn.classList.remove('active');
+        renderRealWindChart();
+    });
+
+    realWindMonthlyBtn.addEventListener('click', () => {
+        state.realWindChartView = 'monthly';
+        document.querySelectorAll('.chart-controls button').forEach(btn => btn.classList.remove('active'));
+        realWindMonthlyBtn.classList.add('active');
+        renderRealWindChart();
+    });
+
     initRecalibrateButton();
     renderHistoricalChart();
 

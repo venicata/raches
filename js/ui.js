@@ -1,7 +1,7 @@
 import { translations } from './translations.js';
 import { triggerModelCalculation } from './api.js';
 import { state } from './state.js';
-import { renderHistoricalChart } from './chart.js';
+import { renderHistoricalChart, renderRealWindChart } from './chart.js';
 import { getCloudCoverScore, getTempDiffScore, getWindDirectionScore, getWindDirIcon, getSuckEffectIcon, getPressureDropScore, getHumidityScore, getPrecipitationScore } from './scoring-helpers.js';
 import { saveHistoricalEntry } from './api.js';
 
@@ -34,17 +34,25 @@ export function setLanguage(lang) {
     });
     document.getElementById('lang-bg').classList.toggle('active', lang === 'bg');
     document.getElementById('lang-en').classList.toggle('active', lang === 'en');
-    
+
     if (state.resultsContainer && state.resultsContainer.querySelector('.placeholder')) {
-         state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderDefault}</p>`;
+        state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderDefault}</p>`;
     }
 
     const chartTitleEl = document.getElementById('historicalChartTitleKey');
     if (chartTitleEl) {
         chartTitleEl.textContent = translations[state.currentLang].historicalChartTitleKey;
     }
-    if (state.historicalChartInstance) { 
+    const realWindChartTitleEl = document.getElementById('realWindChartTitleKey');
+    if (realWindChartTitleEl) {
+        realWindChartTitleEl.textContent = translations[state.currentLang].realWindChartTitleKey;
+    }
+
+    if (state.historicalChartInstance) {
         renderHistoricalChart();
+    }
+    if (state.realWindChartInstance) {
+        renderRealWindChart();
     }
 }
 
@@ -70,7 +78,7 @@ export function displayRealWindData(history) {
             const realWindMs = (record.windSpeedKnots * 0.5144).toFixed(1);
 
             const realWindText = `${T.realWindLabel} <b>${realWindKnots}</b> (пориви до <b>${realWindGustKnots}</b>) ${T.knotsUnit} (${realWindMs} ${T.msUnit})`;
-            
+
             const p = document.createElement('p');
             p.className = 'real-wind-data'; // Клас за идентификация
             p.innerHTML = `🌬️ ${realWindText}`;
@@ -115,12 +123,12 @@ export async function displayResults(analysisResults) {
             else if (finalForecastText === T.forecastMid) { forecastKey = 'forecastMid'; forecastClass = 'mid'; }
             else if (finalForecastText === T.forecastLow) { forecastKey = 'forecastLow'; forecastClass = 'low'; }
             else if (finalForecastText === T.forecastBad) { forecastKey = 'forecastBad'; forecastClass = 'bad'; }
-            else if (finalForecastText === T.forecastNotSuitableKiting) { 
-                forecastKey = 'forecastNotSuitableKiting'; 
+            else if (finalForecastText === T.forecastNotSuitableKiting) {
+                forecastKey = 'forecastNotSuitableKiting';
                 forecastClass = 'bad'; // Use 'bad' class to also trigger 'not-suitable' styling
             }
         }
-        
+
         // Fallback logic if forecast string is missing or doesn't match
         if (!forecastKey) {
             const score = result.score; // Assuming result.score is available
@@ -146,7 +154,7 @@ export async function displayResults(analysisResults) {
         const windSpeedKnots = result.wind_speed_value * 0.539957;
         const windSpeedMs = result.wind_speed_value * 0.277778;
         const maxWindText = `${result.wind_speed_icon || '❓'} ${T.apiWindSpeedLabel} <b>${windSpeedKnots.toFixed(1)}</b> ${T.knotsUnit} (${windSpeedMs.toFixed(1)} ${T.msUnit}) (${result.wind_speed_score > 0 ? '+' : ''}${result.wind_speed_score} ${pointSuffix})`;
-        const windDirText = `<div class="wind-direction-container">${getWindDirIcon(result.wind_direction_score)} <span class="wind-arrow" style="transform: rotate(${result.wind_direction_value + 180}deg);"></span> ${T.windDirDetail.replace('{value}', result.wind_direction_value).replace('{description}', result.wind_direction_description)} (${result.wind_direction_score > 0 ? '+' : ''}${result.wind_direction_score} ${pointSuffix})</div>`;
+        const windDirText = `<span class="wind-direction-container">${getWindDirIcon(result.wind_direction_score)} <span class="wind-arrow" style="transform: rotate(${result.wind_direction_value + 180}deg);"></span> ${T.windDirDetail.replace('{value}', result.wind_direction_value).replace('{description}', result.wind_direction_description)} (${result.wind_direction_score > 0 ? '+' : ''}${result.wind_direction_score} ${pointSuffix})</span>`;
         const suckEffectText = `${getSuckEffectIcon(result.suck_effect_score_value)} ${T.suckEffectLabel} ${result.suck_effect_score_value}/3 (${result.suck_effect_score_value > 0 ? '+' : ''}${result.suck_effect_score_value} ${pointSuffix})`;
         const pressureDropText = `${getPressureDropScore(result.pressure_drop_value).icon} ${T.pressureDropLabel} ${result.pressure_drop_value} hPa (${result.pressure_drop_score > 0 ? '+' : ''}${result.pressure_drop_score} ${pointSuffix})`;
         const humidityText = `${getHumidityScore(result.humidity_value).icon} ${T.humidityLabel} ${result.humidity_value}% (${result.humidity_score > 0 ? '+' : ''}${result.humidity_score} ${pointSuffix})`;
@@ -160,14 +168,38 @@ export async function displayResults(analysisResults) {
             <p>${predictedWindText}</p>
             <h4>${T.detailsLabel}</h4>
             <ul>
-                <li title="${T.criteria1Title} - ${T.criteria1Desc}">${cloudCoverText}</li>
-                <li title="${T.criteria2Title} - ${T.criteria2Desc}">${tempDiffText}</li>
-                <li title="${T.criteria3Title} - ${T.criteria3Desc}">${maxWindText}</li>
-                <li title="${T.criteria4Title} - ${T.criteria4Desc}">${windDirText}</li>
-                <li title="${T.criteria5Title} - ${T.criteria5Desc}">${suckEffectText}</li>
-                <li title="${T.criteria6Title} - ${T.criteria6Desc}">${pressureDropText}</li>
-                <li title="${T.criteria7Title} - ${T.criteria7Desc}">${humidityText}</li>
-                <li title="${T.criteria8Title} - ${T.criteria8Desc}">${precipitationText}</li>
+                <li>
+                    <span>${cloudCoverText}</span><i class="info-icon">i</i>
+                    <div class="custom-tooltip"><strong>${T.criteria1Title}</strong><br>${T.criteria1Desc}</div>
+                </li>
+                <li>
+                    <span>${tempDiffText}</span><i class="info-icon">i</i>
+                    <div class="custom-tooltip"><strong>${T.criteria2Title}</strong><br>${T.criteria2Desc}</div>
+                </li>
+                <li>
+                    <span>${maxWindText}</span><i class="info-icon">i</i>
+                    <div class="custom-tooltip"><strong>${T.criteria3Title}</strong><br>${T.criteria3Desc}</div>
+                </li>
+                <li>
+                    <span>${windDirText}</span><i class="info-icon">i</i>
+                    <div class="custom-tooltip"><strong>${T.criteria4Title}</strong><br>${T.criteria4Desc}</div>
+                </li>
+                <li>
+                    <span>${suckEffectText}</span><i class="info-icon">i</i>
+                    <div class="custom-tooltip"><strong>${T.criteria5Title}</strong><br>${T.criteria5Desc}</div>
+                </li>
+                <li>
+                    <span>${pressureDropText}</span><i class="info-icon">i</i>
+                    <div class="custom-tooltip"><strong>${T.criteria6Title}</strong><br>${T.criteria6Desc}</div>
+                </li>
+                <li>
+                    <span>${humidityText}</span><i class="info-icon">i</i>
+                    <div class="custom-tooltip"><strong>${T.criteria7Title}</strong><br>${T.criteria7Desc}</div>
+                </li>
+                <li>
+                    <span>${precipitationText}</span><i class="info-icon">i</i>
+                    <div class="custom-tooltip"><strong>${T.criteria8Title}</strong><br>${T.criteria8Desc}</div>
+                </li>
             </ul>
         `;
         if (result.waterTemp !== undefined && result.waterTemp !== null) {
@@ -176,12 +208,27 @@ export async function displayResults(analysisResults) {
         resultCard.innerHTML = weatherInfoHtml;
         state.resultsContainer.appendChild(resultCard);
 
+        // --- Part 1.5: Add event listeners for custom tooltips ---
+        resultCard.querySelectorAll('ul li').forEach(li => {
+            li.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent click from bubbling to the document
+                // Hide all other tooltips
+                document.querySelectorAll('.result-card ul li.show-tooltip').forEach(item => {
+                    if (item !== li) {
+                        item.classList.remove('show-tooltip');
+                    }
+                });
+                // Toggle current tooltip
+                li.classList.toggle('show-tooltip');
+            });
+        });
+
         // --- Part 2: Prepare and save raw data for the chart ---
         const historicalEntry = {
             date: result.date,
             finalForecastKey: forecastKey, // Use the unified key
             scoreText: result.scoreText,
-            
+
             // Wind
             pKnots_min: result.pKnots_min,
             pKnots_max: result.pKnots_max,
@@ -220,7 +267,7 @@ export async function displayResults(analysisResults) {
             humidity_score: parseFloat(result.humidity_score),
             precipitation_probability_value: parseFloat(result.precipitation_probability_value),
             precipitation_probability_score: parseFloat(result.precipitation_probability_score),
-            
+
             // Water Temp
             waterTemp: result.waterTemp
         };
@@ -261,16 +308,16 @@ export function initModal() {
     const criteriaLink = document.getElementById('criteria-link');
     const closeButton = document.querySelector('.close-button');
 
-    criteriaLink.onclick = function(event) {
+    criteriaLink.onclick = function (event) {
         event.preventDefault();
         modal.style.display = 'block';
     };
 
-    closeButton.onclick = function() {
+    closeButton.onclick = function () {
         modal.style.display = 'none';
     };
 
-    window.onclick = function(event) {
+    window.onclick = function (event) {
         if (event.target == modal) {
             modal.style.display = 'none';
         }
