@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { translations } from './translations.js';
 import { setLanguage, displayResults, initModal, initRecalibrateButton } from './ui.js';
-import { fetchAndAnalyze, formatDate, triggerRealDataSync, fetchAndDisplayRealWind, triggerNightlyTasks } from './api.js';
+import { fetchAndAnalyze, formatDate, triggerRealDataSync, fetchAndDisplayRealWind, triggerNightlyTasks, trainPeakTimeModel } from './api.js';
 import { renderHistoricalChart, renderRealWindChart } from './chart.js';
 
 // Hide tooltips when clicking anywhere else on the page
@@ -185,6 +185,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             alert(`Error: ${error.message}`);
         } finally {
             refreshBtn.disabled = false;
+        }
+    });
+
+    const trainPeakTimeModelBtn = document.getElementById('trainPeakTimeModelBtn');
+    trainPeakTimeModelBtn.addEventListener('click', async () => {
+        const T = translations[state.currentLang];
+        const originalText = trainPeakTimeModelBtn.textContent;
+        trainPeakTimeModelBtn.textContent = T.trainingModel || 'Обучение...';
+        trainPeakTimeModelBtn.disabled = true;
+
+        try {
+            const result = await trainPeakTimeModel();
+            alert(result.message || 'Моделът е обучен успешно!');
+        } catch (error) {
+            console.error('Failed to train peak time model:', error);
+            alert(`Грешка при обучение на модела: ${error.message}`);
+        } finally {
+            trainPeakTimeModelBtn.textContent = originalText;
+            trainPeakTimeModelBtn.disabled = false;
         }
     });
 });
