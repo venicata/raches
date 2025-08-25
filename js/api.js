@@ -47,12 +47,12 @@ export async function fetchAndAnalyze(startDate, endDate) {
         const marineData = await marineResponse.json();
         const correctionModel = await getCorrectionModel();
 
-        const [{ predictedPeakTime }, analysisResults] = await Promise.all([
+        const [{ peakWindModel }, analysisResults] = await Promise.all([
             getAppData(),
             processWeatherData(weatherData, marineData, correctionModel)
         ]);
 
-        displayResults(analysisResults, predictedPeakTime);
+        displayResults(analysisResults, peakWindModel);
         await fetchAndDisplayRealWind();
     } catch (error) {
         state.resultsContainer.innerHTML = `<p class="placeholder" style="color: red;">Грешка: ${error.message}</p>`;
