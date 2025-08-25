@@ -38,26 +38,13 @@ export default async function handler(request, response) {
         // Process max wind history
         const maxWindHistory = maxWindHistoryResult || [];
 
-        // Process peak wind model and make prediction using the new monthly average model
-        let predictedPeakTime = null;
-        if (modelResult && forecastHistory.length > 0) {
-            const model = typeof modelResult === 'string' ? JSON.parse(modelResult) : modelResult;
-            const latestForecast = forecastHistory[0]; // Assume the first is the latest
-            const month = new Date(latestForecast.date).getUTCMonth(); // 0-11, to match model keys
-
-            if (model.monthly_avg_peak_hour && model.monthly_avg_peak_hour[month] !== undefined) {
-                const averageHour = model.monthly_avg_peak_hour[month]; // e.g., 14.5
-                const hour = Math.floor(averageHour);
-                const minutes = Math.round((averageHour - hour) * 60);
-                const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
-                predictedPeakTime = `${hour}:${formattedMinutes}`;
-            }
-        }
+        // Process peak wind model
+        const peakWindModel = modelResult ? (typeof modelResult === 'string' ? JSON.parse(modelResult) : modelResult) : null;
 
         response.status(200).json({
             forecastHistory: forecastHistory,
             maxWindHistory: maxWindHistory,
-            predictedPeakTime: predictedPeakTime
+            peakWindModel: peakWindModel
         });
 
     } catch (error) {

@@ -106,7 +106,7 @@ export function displayRealWindData(history) {
     });
 }
 
-export async function displayResults(analysisResults, predictedPeakTime) {
+export async function displayResults(analysisResults, peakWindModel) {
     if (!analysisResults || analysisResults.length === 0) {
         state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderDefault}</p>`;
         const chartSection = document.getElementById('chartSection');
@@ -161,9 +161,17 @@ export async function displayResults(analysisResults, predictedPeakTime) {
 
         // --- Get all the translated text components for the card ---
         let predictedWindText = `${T.predictedWindLabel} <b>${result.predicted_wind_knots}</b> ${T.knotsUnit} (${result.predicted_wind_ms} ${T.msUnit})`;
-        // Append peak time only to the first card, which is the current day's forecast
-        if (predictedPeakTime && analysisResults.indexOf(result) === 0) {
-            predictedWindText += ` (${T.peakTimePrediction || 'Пик'}: ~${predictedPeakTime})`;
+        // Calculate and append peak time for the specific day
+        if (peakWindModel && peakWindModel.monthly_avg_peak_hour) {
+            const month = new Date(result.date).getUTCMonth() + 1; // 1-12
+            const averageHour = peakWindModel.monthly_avg_peak_hour[month];
+            if (averageHour !== undefined) {
+                const hour = Math.floor(averageHour);
+                const minutes = Math.round((averageHour - hour) * 60);
+                const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+                const predictedPeakTime = `${hour}:${formattedMinutes}`;
+                predictedWindText += ` - ${T.peakTimePrediction || 'Пик'}: ~${predictedPeakTime}`;
+            }
         }
         const cloudCoverText = `${getCloudCoverScore(result.cloud_cover_value).icon} ${T.cloudCoverLabel} ${result.cloud_cover_value}% (${result.cloud_cover_score > 0 ? '+' : ''}${result.cloud_cover_score} ${pointSuffix})`;
         const tempDiffText = `${getTempDiffScore(result.temp_diff_value).icon} ${T.tempDiffDetail.replace('{description}', result.temp_diff_description).replace('{value}', result.temp_diff_value.toFixed(1)).replace('{landTemp}', result.air_temp_value.toFixed(1)).replace('{seaTemp}', result.sea_temp_value.toFixed(1))} (${result.temp_diff_score > 0 ? '+' : ''}${result.temp_diff_score} ${pointSuffix})`;
