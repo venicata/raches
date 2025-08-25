@@ -108,9 +108,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const historicalBtns = { daily: historicalDailyBtn, weekly: historicalWeeklyBtn, monthly: historicalMonthlyBtn };
     Object.entries(historicalBtns).forEach(([view, btn]) => {
-
-        console.log(view, btn);
-
         btn.addEventListener('click', () => {
             if (state.historicalChartView === view) return;
             state.historicalChartView = view;
