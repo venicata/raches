@@ -57,6 +57,18 @@ export function setLanguage(lang) {
 }
 
 /**
+ * Displays the predicted peak wind time.
+ * @param {string} predictedTime - The predicted time string (e.g., "14:30").
+ */
+export function displayPeakWindPrediction(predictedTime) {
+    const container = document.getElementById('peak-wind-prediction-container');
+    if (container) {
+        const T = translations[state.currentLang];
+        container.innerHTML = `<span>${T.peakTimePrediction || 'Predicted peak wind at'}:</span> <strong>~${predictedTime}</strong>`;
+    }
+}
+
+/**
  * Displays the real wind data by appending it to the corresponding forecast cards.
  * @param {Array} history - An array of historical max wind records.
  */
@@ -94,7 +106,7 @@ export function displayRealWindData(history) {
     });
 }
 
-export async function displayResults(analysisResults) {
+export async function displayResults(analysisResults, predictedPeakTime) {
     if (!analysisResults || analysisResults.length === 0) {
         state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderDefault}</p>`;
         const chartSection = document.getElementById('chartSection');
@@ -148,7 +160,11 @@ export async function displayResults(analysisResults) {
         }
 
         // --- Get all the translated text components for the card ---
-        const predictedWindText = `${T.predictedWindLabel} <b>${result.predicted_wind_knots}</b> ${T.knotsUnit} (${result.predicted_wind_ms} ${T.msUnit})`;
+        let predictedWindText = `${T.predictedWindLabel} <b>${result.predicted_wind_knots}</b> ${T.knotsUnit} (${result.predicted_wind_ms} ${T.msUnit})`;
+        // Append peak time only to the first card, which is the current day's forecast
+        if (predictedPeakTime && analysisResults.indexOf(result) === 0) {
+            predictedWindText += ` (${T.peakTimePrediction || 'Пик'}: ~${predictedPeakTime})`;
+        }
         const cloudCoverText = `${getCloudCoverScore(result.cloud_cover_value).icon} ${T.cloudCoverLabel} ${result.cloud_cover_value}% (${result.cloud_cover_score > 0 ? '+' : ''}${result.cloud_cover_score} ${pointSuffix})`;
         const tempDiffText = `${getTempDiffScore(result.temp_diff_value).icon} ${T.tempDiffDetail.replace('{description}', result.temp_diff_description).replace('{value}', result.temp_diff_value.toFixed(1)).replace('{landTemp}', result.air_temp_value.toFixed(1)).replace('{seaTemp}', result.sea_temp_value.toFixed(1))} (${result.temp_diff_score > 0 ? '+' : ''}${result.temp_diff_score} ${pointSuffix})`;
         const windSpeedKnots = result.wind_speed_value * 0.539957;

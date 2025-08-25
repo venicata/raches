@@ -12,6 +12,8 @@ export const translations = {
         syncing: 'Syncing...',
         realWindLabel: 'Real wind:',
         syncError: 'An error occurred during synchronization.',
+        peakTimePrediction: 'Predicted peak wind at',
+        recalibrateModelBtn: 'Recalibrate Model',
         placeholderLoading: "Loading data and analyzing... ",
         placeholderDefault: "Select a period and click 'Analyze' to see the forecast.",
         forecastHigh: "HIGH PROBABILITY OF GOOD CONDITIONS",

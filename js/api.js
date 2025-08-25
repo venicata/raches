@@ -12,9 +12,9 @@ import { renderHistoricalChart, renderRealWindChart } from './chart.js';
  */
 export function formatDate(date) {
     const d = new Date(date),
-            year = d.getFullYear(),
-            month = ('0' + (d.getMonth() + 1)).slice(-2),
-            day = ('0' + d.getDate()).slice(-2);
+        year = d.getFullYear(),
+        month = ('0' + (d.getMonth() + 1)).slice(-2),
+        day = ('0' + d.getDate()).slice(-2);
     return [year, month, day].join('-');
 }
 
@@ -26,7 +26,7 @@ export function formatDate(date) {
 export async function fetchAndAnalyze(startDate, endDate) {
     state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderLoading}</p>`;
     state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderLoading}</p>`;
-    
+
     const formattedStartDate = formatDate(startDate);
     const formattedEndDate = formatDate(endDate);
 
@@ -42,13 +42,17 @@ export async function fetchAndAnalyze(startDate, endDate) {
         if (!weatherResponse.ok || !marineResponse.ok) {
             throw new Error('Проблем при връзката с API-то за времето.');
         }
-        
+
         const weatherData = await weatherResponse.json();
         const marineData = await marineResponse.json();
         const correctionModel = await getCorrectionModel();
 
-        const analysisResults = await processWeatherData(weatherData, marineData, correctionModel);
-        displayResults(analysisResults);
+        const [{ predictedPeakTime }, analysisResults] = await Promise.all([
+            getAppData(),
+            processWeatherData(weatherData, marineData, correctionModel)
+        ]);
+
+        displayResults(analysisResults, predictedPeakTime);
         await fetchAndDisplayRealWind();
     } catch (error) {
         state.resultsContainer.innerHTML = `<p class="placeholder" style="color: red;">Грешка: ${error.message}</p>`;
@@ -138,7 +142,7 @@ export async function triggerModelCalculation() {
  */
 export async function getAppData() {
     try {
-        const response = await fetch('/api/get-app-data');
+                const response = await fetch('/api/get-app-data');
         if (!response.ok) {
             console.error("Failed to fetch app data:", response.status, response.statusText);
             return { forecastHistory: [], maxWindHistory: [] };

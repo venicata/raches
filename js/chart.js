@@ -408,9 +408,7 @@ export function renderHistoricalChart() {
                             borderWidth: 2,
                             label: {
                                 enabled: true,
-                                content: 'Good Wind (18 knots)',
-                                position: 'end',
-                                backgroundColor: 'rgba(255, 99, 132, 0.8)'
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)'
                             }
                         }
                     }
