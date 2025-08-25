@@ -211,3 +211,20 @@ export async function triggerNightlyTasks() {
         throw error;
     }
 }
+
+/**
+ * Triggers the training of the peak wind time model on the server.
+ */
+export async function trainPeakTimeModel() {
+    try {
+        const response = await fetch('/api/predict-peak-wind-time', { method: 'POST' });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to train peak time model');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Error triggering peak time model training:", error);
+        throw error; // Rethrow to be caught by the caller
+    }
+}
