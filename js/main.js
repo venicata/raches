@@ -94,6 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Handle remote loading first if the URL parameter is present
     await handleRemoteLoad();
 
+
     // Set initial language and render chart on load
     const preferredLang = localStorage.getItem('preferredLang') || 'en';
     setLanguage(preferredLang);
