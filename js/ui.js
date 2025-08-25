@@ -106,12 +106,21 @@ export function displayRealWindData(history) {
     });
 }
 
-export async function displayResults(analysisResults, peakWindModel) {
+export async function displayResults(analysisResults, maxWindHistory, peakWindModel) {
     if (!analysisResults || analysisResults.length === 0) {
         state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderDefault}</p>`;
         const chartSection = document.getElementById('chartSection');
         if (chartSection) chartSection.style.display = 'none';
         return;
+    }
+
+    // Create a map for quick lookup of real peak wind times
+    const realPeakWindTimes = {};
+    if (maxWindHistory) {
+        maxWindHistory.forEach(record => {
+            const date = record.timestamp.split('T')[0];
+            realPeakWindTimes[date] = record.timestamp;
+        });
     }
 
     state.resultsContainer.innerHTML = '';
@@ -160,19 +169,28 @@ export async function displayResults(analysisResults, peakWindModel) {
         }
 
         // --- Get all the translated text components for the card ---
-        let predictedWindText = `${T.predictedWindLabel} <b>${result.predicted_wind_knots}</b> ${T.knotsUnit} (${result.predicted_wind_ms} ${T.msUnit})`;
-        // Calculate and append peak time for the specific day
-        if (peakWindModel && peakWindModel.monthly_avg_peak_hour) {
-            const month = new Date(result.date).getUTCMonth() + 1; // 1-12
+        const forecastDate = result.date;
+        let peakTimeText = '';
+
+        if (realPeakWindTimes[forecastDate]) {
+            // Real peak wind time exists for this day
+            const peakTimestamp = new Date(realPeakWindTimes[forecastDate]);
+            const formattedPeakTime = peakTimestamp.toLocaleTimeString(state.currentLang === 'bg' ? 'bg-BG' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+            peakTimeText = ` - ${T.peakLabel}: ${formattedPeakTime}`; // No tilde, as it's a real value
+        } else if (peakWindModel && peakWindModel.monthly_avg_peak_hour) {
+            // Fallback to predicted peak wind time
+            const month = new Date(forecastDate).getUTCMonth() + 1;
             const averageHour = peakWindModel.monthly_avg_peak_hour[month];
-            if (averageHour !== undefined) {
+            if (averageHour) {
                 const hour = Math.floor(averageHour);
                 const minutes = Math.round((averageHour - hour) * 60);
                 const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
                 const predictedPeakTime = `${hour}:${formattedMinutes}`;
-                predictedWindText += ` - ${T.peakTimePrediction || 'Пик'}: ~${predictedPeakTime}`;
+                peakTimeText = ` - ${T.peakTimePrediction || 'Пик'}: ~${predictedPeakTime}`;
             }
         }
+
+        const predictedWindText = `${T.predictedWindLabel} <b>${result.predicted_wind_knots}</b> ${T.knotsUnit} (${result.predicted_wind_ms} ${T.msUnit})${peakTimeText}`;
         const cloudCoverText = `${getCloudCoverScore(result.cloud_cover_value).icon} ${T.cloudCoverLabel} ${result.cloud_cover_value}% (${result.cloud_cover_score > 0 ? '+' : ''}${result.cloud_cover_score} ${pointSuffix})`;
         const tempDiffText = `${getTempDiffScore(result.temp_diff_value).icon} ${T.tempDiffDetail.replace('{description}', result.temp_diff_description).replace('{value}', result.temp_diff_value.toFixed(1)).replace('{landTemp}', result.air_temp_value.toFixed(1)).replace('{seaTemp}', result.sea_temp_value.toFixed(1))} (${result.temp_diff_score > 0 ? '+' : ''}${result.temp_diff_score} ${pointSuffix})`;
         const windSpeedKnots = result.wind_speed_value * 0.539957;

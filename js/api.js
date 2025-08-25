@@ -47,13 +47,13 @@ export async function fetchAndAnalyze(startDate, endDate) {
         const marineData = await marineResponse.json();
         const correctionModel = await getCorrectionModel();
 
-        const [{ peakWindModel }, analysisResults] = await Promise.all([
+        const [{ peakWindModel, maxWindHistory }, analysisResults] = await Promise.all([
             getAppData(),
             processWeatherData(weatherData, marineData, correctionModel)
         ]);
 
-        displayResults(analysisResults, peakWindModel);
-        await fetchAndDisplayRealWind();
+        displayResults(analysisResults, maxWindHistory, peakWindModel);
+        // The call to fetchAndDisplayRealWind() is removed as maxWindHistory is now passed to displayResults.
     } catch (error) {
         state.resultsContainer.innerHTML = `<p class="placeholder" style="color: red;">Грешка: ${error.message}</p>`;
     }
