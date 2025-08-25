@@ -97,10 +97,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Set initial language and render chart on load
     const preferredLang = localStorage.getItem('preferredLang') || 'en';
     setLanguage(preferredLang);
-        // Real wind chart view toggle
+    // Real wind chart view toggle
     const dailyBtn = document.getElementById('real-wind-daily-btn');
     const realWindWeeklyBtn = document.getElementById('real-wind-weekly-btn');
     const realWindMonthlyBtn = document.getElementById('real-wind-monthly-btn');
+
+    const historicalDailyBtn = document.getElementById('historical-daily-btn');
+    const historicalWeeklyBtn = document.getElementById('historical-weekly-btn');
+    const historicalMonthlyBtn = document.getElementById('historical-monthly-btn');
+
+    const historicalBtns = { daily: historicalDailyBtn, weekly: historicalWeeklyBtn, monthly: historicalMonthlyBtn };
+    Object.entries(historicalBtns).forEach(([view, btn]) => {
+
+        console.log(view, btn);
+
+        btn.addEventListener('click', () => {
+            if (state.historicalChartView === view) return;
+            state.historicalChartView = view;
+            Object.values(historicalBtns).forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderHistoricalChart();
+        });
+    });
 
     dailyBtn.addEventListener('click', () => {
         if (state.realWindChartView === 'daily') return; // Do nothing if already active

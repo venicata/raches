@@ -129,6 +129,8 @@ export function renderHistoricalChart() {
     const historicalData = state.historicalForecastData || [];
     const realWindHistory = state.realWindHistory || [];
 
+    console.error(historicalData, realWindHistory);
+
     const realWindMap = new Map(realWindHistory.map(r => [r.timestamp.split('T')[0], r]));
 
     historicalData.forEach(entry => {
@@ -157,30 +159,99 @@ export function renderHistoricalChart() {
 
     if (chartSection) chartSection.style.display = 'block';
 
-    const labels = historicalData.map(entry => {
-        return new Date(entry.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-GB', {
-            month: 'short', day: 'numeric'
+    let labels, forecastData, avgMsData, realWindComparisonData;
+
+    if (state.historicalChartView === 'weekly') {
+        const weeklyData = historicalData.reduce((acc, d) => {
+            const [year, week] = getWeekNumber(new Date(d.date));
+            const key = `${year}-W${week}`;
+            if (!acc[key]) {
+                acc[key] = { forecastKnots: [], forecastMs: [], realKnots: [], count: 0, startDate: new Date(d.date) };
+            }
+            acc[key].forecastKnots.push(d.avgPredictedKnots);
+            acc[key].forecastMs.push(d.avgPredictedMs);
+            if (d.realWind) {
+                acc[key].realKnots.push(d.realWind.windSpeedKnots);
+            }
+            acc[key].count++;
+            return acc;
+        }, {});
+
+        const sortedKeys = Object.keys(weeklyData).sort((a, b) => new Date(weeklyData[a].startDate) - new Date(weeklyData[b].startDate));
+        labels = sortedKeys.map(key => {
+            const startDate = weeklyData[key].startDate;
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+            const lang = state.currentLang === 'bg' ? 'bg-BG' : 'en-CA';
+            return `${startDate.toLocaleDateString(lang, { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString(lang, { month: 'short', day: 'numeric' })}`;
         });
-    });
-    const avgKnotsData = historicalData.map(entry => entry.realWind ? entry.realWind.windSpeedKnots : entry.avgPredictedKnots);
-    const avgMsData = historicalData.map(entry => entry.realWind ? (entry.realWind.windSpeedKnots * 0.5144) : entry.avgPredictedMs);
+        forecastData = sortedKeys.map(key => weeklyData[key].forecastKnots.reduce((a, b) => a + b, 0) / weeklyData[key].forecastKnots.length);
+        avgMsData = sortedKeys.map(key => weeklyData[key].forecastMs.reduce((a, b) => a + b, 0) / weeklyData[key].forecastMs.length);
+        realWindComparisonData = sortedKeys.map(key => {
+            const week = weeklyData[key];
+            return week.realKnots.length > 0 ? week.realKnots.reduce((a, b) => a + b, 0) / week.realKnots.length : null;
+        });
+
+    } else if (state.historicalChartView === 'monthly') {
+        const monthlyData = historicalData.reduce((acc, d) => {
+            const date = new Date(d.date);
+            const key = `${date.getFullYear()}-${date.getMonth()}`;
+            if (!acc[key]) {
+                acc[key] = { forecastKnots: [], forecastMs: [], realKnots: [], count: 0, date: date };
+            }
+            acc[key].forecastKnots.push(d.avgPredictedKnots);
+            acc[key].forecastMs.push(d.avgPredictedMs);
+            if (d.realWind) {
+                acc[key].realKnots.push(d.realWind.windSpeedKnots);
+            }
+            acc[key].count++;
+            return acc;
+        }, {});
+
+        const sortedKeys = Object.keys(monthlyData).sort((a, b) => monthlyData[a].date - monthlyData[b].date);
+        labels = sortedKeys.map(key => monthlyData[key].date.toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { year: 'numeric', month: 'long' }));
+        forecastData = sortedKeys.map(key => monthlyData[key].forecastKnots.reduce((a, b) => a + b, 0) / monthlyData[key].forecastKnots.length);
+        avgMsData = sortedKeys.map(key => monthlyData[key].forecastMs.reduce((a, b) => a + b, 0) / monthlyData[key].forecastMs.length);
+        realWindComparisonData = sortedKeys.map(key => {
+            const month = monthlyData[key];
+            return month.realKnots.length > 0 ? month.realKnots.reduce((a, b) => a + b, 0) / month.realKnots.length : null;
+        });
+
+    } else { // Daily view
+        labels = historicalData.map(d => new Date(d.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { month: 'short', day: 'numeric' }));
+        forecastData = historicalData.map(d => d.avgPredictedKnots);
+        avgMsData = historicalData.map(d => d.avgPredictedMs);
+        realWindComparisonData = historicalData.map(d => d.realWind ? d.realWind.windSpeedKnots : null);
+    }
 
     const chartData = {
         labels: labels,
         datasets: [
             {
-                label: translations[state.currentLang].knotsUnit,
-                data: avgKnotsData,
-                borderColor: 'rgb(75, 192, 192)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                type: 'line',
+                label: translations[state.currentLang].predictedWindLabel,
+                data: forecastData,
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
                 yAxisID: 'yKnots',
                 tension: 0.1
             },
             {
+                type: 'bar',
+                label: translations[state.currentLang].realWindLabel,
+                data: realWindComparisonData,
+                backgroundColor: 'transparent',
+                borderColor: 'rgb(255, 99, 132, 0.5)',
+                borderWidth: 1.5,
+                borderDash: [5, 5],
+                yAxisID: 'yKnots',
+            },
+            {
+                type: 'line',
                 label: translations[state.currentLang].msUnit,
                 data: avgMsData,
-                borderColor: 'rgb(255, 99, 132)',
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgb(255, 159, 64)',
+                backgroundColor: 'rgba(255, 159, 64, 0.2)',
                 yAxisID: 'yMs',
                 hidden: true,
                 tension: 0.1
@@ -194,7 +265,7 @@ export function renderHistoricalChart() {
 
     const ctx = chartCanvas.getContext('2d');
     state.historicalChartInstance = new Chart(ctx, {
-        type: 'line',
+        type: 'bar', // Default type, but datasets specify their own
         data: chartData,
         options: {
             responsive: true,

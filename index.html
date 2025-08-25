@@ -46,7 +46,14 @@
         </div>
 
         <div class="chart-container">
-            <h2 id="historicalChartTitleKey">Исторически данни за прогнозата</h2>
+            <div class="chart-header">
+                <h2 id="historicalChartTitleKey">Исторически данни за прогнозата</h2>
+                <div class="chart-controls">
+                    <button id="historical-daily-btn" class="active" data-lang-key="dailyView">Дневен</button>
+                    <button id="historical-weekly-btn" data-lang-key="weeklyView">Седмичен</button>
+                    <button id="historical-monthly-btn" data-lang-key="monthlyView">Месечен</button>
+                </div>
+            </div>
             <canvas id="historicalWindChart"></canvas>
         </div>
 
