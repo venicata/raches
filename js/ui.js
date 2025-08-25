@@ -325,6 +325,11 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
     }
 
     await renderHistoricalChart();
+
+    // Display real wind data on the cards if available
+    if (maxWindHistory) {
+        displayRealWindData(maxWindHistory);
+    }
 }
 
 export function initRecalibrateButton() {
