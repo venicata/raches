@@ -178,7 +178,7 @@ export async function displayResults(analysisResults, peakWindModel) {
         const windSpeedKnots = result.wind_speed_value * 0.539957;
         const windSpeedMs = result.wind_speed_value * 0.277778;
         const maxWindText = `${result.wind_speed_icon || '❓'} ${T.apiWindSpeedLabel} <b>${windSpeedKnots.toFixed(1)}</b> ${T.knotsUnit} (${windSpeedMs.toFixed(1)} ${T.msUnit}) (${result.wind_speed_score > 0 ? '+' : ''}${result.wind_speed_score} ${pointSuffix})`;
-        const windDirText = `<span class="wind-direction-container">${getWindDirIcon(result.wind_direction_score)} <span class="wind-arrow" style="transform: rotate(${result.wind_direction_value + 180}deg);"></span> ${T.windDirDetail.replace('{value}', result.wind_direction_value).replace('{description}', result.wind_direction_description)} (${result.wind_direction_score > 0 ? '+' : ''}${result.wind_direction_score} ${pointSuffix})</span>`;
+        const windDirText = `<span class="wind-direction-container">${getWindDirIcon(result.wind_direction_score)} <span class="wind-arrow" style="transform: rotate(${result.wind_direction_value + 180}deg);"></span> <span>${T.windDirDetail.replace('{value}', result.wind_direction_value).replace('{description}', result.wind_direction_description)} (${result.wind_direction_score > 0 ? '+' : ''}${result.wind_direction_score} ${pointSuffix})</span></span>`;
         const suckEffectText = `${getSuckEffectIcon(result.suck_effect_score_value)} ${T.suckEffectLabel} ${result.suck_effect_score_value}/3 (${result.suck_effect_score_value > 0 ? '+' : ''}${result.suck_effect_score_value} ${pointSuffix})`;
         const pressureDropText = `${getPressureDropScore(result.pressure_drop_value).icon} ${T.pressureDropLabel} ${result.pressure_drop_value} hPa (${result.pressure_drop_score > 0 ? '+' : ''}${result.pressure_drop_score} ${pointSuffix})`;
         const humidityText = `${getHumidityScore(result.humidity_value).icon} ${T.humidityLabel} ${result.humidity_value}% (${result.humidity_score > 0 ? '+' : ''}${result.humidity_score} ${pointSuffix})`;
@@ -193,35 +193,43 @@ export async function displayResults(analysisResults, peakWindModel) {
             <h4>${T.detailsLabel}</h4>
             <ul>
                 <li>
-                    <span>${cloudCoverText}</span><i class="info-icon">i</i>
+                    <span class="li-content">${cloudCoverText}</span>
+                    <i class="info-icon">i</i>
                     <div class="custom-tooltip"><strong>${T.criteria1Title}</strong><br>${T.criteria1Desc}</div>
                 </li>
                 <li>
-                    <span>${tempDiffText}</span><i class="info-icon">i</i>
+                    <span class="li-content">${tempDiffText}</span>
+                    <i class="info-icon">i</i>
                     <div class="custom-tooltip"><strong>${T.criteria2Title}</strong><br>${T.criteria2Desc}</div>
                 </li>
                 <li>
-                    <span>${maxWindText}</span><i class="info-icon">i</i>
+                    <span class="li-content">${maxWindText}</span>
+                    <i class="info-icon">i</i>
                     <div class="custom-tooltip"><strong>${T.criteria3Title}</strong><br>${T.criteria3Desc}</div>
                 </li>
                 <li>
-                    <span>${windDirText}</span><i class="info-icon">i</i>
+                    <span class="li-content">${windDirText}</span>
+                    <i class="info-icon">i</i>
                     <div class="custom-tooltip"><strong>${T.criteria4Title}</strong><br>${T.criteria4Desc}</div>
                 </li>
                 <li>
-                    <span>${suckEffectText}</span><i class="info-icon">i</i>
+                    <span class="li-content">${suckEffectText}</span>
+                    <i class="info-icon">i</i>
                     <div class="custom-tooltip"><strong>${T.criteria5Title}</strong><br>${T.criteria5Desc}</div>
                 </li>
                 <li>
-                    <span>${pressureDropText}</span><i class="info-icon">i</i>
+                    <span class="li-content">${pressureDropText}</span>
+                    <i class="info-icon">i</i>
                     <div class="custom-tooltip"><strong>${T.criteria6Title}</strong><br>${T.criteria6Desc}</div>
                 </li>
                 <li>
-                    <span>${humidityText}</span><i class="info-icon">i</i>
+                    <span class="li-content">${humidityText}</span>
+                    <i class="info-icon">i</i>
                     <div class="custom-tooltip"><strong>${T.criteria7Title}</strong><br>${T.criteria7Desc}</div>
                 </li>
                 <li>
-                    <span>${precipitationText}</span><i class="info-icon">i</i>
+                    <span class="li-content">${precipitationText}</span>
+                    <i class="info-icon">i</i>
                     <div class="custom-tooltip"><strong>${T.criteria8Title}</strong><br>${T.criteria8Desc}</div>
                 </li>
             </ul>

@@ -43,9 +43,14 @@ export async function calculateCorrectionModel() {
     });
 
     const trainingData = [];
-    forecastHistory.forEach(forecast => {
-        const realKnots = dailyMaxWind[forecast.date];
-        if (realKnots !== undefined && realKnots !== null) {
+    const forecastMap = new Map(forecastHistory.map(f => [f.date, f]));
+    let unmatchedRecords = 0;
+
+    for (const date in dailyMaxWind) {
+        const forecast = forecastMap.get(date);
+        const realKnots = dailyMaxWind[date];
+
+        if (forecast) {
             const features = [
                 forecast.cloud_cover_score,
                 forecast.temp_diff_score,
@@ -61,12 +66,14 @@ export async function calculateCorrectionModel() {
             const wind_diff = realKnots - predictedKnots;
 
             trainingData.push({ features, target: wind_diff });
+        } else {
+            unmatchedRecords++;
         }
-    });
+    }
 
     const NUM_FEATURES = 8;
     if (trainingData.length < NUM_FEATURES + 1) {
-        return { success: true, message: `Not enough matching data points. Need at least ${NUM_FEATURES + 1}, but have ${trainingData.length}.` };
+        return { success: true, message: `Not enough matching data points. Need at least ${NUM_FEATURES + 1}, but have ${trainingData.length}. Unmatched real wind records: ${unmatchedRecords}.` };
     }
 
     // 3. Build matrices and calculate coefficients
