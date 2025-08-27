@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/run-nightly-tasks",
-      "schedule": "0 14 * * *"
+      "schedule": "0 15 * * *"
     }
   ]
 }
