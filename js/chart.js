@@ -256,13 +256,12 @@ export function renderHistoricalChart() {
                 tension: 0.1
             },
             {
-                type: 'bar',
+                type: 'line',
                 label: translations[state.currentLang].realWindLabel,
                 data: realWindComparisonData,
                 backgroundColor: 'transparent',
-                borderColor: 'rgb(255, 99, 132, 0.5)',
+                borderColor: 'rgb(255, 99, 132, 1)',
                 borderWidth: 1.5,
-                borderDash: [5, 5],
                 yAxisID: 'yKnots',
             },
             {
