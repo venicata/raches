@@ -137,9 +137,14 @@ export function renderHistoricalChart() {
     const historicalData = state.historicalForecastData || [];
     const realWindHistory = state.realWindHistory || [];
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to midnight to compare dates only
+
+    const filteredData = historicalData.filter(entry => new Date(entry.date) <= today);
+
     const realWindMap = new Map(realWindHistory.map(r => [r.timestamp.split('T')[0], r]));
 
-    historicalData.forEach(entry => {
+    filteredData.forEach(entry => {
         const realWindRecord = realWindMap.get(entry.date);
         if (realWindRecord) {
             entry.realWind = realWindRecord;
@@ -154,7 +159,7 @@ export function renderHistoricalChart() {
         chartTitleEl.textContent = translations[state.currentLang].historicalChartTitleKey;
     }
 
-    if (!historicalData || historicalData.length === 0) {
+    if (!filteredData || filteredData.length === 0) {
         if (chartSection) chartSection.style.display = 'none';
         if (state.historicalChartInstance) {
             state.historicalChartInstance.destroy();
@@ -168,7 +173,7 @@ export function renderHistoricalChart() {
     let labels, forecastData, avgMsData, realWindComparisonData;
 
     if (state.historicalChartView === 'weekly') {
-        const weeklyData = historicalData.reduce((acc, d) => {
+        const weeklyData = filteredData.reduce((acc, d) => {
             const [year, week] = getWeekNumber(new Date(d.date));
             const key = `${year}-W${week}`;
             if (!acc[key]) {
@@ -199,7 +204,7 @@ export function renderHistoricalChart() {
         });
 
     } else if (state.historicalChartView === 'monthly') {
-        const monthlyData = historicalData.reduce((acc, d) => {
+        const monthlyData = filteredData.reduce((acc, d) => {
             const date = new Date(d.date);
             const key = `${date.getFullYear()}-${date.getMonth()}`;
             if (!acc[key]) {
@@ -224,12 +229,12 @@ export function renderHistoricalChart() {
         });
 
     } else { // Daily view
-        let dataToRender = historicalData;
+        let dataToRender = filteredData;
         // On mobile (screen width < 768px), show only the last 30 days
         if (window.innerWidth < 768) {
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            dataToRender = historicalData.filter(d => new Date(d.date) >= thirtyDaysAgo);
+            dataToRender = filteredData.filter(d => new Date(d.date) >= thirtyDaysAgo);
         }
 
         labels = dataToRender.map(d => new Date(d.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { month: 'short', day: 'numeric' }));
@@ -297,14 +302,14 @@ export function renderHistoricalChart() {
                     callbacks: {
                         title: function (context) {
                             const dataIndex = context[0].dataIndex;
-                            const entryDate = historicalData[dataIndex].date;
+                            const entryDate = filteredData[dataIndex].date;
                             return new Date(entryDate).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-GB', {
                                 weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
                             });
                         },
                         afterBody: function (context) {
                             const dataIndex = context[0].dataIndex;
-                            const entry = historicalData[dataIndex];
+                            const entry = filteredData[dataIndex];
                             if (!entry) return '';
 
                             // Dynamically build tooltip from raw data based on current language
