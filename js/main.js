@@ -106,8 +106,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const historicalDailyBtn = document.getElementById('historical-daily-btn');
     const historicalWeeklyBtn = document.getElementById('historical-weekly-btn');
     const historicalMonthlyBtn = document.getElementById('historical-monthly-btn');
+    const historicalAllBtn = document.getElementById('historical-all-btn');
 
-    const historicalBtns = { daily: historicalDailyBtn, weekly: historicalWeeklyBtn, monthly: historicalMonthlyBtn };
+    const historicalBtns = { daily: historicalDailyBtn, weekly: historicalWeeklyBtn, monthly: historicalMonthlyBtn, all: historicalAllBtn };
     Object.entries(historicalBtns).forEach(([view, btn]) => {
         btn.addEventListener('click', () => {
             if (state.historicalChartView === view) return;

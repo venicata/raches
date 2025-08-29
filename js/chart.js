@@ -172,75 +172,92 @@ export function renderHistoricalChart() {
 
     let labels, forecastData, avgMsData, realWindComparisonData;
 
-    if (state.historicalChartView === 'weekly') {
-        const weeklyData = filteredData.reduce((acc, d) => {
-            const [year, week] = getWeekNumber(new Date(d.date));
-            const key = `${year}-W${week}`;
-            if (!acc[key]) {
-                acc[key] = { forecastKnots: [], forecastMs: [], realKnots: [], count: 0, startDate: new Date(d.date) };
-            }
-            acc[key].forecastKnots.push(d.avgPredictedKnots);
-            acc[key].forecastMs.push(d.avgPredictedMs);
-            if (d.realWind) {
-                acc[key].realKnots.push(d.realWind.windSpeedKnots);
-            }
-            acc[key].count++;
-            return acc;
-        }, {});
+    switch (state.historicalChartView) {
+        case 'weekly': {
+            const weeklyData = filteredData.reduce((acc, d) => {
+                const [year, week] = getWeekNumber(new Date(d.date));
+                const key = `${year}-W${week}`;
+                if (!acc[key]) {
+                    acc[key] = { forecastKnots: [], forecastMs: [], realKnots: [], count: 0, startDate: new Date(d.date) };
+                }
+                acc[key].forecastKnots.push(d.avgPredictedKnots);
+                acc[key].forecastMs.push(d.avgPredictedMs);
+                if (d.realWind) {
+                    acc[key].realKnots.push(d.realWind.windSpeedKnots);
+                }
+                acc[key].count++;
+                return acc;
+            }, {});
 
-        const sortedKeys = Object.keys(weeklyData).sort((a, b) => new Date(weeklyData[a].startDate) - new Date(weeklyData[b].startDate));
-        labels = sortedKeys.map(key => {
-            const startDate = weeklyData[key].startDate;
-            const endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + 6);
-            const lang = state.currentLang === 'bg' ? 'bg-BG' : 'en-CA';
-            return `${startDate.toLocaleDateString(lang, { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString(lang, { month: 'short', day: 'numeric' })}`;
-        });
-        forecastData = sortedKeys.map(key => weeklyData[key].forecastKnots.reduce((a, b) => a + b, 0) / weeklyData[key].forecastKnots.length);
-        avgMsData = sortedKeys.map(key => weeklyData[key].forecastMs.reduce((a, b) => a + b, 0) / weeklyData[key].forecastMs.length);
-        realWindComparisonData = sortedKeys.map(key => {
-            const week = weeklyData[key];
-            return week.realKnots.length > 0 ? week.realKnots.reduce((a, b) => a + b, 0) / week.realKnots.length : null;
-        });
-
-    } else if (state.historicalChartView === 'monthly') {
-        const monthlyData = filteredData.reduce((acc, d) => {
-            const date = new Date(d.date);
-            const key = `${date.getFullYear()}-${date.getMonth()}`;
-            if (!acc[key]) {
-                acc[key] = { forecastKnots: [], forecastMs: [], realKnots: [], count: 0, date: date };
-            }
-            acc[key].forecastKnots.push(d.avgPredictedKnots);
-            acc[key].forecastMs.push(d.avgPredictedMs);
-            if (d.realWind) {
-                acc[key].realKnots.push(d.realWind.windSpeedKnots);
-            }
-            acc[key].count++;
-            return acc;
-        }, {});
-
-        const sortedKeys = Object.keys(monthlyData).sort((a, b) => monthlyData[a].date - monthlyData[b].date);
-        labels = sortedKeys.map(key => monthlyData[key].date.toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { year: 'numeric', month: 'long' }));
-        forecastData = sortedKeys.map(key => monthlyData[key].forecastKnots.reduce((a, b) => a + b, 0) / monthlyData[key].forecastKnots.length);
-        avgMsData = sortedKeys.map(key => monthlyData[key].forecastMs.reduce((a, b) => a + b, 0) / monthlyData[key].forecastMs.length);
-        realWindComparisonData = sortedKeys.map(key => {
-            const month = monthlyData[key];
-            return month.realKnots.length > 0 ? month.realKnots.reduce((a, b) => a + b, 0) / month.realKnots.length : null;
-        });
-
-    } else { // Daily view
-        let dataToRender = filteredData;
-        // On mobile (screen width < 768px), show only the last 30 days
-        if (window.innerWidth < 768) {
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            dataToRender = filteredData.filter(d => new Date(d.date) >= thirtyDaysAgo);
+            const sortedKeys = Object.keys(weeklyData).sort((a, b) => new Date(weeklyData[a].startDate) - new Date(weeklyData[b].startDate));
+            labels = sortedKeys.map(key => {
+                const startDate = weeklyData[key].startDate;
+                const endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + 6);
+                const lang = state.currentLang === 'bg' ? 'bg-BG' : 'en-CA';
+                return `${startDate.toLocaleDateString(lang, { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString(lang, { month: 'short', day: 'numeric' })}`;
+            });
+            forecastData = sortedKeys.map(key => weeklyData[key].forecastKnots.reduce((a, b) => a + b, 0) / weeklyData[key].forecastKnots.length);
+            avgMsData = sortedKeys.map(key => weeklyData[key].forecastMs.reduce((a, b) => a + b, 0) / weeklyData[key].forecastMs.length);
+            realWindComparisonData = sortedKeys.map(key => {
+                const week = weeklyData[key];
+                return week.realKnots.length > 0 ? week.realKnots.reduce((a, b) => a + b, 0) / week.realKnots.length : null;
+            });
+            break;
         }
+        case 'monthly': {
+            const monthlyData = filteredData.reduce((acc, d) => {
+                const date = new Date(d.date);
+                const key = `${date.getFullYear()}-${date.getMonth()}`;
+                if (!acc[key]) {
+                    acc[key] = { forecastKnots: [], forecastMs: [], realKnots: [], count: 0, date: date };
+                }
+                acc[key].forecastKnots.push(d.avgPredictedKnots);
+                acc[key].forecastMs.push(d.avgPredictedMs);
+                if (d.realWind) {
+                    acc[key].realKnots.push(d.realWind.windSpeedKnots);
+                }
+                acc[key].count++;
+                return acc;
+            }, {});
 
-        labels = dataToRender.map(d => new Date(d.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { month: 'short', day: 'numeric' }));
-        forecastData = dataToRender.map(d => d.avgPredictedKnots);
-        avgMsData = dataToRender.map(d => d.avgPredictedMs);
-        realWindComparisonData = dataToRender.map(d => d.realWind ? d.realWind.windSpeedKnots : null);
+            const sortedKeys = Object.keys(monthlyData).sort((a, b) => monthlyData[a].date - monthlyData[b].date);
+            labels = sortedKeys.map(key => monthlyData[key].date.toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { year: 'numeric', month: 'long' }));
+            forecastData = sortedKeys.map(key => monthlyData[key].forecastKnots.reduce((a, b) => a + b, 0) / monthlyData[key].forecastKnots.length);
+            avgMsData = sortedKeys.map(key => monthlyData[key].forecastMs.reduce((a, b) => a + b, 0) / monthlyData[key].forecastMs.length);
+            realWindComparisonData = sortedKeys.map(key => {
+                const month = monthlyData[key];
+                return month.realKnots.length > 0 ? month.realKnots.reduce((a, b) => a + b, 0) / month.realKnots.length : null;
+            });
+            break;
+        }
+        case 'all': { // All data view
+            let dataToRender = filteredData;
+            labels = dataToRender.map(d => new Date(d.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { month: 'short', day: 'numeric' }));
+            forecastData = dataToRender.map(d => d.avgPredictedKnots);
+            avgMsData = dataToRender.map(d => d.avgPredictedMs);
+            realWindComparisonData = dataToRender.map(d => d.realWind ? d.realWind.windSpeedKnots : null);
+            break;
+        }
+        default: { // Daily view
+            let dataToRender = filteredData;
+            // On mobile (screen width < 768px), show only the last 30 days, on desktop show last 45
+            if (window.innerWidth < 768) {
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                dataToRender = filteredData.filter(d => new Date(d.date) >= thirtyDaysAgo);
+            } else {
+                const fortyFiveDaysAgo = new Date();
+                fortyFiveDaysAgo.setDate(fortyFiveDaysAgo.getDate() - 45);
+                dataToRender = filteredData.filter(d => new Date(d.date) >= fortyFiveDaysAgo);
+            }
+
+            labels = dataToRender.map(d => new Date(d.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { month: 'short', day: 'numeric' }));
+            forecastData = dataToRender.map(d => d.avgPredictedKnots);
+            avgMsData = dataToRender.map(d => d.avgPredictedMs);
+            realWindComparisonData = dataToRender.map(d => d.realWind ? d.realWind.windSpeedKnots : null);
+            break;
+        }
     }
 
     const chartData = {
