@@ -138,7 +138,7 @@ export function renderHistoricalChart() {
     const realWindHistory = state.realWindHistory || [];
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Set to midnight to compare dates only
+    today.setHours(23, 59, 59, 999); // Set to end of day to include today in filtering
 
     const filteredData = historicalData.filter(entry => new Date(entry.date) <= today);
 
