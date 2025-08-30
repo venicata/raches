@@ -171,6 +171,7 @@ export function renderHistoricalChart() {
     if (chartSection) chartSection.style.display = 'block';
 
     let labels, forecastData, avgMsData, realWindComparisonData;
+    let dataForChart = filteredData; // Default to all filtered data
 
     switch (state.historicalChartView) {
         case 'weekly': {
@@ -190,6 +191,10 @@ export function renderHistoricalChart() {
             }, {});
 
             const sortedKeys = Object.keys(weeklyData).sort((a, b) => new Date(weeklyData[a].startDate) - new Date(weeklyData[b].startDate));
+
+            // Create an array of aggregated objects for the tooltip
+            dataForChart = sortedKeys.map(key => weeklyData[key]);
+
             labels = sortedKeys.map(key => {
                 const startDate = weeklyData[key].startDate;
                 const endDate = new Date(startDate);
@@ -222,6 +227,10 @@ export function renderHistoricalChart() {
             }, {});
 
             const sortedKeys = Object.keys(monthlyData).sort((a, b) => monthlyData[a].date - monthlyData[b].date);
+
+            // Create an array of aggregated objects for the tooltip
+            dataForChart = sortedKeys.map(key => monthlyData[key]);
+
             labels = sortedKeys.map(key => monthlyData[key].date.toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { year: 'numeric', month: 'long' }));
             forecastData = sortedKeys.map(key => monthlyData[key].forecastKnots.reduce((a, b) => a + b, 0) / monthlyData[key].forecastKnots.length);
             avgMsData = sortedKeys.map(key => monthlyData[key].forecastMs.reduce((a, b) => a + b, 0) / monthlyData[key].forecastMs.length);
@@ -233,6 +242,7 @@ export function renderHistoricalChart() {
         }
         case 'all': { // All data view
             let dataToRender = filteredData;
+            dataForChart = dataToRender;
             labels = dataToRender.map(d => new Date(d.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { month: 'short', day: 'numeric' }));
             forecastData = dataToRender.map(d => d.avgPredictedKnots);
             avgMsData = dataToRender.map(d => d.avgPredictedMs);
@@ -252,6 +262,10 @@ export function renderHistoricalChart() {
                 dataToRender = filteredData.filter(d => new Date(d.date) >= fortyFiveDaysAgo);
             }
 
+            // Sort the data chronologically before rendering the chart
+            dataToRender.sort((a, b) => new Date(a.date) - new Date(b.date));
+            dataForChart = dataToRender;
+
             labels = dataToRender.map(d => new Date(d.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { month: 'short', day: 'numeric' }));
             forecastData = dataToRender.map(d => d.avgPredictedKnots);
             avgMsData = dataToRender.map(d => d.avgPredictedMs);
@@ -259,6 +273,7 @@ export function renderHistoricalChart() {
             break;
         }
     }
+
 
     const chartData = {
         labels: labels,
@@ -318,18 +333,57 @@ export function renderHistoricalChart() {
                     callbacks: {
                         title: function (context) {
                             const dataIndex = context[0].dataIndex;
-                            const entryDate = filteredData[dataIndex].date;
+                            const entry = dataForChart[dataIndex];
+                            if (!entry) return '';
+
+                            // For aggregated views, the label is already formatted as a range or month name
+                            if (state.historicalChartView === 'weekly' || state.historicalChartView === 'monthly') {
+                                return context[0].label;
+                            }
+
+                            // For daily and all views, format the date
+                            const entryDate = entry.date;
                             return new Date(entryDate).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-GB', {
                                 weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
                             });
                         },
                         afterBody: function (context) {
                             const dataIndex = context[0].dataIndex;
-                            const entry = filteredData[dataIndex];
+                            const entry = dataForChart[dataIndex];
                             if (!entry) return '';
 
-                            // Dynamically build tooltip from raw data based on current language
                             const T = translations[state.currentLang];
+
+                            // For aggregated views (weekly/monthly), the 'entry' object is different.
+                            if (!entry.finalForecastKey) {
+                                let tooltipLines = [];
+                                const validKnots = entry.forecastKnots.filter(knots => knots != null && !isNaN(parseFloat(knots)));
+                                const sumKnots = validKnots.reduce((acc, val) => acc + parseFloat(val), 0);
+                                const avgKnots = validKnots.length > 0 ? sumKnots / validKnots.length : 0;
+
+                                const validMs = entry.forecastMs.filter(ms => ms != null && ms !== '' && !isNaN(parseFloat(ms)));
+                                let avgMs;
+                                if (validMs.length > 0) {
+                                    const sumMs = validMs.reduce((acc, val) => acc + parseFloat(val), 0);
+                                    avgMs = sumMs / validMs.length;
+                                } else {
+                                    // If no valid m/s values, calculate from knots
+                                    avgMs = avgKnots / 1.94384;
+                                }
+
+                                tooltipLines.push(`💨 ${T.avgForecastLabel || 'Avg Forecast'}: ${avgKnots.toFixed(1)} knots (${avgMs.toFixed(1)} m/s)`);
+
+                                if (entry.realKnots && entry.realKnots.length > 0) {
+                                    const avgRealKnots = entry.realKnots.reduce((a, b) => a + b, 0) / entry.realKnots.length;
+                                    tooltipLines.push(`🚩 ${T.avgRealWindLabel || 'Avg Real Wind'}: ${avgRealKnots.toFixed(1)} knots`);
+                                }
+
+                                tooltipLines.push(`📝 ${T.recordsCountLabel || 'Records'}: ${entry.count}`);
+
+                                return tooltipLines;
+                            }
+
+                            // Dynamically build tooltip from raw data for daily views
                             const pointSuffix = T.pointsSuffix || 'pts';
                             let tooltipLines = [];
 
