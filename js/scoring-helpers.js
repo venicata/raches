@@ -55,6 +55,9 @@ export function getWindDirectionScore(dir, T) {
     } else if (dir >= 15 && dir < 45) { // E-NE (almost Ideal)
         score = 2;
         textKey = 'windDirE_SE_Acceptable'; // Assuming E-SE is the intended key
+    } else if (dir > 90 && dir < 115) { // E-NE (almost Ideal)
+        score = 2;
+        textKey = 'windDirE_SE_Acceptable'; // Assuming E-SE is the intended key
     } else if (dir > 135 && dir <= 115) { // E-NE (almost Ideal)
         score = 1;
         textKey = 'windDirE_SE_Acceptable'; // Assuming E-SE is the intended key

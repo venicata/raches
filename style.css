@@ -301,6 +301,12 @@ footer a {
     line-height: 1.6;
 }
 
+.baseline-correction {
+    font-size: 0.9em;
+    color: #555;
+    font-style: italic;
+}
+
 .result-card ul {
     list-style-type: none;
     padding-left: 0;

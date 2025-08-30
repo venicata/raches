@@ -108,7 +108,9 @@ function predictWindSpeedWithModel(scores, model) {
 
     return {
         min: minKnots,
-        max: maxKnots
+        max: maxKnots,
+        baselineAvgKnots: baselineAvgKnots,
+        correction: correction
     };
 }
 
@@ -146,6 +148,8 @@ export function predictWindSpeedRange(scores, model) {
         avgPredictedKnots, // This is the corrected average
         rawAvgPredictedKnots, // This is the raw, uncorrected average
         avgPredictedMs,
-        text: `${finalMinKnots}-${finalMaxKnots} ${T.knotsUnit} (${avgPredictedMs.toFixed(1)} ${T.msUnit})`
+        text: `${finalMinKnots}-${finalMaxKnots} ${T.knotsUnit} (${avgPredictedMs.toFixed(1)} ${T.msUnit})`,
+        baselineAvgKnots: finalPrediction.baselineAvgKnots,
+        correction: finalPrediction.correction
     };
 }

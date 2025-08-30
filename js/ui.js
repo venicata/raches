@@ -123,7 +123,8 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
         });
     }
 
-    state.resultsContainer.innerHTML = '';
+        state.resultsContainer.innerHTML = '';
+
     const T = translations[state.currentLang];
     const pointSuffix = T.pointsSuffix || 'pts';
 
@@ -208,6 +209,7 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
             <p class="forecast-label ${forecastClass === 'bad' ? 'bad' : ''}">💨 ${T.forecastLabel} ${finalForecastText}</p>
             <p>${result.scoreText}</p>
             <p>${predictedWindText}</p>
+            <p class="baseline-correction">${T.baselineLabel}: ${result.baselineAvgKnots.toFixed(1)} ${T.knotsUnit}, ${T.correctionLabel}: ${result.correction.toFixed(1)} ${T.knotsUnit}</p>
             <h4>${T.detailsLabel}</h4>
             <ul>
                 <li>

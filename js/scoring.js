@@ -256,6 +256,8 @@ export async function processWeatherData(weatherData, marineData, correctionMode
             rawAvgPredictedKnots: windPrediction.rawAvgPredictedKnots, // Raw value
             avgPredictedMs: windPrediction.avgPredictedMs,
             rawAvgPredictedMs: windPrediction.rawAvgPredictedMs,
+            baselineAvgKnots: windPrediction.baselineAvgKnots,
+            correction: windPrediction.correction,
             waterTemp: data.sea_temp_value
         });
     }
