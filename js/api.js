@@ -52,7 +52,7 @@ export async function fetchAndAnalyze(startDate, endDate) {
             processWeatherData(weatherData, marineData, correctionModel)
         ]);
 
-        displayResults(analysisResults, maxWindHistory, peakWindModel);
+        displayResults(analysisResults, maxWindHistory, peakWindModel, correctionModel);
         // The call to fetchAndDisplayRealWind() is removed as maxWindHistory is now passed to displayResults.
     } catch (error) {
         state.resultsContainer.innerHTML = `<p class="placeholder" style="color: red;">Грешка: ${error.message}</p>`;
@@ -142,7 +142,7 @@ export async function triggerModelCalculation() {
  */
 export async function getAppData() {
     try {
-                const response = await fetch('/api/get-app-data');
+        const response = await fetch('/api/get-app-data');
         if (!response.ok) {
             console.error("Failed to fetch app data:", response.status, response.statusText);
             return { forecastHistory: [], maxWindHistory: [] };
@@ -178,13 +178,10 @@ export async function saveHistoricalEntry(entry) {
             body: JSON.stringify(entry),
         });
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
-            console.error("Failed to save historical entry to API:", response.status, response.statusText, errorData);
-        } else {
-            console.log("Historical entry saved successfully via API.");
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
     } catch (error) {
-        console.error("Error sending historical entry to API:", error);
+        console.error('Failed to save historical entry:', error);
     }
 }
 
