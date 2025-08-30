@@ -286,6 +286,8 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
             pMs_max: result.pKnots_max * 0.514444,
             avgPredictedKnots: result.avgPredictedKnots, // Corrected prediction
             rawAvgPredictedKnots: result.rawAvgPredictedKnots, // Raw prediction
+            avgPredictedMs: result.avgPredictedMs,
+            rawAvgPredictedMs: result.rawAvgPredictedMs,
 
             // Cloud
             cloud_cover_value: result.cloud_cover_value,

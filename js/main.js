@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     state.datePicker = flatpickr("#date-picker", {
         mode: "range",
         dateFormat: "Y-m-d",
-        minDate: new Date().fp_incr(-1), // Allow selecting yesterday
+        minDate: new Date().fp_incr(-15), // Allow selecting yesterday
         maxDate: new Date().fp_incr(15) // Allows forecast up to 16 days ahead
     });
 
