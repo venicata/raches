@@ -106,7 +106,7 @@ export function displayRealWindData(history) {
     });
 }
 
-export async function displayResults(analysisResults, maxWindHistory, peakWindModel) {
+export async function displayResults(analysisResults, maxWindHistory, peakWindModel, correctionModel) {
     if (!analysisResults || analysisResults.length === 0) {
         state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderDefault}</p>`;
         const chartSection = document.getElementById('chartSection');
@@ -332,6 +332,9 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
     if (maxWindHistory) {
         displayRealWindData(maxWindHistory);
     }
+
+    // Display the correction model if available
+    displayCorrectionModel(correctionModel);
 }
 
 export function initRecalibrateButton() {
@@ -358,6 +361,25 @@ export function initRecalibrateButton() {
             btn.disabled = false;
         }
     });
+}
+
+export function displayCorrectionModel(model) {
+    const container = document.getElementById('correction-model-container');
+    const paramsEl = document.getElementById('correction-model-params');
+
+    if (model && model.coefficients && container && paramsEl) {
+        // Format for display
+        const displayModel = {
+            lastUpdated: model.lastUpdated,
+            recordsAnalyzed: model.recordsAnalyzed,
+            coefficients: model.coefficients
+        };
+
+        paramsEl.textContent = JSON.stringify(displayModel, null, 2);
+        container.style.display = 'block';
+    } else if (container) {
+        container.style.display = 'none';
+    }
 }
 
 export function initModal() {

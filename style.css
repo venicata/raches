@@ -451,18 +451,18 @@ footer a {
     border-left: 5px solid #F44336;
 }
 
-#scoring-legend {
+#scoring-legend, #correction-model-container {
     padding: 15px;
     background-color: #f9f9f9;
     border-radius: 8px;
     margin-top: 20px;
     border: 1px solid #ddd;
 }
-#scoring-legend h4 {
+#scoring-legend h4, #correction-model-container h3 {
     margin-top: 0;
     margin-bottom: 10px;
 }
-#scoring-legend ul {
+#scoring-legend ul, #correction-model-container pre {
     list-style-type: none;
     padding: 0;
     margin: 0;
