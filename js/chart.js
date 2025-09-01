@@ -296,6 +296,7 @@ export function renderHistoricalChart() {
                 borderWidth: 1.5,
                 yAxisID: 'yKnots',
             },
+            /*
             {
                 type: 'line',
                 label: translations[state.currentLang].msUnit,
@@ -306,6 +307,7 @@ export function renderHistoricalChart() {
                 hidden: true,
                 tension: 0.1
             }
+            */
         ]
     };
 
@@ -489,6 +491,7 @@ export function renderHistoricalChart() {
                     }
                 }
             },
+            /*
             scales: {
                 yKnots: {
                     type: 'linear',
@@ -512,6 +515,7 @@ export function renderHistoricalChart() {
                     },
                 }
             }
+            */
         }
     });
 }
