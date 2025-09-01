@@ -49,27 +49,31 @@ export function getWindDirectionScore(dir, T) {
     let score = 0;
     let textKey = '';
 
-    if (dir >= 45 && dir <= 90) { // NE-E (Ideal)
-        score = 3;
-        textKey = 'windDirNE_E_Ideal';
-    } else if (dir >= 15 && dir < 45) { // E-NE (almost Ideal)
-        score = 2;
-        textKey = 'windDirE_SE_Acceptable'; // Assuming E-SE is the intended key
-    } else if (dir > 90 && dir < 115) { // E-NE (almost Ideal)
-        score = 2;
-        textKey = 'windDirE_SE_Acceptable'; // Assuming E-SE is the intended key
-    } else if (dir > 135 && dir <= 115) { // E-NE (almost Ideal)
-        score = 1;
-        textKey = 'windDirE_SE_Acceptable'; // Assuming E-SE is the intended key
-    } else if ((dir > 115 && dir <= 135) || (dir >= 0 && dir < 45)) { // E-SE and N-NE (Not good)
-        score = -2;
-        textKey = (dir > 115) ? 'windDirE_SE_Acceptable' : 'windDirN_NE_Acceptable';
-    } else if (dir > 135 && dir < 225) { // SE-S-SW (Not good at all)
-        score = -4;
-        textKey = 'windDirSE_S_SW_Neutral';
-    } else { // W, NW (Bad)
-        score = -8;
-        textKey = 'windDirW_NW_Bad';
+    switch (true) {
+        case (dir >= 45 && dir <= 90): // NE-E (Ideal)
+            score = 3;
+            textKey = 'windDirNE_E_Ideal';
+            break;
+        case (dir >= 15 && dir < 45) || (dir > 90 && dir < 115): // E-NE and E-SE (Acceptable)
+            score = 2;
+            textKey = 'windDirE_SE_Acceptable';
+            break;
+        case (dir >= 0 && dir < 15) || (dir >= 115 && dir < 135): // N-NE and SE (Not ideal)
+            score = 1;
+            textKey = 'windDirN_NE_Acceptable';
+            break;
+        case (dir >= 135 && dir < 225): // SE-S-SW (Stops thermal)
+            score = -4;
+            textKey = 'windDirSE_S_SW_Neutral';
+            break;
+        case (dir >= 225 && dir < 360): // W-NW (Bad)
+            score = -8;
+            textKey = 'windDirW_NW_Bad';
+            break;
+        default:
+            score = 0;
+            textKey = ''; // No specific direction text
+            break;
     }
 
     const description = T[textKey] || '';
