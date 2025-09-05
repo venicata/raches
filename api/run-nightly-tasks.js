@@ -8,7 +8,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
 import { processMaxWind } from './process-max-wind.js';
 import { calculateCorrectionModel } from './calculate-correction-model.js';
-import { predictPeakWindTime } from './predict-peak-wind-time.js';
+import { trainAndSavePeakTimeModel } from './predict-peak-wind-time.js';
 
 export default async function handler(request, response) {
     // Security check for Vercel Cron is disabled for manual triggering.
@@ -33,10 +33,10 @@ export default async function handler(request, response) {
         console.log('calculateCorrectionModel finished.');
 
         // Step 3: Train Peak Wind Time Model
-        console.log('Running predictPeakWindTime model training...');
-        const peakTimeResult = await predictPeakWindTime();
-        results.predictPeakWindTime = peakTimeResult;
-        console.log('predictPeakWindTime model training finished.');
+        console.log('Running trainAndSavePeakTimeModel model training...');
+        const peakTimeResult = await trainAndSavePeakTimeModel();
+        results.trainAndSavePeakTimeModel = peakTimeResult;
+        console.log('trainAndSavePeakTimeModel model training finished.');
 
         console.log('Nightly tasks completed successfully.');
         return response.status(200).json({
