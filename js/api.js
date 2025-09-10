@@ -1,4 +1,4 @@
-import { RACHES_LAT, RACHES_LON, VOLOS_LAT, VOLOS_LON } from './constants.js';
+import { RACHES_LAT, RACHES_LON, VOLOS_LAT, VOLOS_LON, LAMIA_LAT, LAMIA_LON } from './constants.js';
 import { processWeatherData } from './scoring.js';
 import { displayResults, displayRealWindData } from './ui.js';
 import { translations } from './translations.js';
@@ -25,26 +25,49 @@ export function formatDate(date) {
  */
 export async function fetchAndAnalyze(startDate, endDate) {
     state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderLoading}</p>`;
-    state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderLoading}</p>`;
 
     const formattedStartDate = formatDate(startDate);
     const formattedEndDate = formatDate(endDate);
 
-    const weatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${RACHES_LAT}&longitude=${RACHES_LON}&hourly=temperature_2m,cloud_cover_low,windspeed_10m,winddirection_80m,precipitation_probability,relative_humidity_2m,surface_pressure&daily=cloud_cover_mean,temperature_2m_max,wind_speed_10m_max,wind_direction_10m_dominant&timezone=auto&start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
+    // URL for Raches - wind and other parameters
+    const rachesWeatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${RACHES_LAT}&longitude=${RACHES_LON}&hourly=windspeed_10m,winddirection_80m,precipitation_probability,relative_humidity_2m,surface_pressure&daily=wind_speed_10m_max,wind_direction_10m_dominant&timezone=auto&start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
+
+    // URL for Lamia - temperature and cloud cover
+    const lamiaWeatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LAMIA_LAT}&longitude=${LAMIA_LON}&hourly=temperature_2m,cloud_cover&daily=cloud_cover_mean,temperature_2m_max&timezone=auto&start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
+
+    // URL for Volos - sea temperature
     const marineApiUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${VOLOS_LAT}&longitude=${VOLOS_LON}&hourly=sea_surface_temperature&start_date=${formattedStartDate}&end_date=${formattedEndDate}&timezone=auto`;
 
     try {
-        const [weatherResponse, marineResponse] = await Promise.all([
-            fetch(weatherApiUrl),
+        const [rachesWeatherResponse, lamiaWeatherResponse, marineResponse] = await Promise.all([
+            fetch(rachesWeatherApiUrl),
+            fetch(lamiaWeatherApiUrl),
             fetch(marineApiUrl)
         ]);
 
-        if (!weatherResponse.ok || !marineResponse.ok) {
+        if (!rachesWeatherResponse.ok || !lamiaWeatherResponse.ok || !marineResponse.ok) {
             throw new Error('Проблем при връзката с API-то за времето.');
         }
 
-        const weatherData = await weatherResponse.json();
+        const rachesWeatherData = await rachesWeatherResponse.json();
+        const lamiaWeatherData = await lamiaWeatherResponse.json();
         const marineData = await marineResponse.json();
+
+        // Merge weather data
+        const weatherData = {
+            ...rachesWeatherData,
+            hourly: {
+                ...rachesWeatherData.hourly,
+                temperature_2m: lamiaWeatherData.hourly.temperature_2m,
+                cloud_cover_low: lamiaWeatherData.hourly.cloud_cover,
+            },
+            daily: {
+                ...rachesWeatherData.daily,
+                cloud_cover_mean: lamiaWeatherData.daily.cloud_cover_mean,
+                temperature_2m_max: lamiaWeatherData.daily.temperature_2m_max,
+            }
+        };
+
         const correctionModel = await getCorrectionModel();
 
         const [{ peakWindModel, maxWindHistory }, analysisResults] = await Promise.all([
@@ -53,7 +76,6 @@ export async function fetchAndAnalyze(startDate, endDate) {
         ]);
 
         displayResults(analysisResults, maxWindHistory, peakWindModel, correctionModel);
-        // The call to fetchAndDisplayRealWind() is removed as maxWindHistory is now passed to displayResults.
     } catch (error) {
         state.resultsContainer.innerHTML = `<p class="placeholder" style="color: red;">Грешка: ${error.message}</p>`;
     }
