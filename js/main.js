@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { translations } from './translations.js';
-import { setLanguage, displayResults, initModal, initRecalibrateButton } from './ui.js';
+import { setLanguage, displayResults, initModal, initAdminButtons } from './ui.js';
 import { fetchAndAnalyze, formatDate, triggerRealDataSync, fetchAndDisplayRealWind, triggerNightlyTasks, trainPeakTimeModel } from './api.js';
 import { renderHistoricalChart, renderRealWindChart } from './chart.js';
 
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderRealWindChart();
     });
 
-    initRecalibrateButton();
+    initAdminButtons();
     renderHistoricalChart();
 
     const syncBtn = document.getElementById('sync-btn');

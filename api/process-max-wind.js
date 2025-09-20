@@ -67,11 +67,12 @@ function findMaxWindForEachDay(observations) {
             dayObs[0]
         );
 
-        // Изчисляваме средната скорост на вятъра в +-1 час прозорец около пика
+        // Изчисляваме средната скорост на вятъра в прозорец -15 мин преди пика и +60 мин след него
         const peakTime = new Date(maxRecord.timestamp).getTime();
-        const oneHour = 60 * 60 * 1000;
-        const startTime = peakTime - oneHour;
-        const endTime = peakTime + oneHour;
+        const fifteenMinutes = 15 * 60 * 1000;
+        const sixtyMinutes = 60 * 60 * 1000;
+        const startTime = peakTime - fifteenMinutes;
+        const endTime = peakTime + sixtyMinutes;
 
         const relevantObservations = dayObs.filter(obs => {
             const obsTime = new Date(obs.timestamp).getTime();
