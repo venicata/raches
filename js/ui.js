@@ -345,7 +345,7 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
     displayCorrectionModel(correctionModel);
 }
 
-export function initRecalibrateButton() {
+export function initAdminButtons() {
     const btn = document.getElementById('recalibrateModelBtn');
     const statusEl = document.getElementById('recalibrateStatus');
 
@@ -369,6 +369,40 @@ export function initRecalibrateButton() {
             btn.disabled = false;
         }
     });
+
+    const deleteBtn = document.getElementById('deleteLastRealWindBtn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to delete the last real wind entry?')) {
+                return;
+            }
+
+            deleteBtn.disabled = true;
+            statusEl.textContent = 'Deleting...';
+            statusEl.style.color = '#555';
+
+            try {
+                const response = await fetch('/api/delete-last-real-wind', { method: 'POST' });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Unknown error');
+                }
+
+                statusEl.textContent = result.message || 'Entry deleted!';
+                statusEl.style.color = 'green';
+                alert('Success: ' + (result.message || 'Entry deleted!'));
+                // Optionally, you can refresh the page or the data
+                // location.reload();
+            } catch (error) {
+                statusEl.textContent = `Error: ${error.message}`;
+                statusEl.style.color = 'red';
+                alert(`Error: ${error.message}`);
+            } finally {
+                deleteBtn.disabled = false;
+            }
+        });
+    }
 }
 
 export function displayCorrectionModel(model) {

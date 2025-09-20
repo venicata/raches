@@ -335,7 +335,7 @@ footer a {
     background-color: #f9f9f9;
 }
 
-#recalibrateModelBtn, #refreshBtn, #trainPeakTimeModelBtn {
+#recalibrateModelBtn, #refreshBtn, #trainPeakTimeModelBtn, #deleteLastRealWindBtn {
     padding: 10px 20px;
     font-size: 1rem;
     cursor: pointer;
