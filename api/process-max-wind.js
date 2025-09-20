@@ -59,11 +59,36 @@ function findMaxWindForEachDay(observations) {
         return acc;
     }, {});
 
+    // 2. За всеки ден намираме макс. запис и изчисляваме средния вятър около пика
     const dailyMaxRecords = Object.values(dailyObservations).map(dayObs => {
-        return dayObs.reduce((max, current) =>
+        // Намираме записа с максимален вятър за деня
+        const maxRecord = dayObs.reduce((max, current) =>
             (current.windSpeedKnots > max.windSpeedKnots) ? current : max,
             dayObs[0]
         );
+
+        // Изчисляваме средната скорост на вятъра в +-1 час прозорец около пика
+        const peakTime = new Date(maxRecord.timestamp).getTime();
+        const oneHour = 60 * 60 * 1000;
+        const startTime = peakTime - oneHour;
+        const endTime = peakTime + oneHour;
+
+        const relevantObservations = dayObs.filter(obs => {
+            const obsTime = new Date(obs.timestamp).getTime();
+            return obsTime >= startTime && obsTime <= endTime;
+        });
+
+        let avgWindSpeedAroundPeak = maxRecord.windSpeedKnots; // По подразбиране е пиковата стойност
+        if (relevantObservations.length > 0) {
+            const sum = relevantObservations.reduce((acc, obs) => acc + obs.windSpeedKnots, 0);
+            avgWindSpeedAroundPeak = sum / relevantObservations.length;
+        }
+
+        // Добавяме новото поле към обекта и го закръгляме
+        return {
+            ...maxRecord,
+            avgWindSpeedAroundPeak: Math.round(avgWindSpeedAroundPeak * 100) / 100
+        };
     });
 
     return dailyMaxRecords;

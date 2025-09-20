@@ -33,24 +33,18 @@ export async function calculateCorrectionModel() {
     }
 
     // 2. Combine and prepare data
-    const dailyMaxWind = {};
-    realWindHistory.forEach(r => {
-        const date = r.timestamp.split('T')[0];
-        const currentMax = dailyMaxWind[date] || -Infinity;
-        if (r.windSpeedKnots > currentMax) {
-            dailyMaxWind[date] = r.windSpeedKnots;
-        }
-    });
+    const forecastMap = new Map(forecastHistory.map(f => [f.date, f]));
+    const realWindMap = new Map(realWindHistory.map(r => [r.timestamp.split('T')[0], r]));
 
     const trainingData = [];
-    const forecastMap = new Map(forecastHistory.map(f => [f.date, f]));
     let unmatchedRecords = 0;
 
-    for (const date in dailyMaxWind) {
+    for (const [date, realWindRecord] of realWindMap.entries()) {
         const forecast = forecastMap.get(date);
-        const realKnots = dailyMaxWind[date];
 
         if (forecast) {
+            const realKnots = realWindRecord.windSpeedKnots;
+
             const features = [
                 forecast.cloud_cover_score,
                 forecast.temp_diff_score,
@@ -102,15 +96,15 @@ export async function calculateCorrectionModel() {
         version: '5.0-linear-regression',
         lastUpdated: new Date().toISOString(),
         coefficients: {
-            intercept: coefficients[0],
-            cloud_cover: coefficients[1],
-            temp_diff: coefficients[2],
-            wind_speed: coefficients[3],
-            wind_direction: coefficients[4],
-            suck_effect: coefficients[5],
-            pressure_drop: coefficients[6],
-            humidity: coefficients[7],
-            precipitation: coefficients[8],
+            intercept: Math.round(coefficients[0] * 100) / 100,
+            cloud_cover: Math.round(coefficients[1] * 100) / 100,
+            temp_diff: Math.round(coefficients[2] * 100) / 100,
+            wind_speed: Math.round(coefficients[3] * 100) / 100,
+            wind_direction: Math.round(coefficients[4] * 100) / 100,
+            suck_effect: Math.round(coefficients[5] * 100) / 100,
+            pressure_drop: Math.round(coefficients[6] * 100) / 100,
+            humidity: Math.round(coefficients[7] * 100) / 100,
+            precipitation: Math.round(coefficients[8] * 100) / 100,
         },
         recordsAnalyzed: trainingData.length
     };

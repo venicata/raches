@@ -419,7 +419,14 @@ export function renderHistoricalChart() {
                                 const realWindKnots = entry.realWind.windSpeedKnots.toFixed(1);
                                 const realWindGustKnots = entry.realWind.windGustKnots.toFixed(1);
                                 const realWindMs = (entry.realWind.windSpeedKnots * 0.5144).toFixed(1);
-                                const realWindText = `${T.realWindLabel} ${realWindKnots} (пориви до ${realWindGustKnots}) ${T.knotsUnit} (${realWindMs} ${T.msUnit})`;
+
+                                let realWindText = `${T.realWindLabel} ${realWindKnots} (пориви до ${realWindGustKnots}) ${T.knotsUnit} (${realWindMs} ${T.msUnit})`;
+
+                                if (entry.realWind.avgWindSpeedAroundPeak) {
+                                    const avgWindKnots = entry.realWind.avgWindSpeedAroundPeak.toFixed(1);
+                                    realWindText += ` | ${T.avgWindAroundPeakLabel} ${avgWindKnots} ${T.knotsUnit}`;
+                                }
+
                                 tooltipLines.push(`🌬️ ${realWindText}`);
                             }
 
