@@ -49,7 +49,7 @@ export default async function handler(request, response) {
 
         // Keep only the last MAX_HISTORY_DAYS entries
         if (currentHistoryArray.length > MAX_HISTORY_DAYS) {
-            currentHistoryArray = currentHistoryArray.slice(-MAX_HISTORY_DAYS);
+            //currentHistoryArray = currentHistoryArray.slice(-MAX_HISTORY_DAYS);
         }
 
         // Store the updated history back in Redis (as a JSON string)

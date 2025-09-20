@@ -89,7 +89,13 @@ export function displayRealWindData(history) {
             const realWindGustKnots = record.windGustKnots.toFixed(1);
             const realWindMs = (record.windSpeedKnots * 0.5144).toFixed(1);
 
-            const realWindText = `${T.realWindLabel} <b>${realWindKnots}</b> (пориви до <b>${realWindGustKnots}</b>) ${T.knotsUnit} (${realWindMs} ${T.msUnit})`;
+            let realWindText = `${T.realWindLabel} <b>${realWindKnots}</b> (пориви до <b>${realWindGustKnots}</b>) ${T.knotsUnit} (${realWindMs} ${T.msUnit})`;
+
+            // Проверка и добавяне на средната скорост около пика
+            if (record.avgWindSpeedAroundPeak) {
+                const avgWindKnots = record.avgWindSpeedAroundPeak.toFixed(1);
+                realWindText += ` | ${T.avgWindAroundPeakLabel} <b>${avgWindKnots}</b> ${T.knotsUnit}`;
+            }
 
             const p = document.createElement('p');
             p.className = 'real-wind-data'; // Клас за идентификация
