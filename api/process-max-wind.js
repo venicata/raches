@@ -59,30 +59,58 @@ function findMaxWindForEachDay(observations) {
         return acc;
     }, {});
 
-    // 2. За всеки ден намираме макс. запис и изчисляваме средния вятър около пика
+    // 2. За всеки ден намираме най-добрия 90-минутен прозорец около пика
     const dailyMaxRecords = Object.values(dailyObservations).map(dayObs => {
+        // Сортираме измерванията по време, за да работи плъзгащият се прозорец
+        dayObs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
         // Намираме записа с максимален вятър за деня
         const maxRecord = dayObs.reduce((max, current) =>
             (current.windSpeedKnots > max.windSpeedKnots) ? current : max,
             dayObs[0]
         );
 
-        // Изчисляваме средната скорост на вятъра в прозорец -15 мин преди пика и +60 мин след него
         const peakTime = new Date(maxRecord.timestamp).getTime();
-        const fifteenMinutes = 15 * 60 * 1000;
-        const sixtyMinutes = 60 * 60 * 1000;
-        const startTime = peakTime - fifteenMinutes;
-        const endTime = peakTime + sixtyMinutes;
+        const NINETY_MINUTES = 90 * 60 * 1000;
 
-        const relevantObservations = dayObs.filter(obs => {
+        // Дефинираме по-голям прозорец за търсене: 90 минути преди и 90 минути след пика
+        const searchWindowStart = peakTime - NINETY_MINUTES;
+        const searchWindowEnd = peakTime + NINETY_MINUTES;
+
+        const candidateObs = dayObs.filter(obs => {
             const obsTime = new Date(obs.timestamp).getTime();
-            return obsTime >= startTime && obsTime <= endTime;
+            return obsTime >= searchWindowStart && obsTime <= searchWindowEnd;
         });
 
-        let avgWindSpeedAroundPeak = maxRecord.windSpeedKnots; // По подразбиране е пиковата стойност
-        if (relevantObservations.length > 0) {
-            const sum = relevantObservations.reduce((acc, obs) => acc + obs.windSpeedKnots, 0);
-            avgWindSpeedAroundPeak = sum / relevantObservations.length;
+        let bestAvg = -1;
+        let bestWindowObservations = [];
+
+        // Алгоритъм с плъзгащ се прозорец
+        if (candidateObs.length > 0) {
+            for (let i = 0; i < candidateObs.length; i++) {
+                const windowStartTime = new Date(candidateObs[i].timestamp).getTime();
+                const windowEndTime = windowStartTime + NINETY_MINUTES;
+
+                const currentWindow = candidateObs.filter(obs => {
+                    const obsTime = new Date(obs.timestamp).getTime();
+                    return obsTime >= windowStartTime && obsTime < windowEndTime;
+                });
+
+                if (currentWindow.length > 0) {
+                    const sum = currentWindow.reduce((acc, obs) => acc + obs.windSpeedKnots, 0);
+                    const avg = sum / currentWindow.length;
+
+                    if (avg > bestAvg) {
+                        bestAvg = avg;
+                        bestWindowObservations = currentWindow;
+                    }
+                }
+            }
+        }
+
+        let avgWindSpeedAroundPeak = maxRecord.windSpeedKnots; // fallback
+        if (bestAvg !== -1) {
+            avgWindSpeedAroundPeak = bestAvg;
         }
 
         // Добавяме новото поле към обекта и го закръгляме
