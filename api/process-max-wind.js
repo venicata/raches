@@ -61,64 +61,60 @@ function findMaxWindForEachDay(observations) {
 
     // 2. За всеки ден намираме най-добрия 90-минутен прозорец около пика
     const dailyMaxRecords = Object.values(dailyObservations).map(dayObs => {
-        // Сортираме измерванията по време, за да работи плъзгащият се прозорец
+        if (!dayObs || dayObs.length === 0) return null;
+
+        // Стъпка 1: Сортиране
         dayObs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-        // Намираме записа с максимален вятър за деня
+        // Стъпка 2: Намиране на пика
         const maxRecord = dayObs.reduce((max, current) =>
-            (current.windSpeedKnots > max.windSpeedKnots) ? current : max,
-            dayObs[0]
-        );
+            (current.windSpeedKnots > max.windSpeedKnots) ? current : max, dayObs[0]);
 
-        const peakTime = new Date(maxRecord.timestamp).getTime();
+        // Ако има само едно измерване, средната стойност е равна на него
+        if (dayObs.length === 1) {
+            return { ...maxRecord, avgWindSpeedAroundPeak: maxRecord.windSpeedKnots };
+        }
+
         const NINETY_MINUTES = 90 * 60 * 1000;
+        const peakTime = new Date(maxRecord.timestamp).getTime();
 
-        // Дефинираме по-голям прозорец за търсене: 90 минути преди и 90 минути след пика
+        // Стъпка 3: Ограничаване на обхвата до +/- 90 минути около пика
         const searchWindowStart = peakTime - NINETY_MINUTES;
         const searchWindowEnd = peakTime + NINETY_MINUTES;
-
         const candidateObs = dayObs.filter(obs => {
             const obsTime = new Date(obs.timestamp).getTime();
             return obsTime >= searchWindowStart && obsTime <= searchWindowEnd;
         });
 
         let bestAvg = -1;
-        let bestWindowObservations = [];
 
-        // Алгоритъм с плъзгащ се прозорец
-        if (candidateObs.length > 0) {
-            for (let i = 0; i < candidateObs.length; i++) {
-                const windowStartTime = new Date(candidateObs[i].timestamp).getTime();
-                const windowEndTime = windowStartTime + NINETY_MINUTES;
+        // Стъпка 4: Търсене на най-добрия 90-минутен прозорец в ограничения обхват
+        for (let i = 0; i < candidateObs.length; i++) {
+            const windowStartTime = new Date(candidateObs[i].timestamp).getTime();
+            const windowEndTime = windowStartTime + NINETY_MINUTES;
 
-                const currentWindow = candidateObs.filter(obs => {
-                    const obsTime = new Date(obs.timestamp).getTime();
-                    return obsTime >= windowStartTime && obsTime < windowEndTime;
-                });
+            const currentWindow = candidateObs.filter(obs => {
+                const obsTime = new Date(obs.timestamp).getTime();
+                return obsTime >= windowStartTime && obsTime < windowEndTime;
+            });
 
-                if (currentWindow.length > 0) {
-                    const sum = currentWindow.reduce((acc, obs) => acc + obs.windSpeedKnots, 0);
-                    const avg = sum / currentWindow.length;
-
-                    if (avg > bestAvg) {
-                        bestAvg = avg;
-                        bestWindowObservations = currentWindow;
-                    }
+            if (currentWindow.length > 0) {
+                const sum = currentWindow.reduce((acc, obs) => acc + obs.windSpeedKnots, 0);
+                const avg = sum / currentWindow.length;
+                if (avg > bestAvg) {
+                    bestAvg = avg;
                 }
             }
         }
 
-        let avgWindSpeedAroundPeak = maxRecord.windSpeedKnots; // fallback
-        if (bestAvg !== -1) {
-            avgWindSpeedAroundPeak = bestAvg;
-        }
+        // Стъпка 5: Връщане на резултата
+        const avgWindSpeedAroundPeak = (bestAvg !== -1) ? bestAvg : maxRecord.windSpeedKnots;
 
-        // Добавяме новото поле към обекта и го закръгляме
         return {
             ...maxRecord,
             avgWindSpeedAroundPeak: Math.round(avgWindSpeedAroundPeak * 100) / 100
         };
-    });
+    }).filter(record => record !== null); // Премахваме дните без данни
 
     return dailyMaxRecords;
 }
