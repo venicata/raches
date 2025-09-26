@@ -6,6 +6,13 @@ import { predictWindSpeedRange, parsePredictedWindRange } from './wind-predictio
 
 
 
+function getForecastCategory(avgKnots, T) {
+    if (avgKnots < 8) return T.forecastNotSuitableKiting;
+    if (avgKnots < 12) return T.forecastLow;
+    if (avgKnots < 16) return T.forecastMid;
+    return T.forecastHigh;
+}
+
 export async function processWeatherData(weatherData, marineData, correctionModel = {}) {
     const dailyData = {};
     weatherData.daily.time.forEach((date, index) => {
@@ -188,10 +195,6 @@ export async function processWeatherData(weatherData, marineData, correctionMode
         const maxScoreTotal = 24.25; // Adjusted for new params
         data.scoreText = T.scoreLabel.replace('{score}', score.toFixed(2)).replace('{minScore}', minScoreTotal).replace('{maxScore}', maxScoreTotal);
 
-        if (score > 10) { data.forecastLabel = T.forecastHigh; }
-        else if (score >= 5) { data.forecastLabel = T.forecastMid; }
-        else if (score >= 0) { data.forecastLabel = T.forecastLow; }
-        else { data.forecastLabel = T.forecastBad; }
 
         const scores = {
             overallScore: score,
@@ -207,6 +210,9 @@ export async function processWeatherData(weatherData, marineData, correctionMode
 
         const windPrediction = predictWindSpeedRange(scores, correctionModel);
 
+        // Determine forecast label based on the corrected wind prediction
+        data.forecastLabel = getForecastCategory(windPrediction.avgPredictedKnots, T);
+
         data.pKnots_min = windPrediction.pKnots_min;
         data.pKnots_max = windPrediction.pKnots_max;
         data.pMs_min = windPrediction.avgPredictedMs; // Note: using avg for min/max ms for simplicity
@@ -215,10 +221,6 @@ export async function processWeatherData(weatherData, marineData, correctionMode
         data.predicted_wind_ms = `${(windPrediction.pKnots_min * 0.5144).toFixed(1)}-${(windPrediction.pKnots_max * 0.5144).toFixed(1)}`;
         data.predicted_wind_text = windPrediction.text;
 
-        const KITING_MIN_KNOTS = 16;
-        if (data.pKnots_max > 0 && data.pKnots_max < KITING_MIN_KNOTS) {
-            data.forecastLabel = T.forecastNotSuitableKiting;
-        }
 
         analysisResults.push({
             date: date,
