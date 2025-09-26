@@ -96,7 +96,7 @@ function predictWindSpeedWithModel(scores, model) {
         (coeffs.precipitation || 0) * features[7]; // New
 
     // Clamp the correction to a reasonable range (e.g., +/- 10 knots) to prevent extreme adjustments
-    const MAX_CORRECTION = 10;
+    const MAX_CORRECTION = 20;
     correction = Math.max(-MAX_CORRECTION, Math.min(MAX_CORRECTION, correction));
 
     // 3. Apply the clamped correction to the baseline
