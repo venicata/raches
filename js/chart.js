@@ -38,15 +38,19 @@ export function renderRealWindChart() {
 
     let labels;
     let realWindData;
+    let avgWindAroundPeakData = [];
 
     if (state.realWindChartView === 'weekly') {
         const weeklyData = state.realWindHistory.reduce((acc, d) => {
             const [year, week] = getWeekNumber(new Date(d.timestamp));
             const key = `${year}-W${week}`;
             if (!acc[key]) {
-                acc[key] = { windSpeeds: [], count: 0, startDate: new Date(d.timestamp) };
+                acc[key] = { windSpeeds: [], avgSpeeds: [], count: 0, startDate: new Date(d.timestamp) };
             }
             acc[key].windSpeeds.push(d.windSpeedKnots);
+            if (d.avgWindSpeedAroundPeak) {
+                acc[key].avgSpeeds.push(d.avgWindSpeedAroundPeak);
+            }
             acc[key].count++;
             return acc;
         }, {});
@@ -64,14 +68,24 @@ export function renderRealWindChart() {
             return sum / week.count;
         });
 
+        avgWindAroundPeakData = Object.keys(weeklyData).sort((a, b) => new Date(weeklyData[a].startDate) - new Date(weeklyData[b].startDate)).map(key => {
+            const week = weeklyData[key];
+            if (week.avgSpeeds.length === 0) return null;
+            const sum = week.avgSpeeds.reduce((a, b) => a + b, 0);
+            return sum / week.avgSpeeds.length;
+        });
+
     } else if (state.realWindChartView === 'monthly') {
         const monthlyData = state.realWindHistory.reduce((acc, d) => {
             const date = new Date(d.timestamp);
             const key = `${date.getFullYear()}-${date.getMonth()}`;
             if (!acc[key]) {
-                acc[key] = { windSpeeds: [], count: 0, date: date };
+                acc[key] = { windSpeeds: [], avgSpeeds: [], count: 0, date: date };
             }
             acc[key].windSpeeds.push(d.windSpeedKnots);
+            if (d.avgWindSpeedAroundPeak) {
+                acc[key].avgSpeeds.push(d.avgWindSpeedAroundPeak);
+            }
             acc[key].count++;
             return acc;
         }, {});
@@ -86,6 +100,13 @@ export function renderRealWindChart() {
             return sum / month.count;
         });
 
+        avgWindAroundPeakData = Object.keys(monthlyData).sort((a, b) => monthlyData[a].date - monthlyData[b].date).map(key => {
+            const month = monthlyData[key];
+            if (month.avgSpeeds.length === 0) return null;
+            const sum = month.avgSpeeds.reduce((a, b) => a + b, 0);
+            return sum / month.avgSpeeds.length;
+        });
+
     } else { // Daily view
         let dataToRender = state.realWindHistory;
         // On mobile (screen width < 768px), show only the last 30 days
@@ -97,6 +118,7 @@ export function renderRealWindChart() {
 
         labels = dataToRender.map(d => new Date(d.timestamp).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-CA', { month: 'short', day: 'numeric' }));
         realWindData = dataToRender.map(d => d.windSpeedKnots);
+        avgWindAroundPeakData = dataToRender.map(d => d.avgWindSpeedAroundPeak || null);
     }
 
     const ctx = chartCanvas.getContext('2d');
@@ -105,21 +127,31 @@ export function renderRealWindChart() {
         data: {
             labels: labels,
             datasets: [{
-                label: T.knotsUnit || 'knots',
+                label: T.realWindLabel || 'Max Real Wind',
                 data: realWindData,
                 backgroundColor: 'rgba(255, 99, 132, 0.5)',
                 borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }, {
+                label: T.avgWindAroundPeakLabel || 'Avg Wind Around Peak',
+                data: avgWindAroundPeakData,
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1
             }]
         },
         options: {
             plugins: {
                 legend: {
-                    display: false // Hides the legend
+                    display: true
                 }
             },
             scales: {
+                x: {
+                    stacked: false,
+                },
                 y: {
+                    stacked: false,
                     beginAtZero: true,
                     title: {
                         display: true,
