@@ -54,6 +54,18 @@ export function setLanguage(lang) {
     if (state.realWindChartInstance) {
         renderRealWindChart();
     }
+
+    const toggleAvgWindBtn = document.getElementById('toggle-avg-wind-btn');
+    if (toggleAvgWindBtn) {
+        toggleAvgWindBtn.addEventListener('click', () => {
+            if (state.realWindChartInstance) {
+                const chart = state.realWindChartInstance;
+                const dataset = chart.data.datasets[1]; // Avg Wind dataset
+                dataset.hidden = !dataset.hidden;
+                chart.update();
+            }
+        });
+    }
 }
 
 /**
