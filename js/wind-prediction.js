@@ -48,8 +48,14 @@ function predictWindSpeedWithScore(overallScore) {
     ];
     let p1 = scoreToWindMap[0], p2 = scoreToWindMap[scoreToWindMap.length - 1];
 
-    if (overallScore <= p1[0]) return { min: p1[1], max: p1[2] };
-    if (overallScore >= p2[0]) return { min: p2[1], max: p2[2] };
+    if (overallScore <= p1[0]) {
+        const min = p1[1], max = p1[2];
+        return { min, max, baselineAvgKnots: (min + max) / 2, correction: 0 };
+    }
+    if (overallScore >= p2[0]) {
+        const min = p2[1], max = p2[2];
+        return { min, max, baselineAvgKnots: (min + max) / 2, correction: 0 };
+    }
 
     for (let i = 0; i < scoreToWindMap.length - 1; i++) {
         if (overallScore >= scoreToWindMap[i][0] && overallScore < scoreToWindMap[i + 1][0]) {
@@ -63,14 +69,19 @@ function predictWindSpeedWithScore(overallScore) {
     const minKnots = p1[1] + (p2[1] - p1[1]) * progress;
     const maxKnots = minKnots + 3;
 
-    return { min: minKnots, max: maxKnots };
+    return {
+        min: minKnots,
+        max: maxKnots,
+        baselineAvgKnots: (minKnots + maxKnots) / 2,
+        correction: 0
+    };
 }
 
 // Main prediction function that uses the trained model
 function predictWindSpeedWithModel(scores, model) {
     // 1. Get the baseline prediction from the score-based system
     const baselinePrediction = predictWindSpeedWithScore(scores.overallScore);
-    const baselineAvgKnots = (baselinePrediction.min + baselinePrediction.max) / 2;
+    const baselineAvgKnots = baselinePrediction.baselineAvgKnots;
 
     // 2. Calculate the correction from the model
     const coeffs = model.coefficients;
@@ -114,7 +125,7 @@ function predictWindSpeedWithModel(scores, model) {
     };
 }
 
-export function predictWindSpeedRange(scores, model) {
+export function predictWindSpeedRange(scores, monthlyModels, date) {
     const T = translations[state.currentLang];
 
     // 1. Get the raw, score-based prediction first.
@@ -124,10 +135,18 @@ export function predictWindSpeedRange(scores, model) {
     const rawAvgPredictedKnots = (rawMinKnots + rawMaxKnots) / 2;
 
     let finalPrediction;
+    let model = null;
 
-    // 2. Use the trained model to get the corrected prediction if it exists.
+    // 2. Select the model for the correct month
+    if (date && monthlyModels) {
+        const month = new Date(date).getMonth() + 1; // 1-12
+        model = monthlyModels[month];
+    }
+
+
+    // 3. Use the trained model to get the corrected prediction if it exists for the month.
     if (model && model.coefficients) {
-        console.log('Using model for prediction');
+        console.log(`Using model for month ${new Date(date).getMonth() + 1} for prediction`);
         finalPrediction = predictWindSpeedWithModel(scores, model);
     } else {
         // Fallback to the raw score-based system if no model is available.
@@ -135,13 +154,13 @@ export function predictWindSpeedRange(scores, model) {
         finalPrediction = rawPrediction;
     }
 
-    // 3. Finalize values for display.
+    // 4. Finalize values for display.
     const finalMinKnots = Math.round(finalPrediction.min);
     const finalMaxKnots = Math.round(finalPrediction.max);
     const avgPredictedKnots = (finalMinKnots + finalMaxKnots) / 2;
     const avgPredictedMs = avgPredictedKnots * 0.5144;
 
-    // 4. Return both raw and corrected values.
+    // 5. Return both raw and corrected values.
     return {
         pKnots_min: finalMinKnots,
         pKnots_max: finalMaxKnots,

@@ -208,7 +208,7 @@ export async function processWeatherData(weatherData, marineData, correctionMode
             precipitation_probability_score: data.precipitation_probability_score
         };
 
-        const windPrediction = predictWindSpeedRange(scores, correctionModel);
+        const windPrediction = predictWindSpeedRange(scores, correctionModel, date);
 
         // Determine forecast label based on the corrected wind prediction
         data.forecastLabel = getForecastCategory(windPrediction.avgPredictedKnots, T);
