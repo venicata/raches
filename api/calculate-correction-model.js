@@ -36,7 +36,7 @@ export async function calculateCorrectionModel() {
     const forecastMap = new Map(forecastHistory.map(f => [f.date, f]));
     const realWindMap = new Map(realWindHistory.map(r => [r.timestamp.split('T')[0], r]));
 
-    const trainingData = [];
+    const monthlyTrainingData = {};
     let unmatchedRecords = 0;
 
     for (const [date, realWindRecord] of realWindMap.entries()) {
@@ -59,59 +59,108 @@ export async function calculateCorrectionModel() {
             const predictedKnots = forecast.rawAvgPredictedKnots || forecast.avgPredictedKnots;
             const wind_diff = realKnots - predictedKnots;
 
-            trainingData.push({ features, target: wind_diff });
+            const month = new Date(realWindRecord.timestamp).getMonth() + 1; // 1-12
+            if (!monthlyTrainingData[month]) {
+                monthlyTrainingData[month] = [];
+            }
+            monthlyTrainingData[month].push({ features, target: wind_diff });
+
         } else {
             unmatchedRecords++;
         }
     }
 
     const NUM_FEATURES = 8;
-    if (trainingData.length < NUM_FEATURES + 1) {
-        return { success: true, message: `Not enough matching data points. Need at least ${NUM_FEATURES + 1}, but have ${trainingData.length}. Unmatched real wind records: ${unmatchedRecords}.` };
+    const monthlyModels = {};
+    const allMonths = Array.from({ length: 12 }, (_, i) => i + 1);
+
+    // Find which months have enough data to be a source for a model
+    const availableDataMonths = allMonths.filter(m => monthlyTrainingData[m] && monthlyTrainingData[m].length >= NUM_FEATURES + 1);
+
+    // If no month has enough data, we can't generate any models
+    if (availableDataMonths.length === 0) {
+        return { success: true, message: 'Insufficient data for any month to generate models.' };
     }
 
-    // 3. Build matrices and calculate coefficients
-    const X = math.matrix(trainingData.map(d => [1, ...d.features]), 'dense');
-    const y = math.matrix(trainingData.map(d => [d.target]), 'dense');
-    const Xt = math.transpose(X);
-    let XtX = math.multiply(Xt, X);
+    for (const month of allMonths) {
+        let trainingData;
+        let sourceMonth = month;
+        let isFallback = false;
 
-    const lambda = 0.1;
-    const I = math.identity(XtX.size()[0]);
-    XtX = math.add(XtX, math.multiply(I, lambda));
+        if (monthlyTrainingData[month] && monthlyTrainingData[month].length >= NUM_FEATURES + 1) {
+            // Use current month's data as it's sufficient
+            trainingData = monthlyTrainingData[month];
+        } else {
+            // Not enough data, find the most recent month with sufficient data as a fallback
+            isFallback = true;
+            let fallbackSearchMonth = month === 1 ? 12 : month - 1;
+            for (let i = 0; i < 12; i++) { // Loop max 12 times to check all other months
+                if (availableDataMonths.includes(fallbackSearchMonth)) {
+                    sourceMonth = fallbackSearchMonth;
+                    trainingData = monthlyTrainingData[sourceMonth];
+                    console.log(`Month ${month} has insufficient data. Using data from month ${sourceMonth}.`);
+                    break;
+                }
+                fallbackSearchMonth = fallbackSearchMonth === 1 ? 12 : fallbackSearchMonth - 1;
+            }
+        }
 
-    let XtX_inv;
-    try {
-        XtX_inv = math.inv(XtX);
-    } catch (error) {
-        console.error('Error inverting matrix:', error);
-        throw new Error('Matrix inversion failed. Data might be collinear.');
+        if (!trainingData) {
+            console.log(`Skipping month ${month}, no sufficient data or fallback found.`);
+            continue;
+        }
+
+        // 3. Build matrices and calculate coefficients
+        const X = math.matrix(trainingData.map(d => [1, ...d.features]), 'dense');
+        const y = math.matrix(trainingData.map(d => [d.target]), 'dense');
+        const Xt = math.transpose(X);
+        let XtX = math.multiply(Xt, X);
+
+        const lambda = 0.1;
+        const I = math.identity(XtX.size()[0]);
+        XtX = math.add(XtX, math.multiply(I, lambda));
+
+        let XtX_inv;
+        try {
+            XtX_inv = math.inv(XtX);
+        } catch (error) {
+            console.error(`Error inverting matrix for month ${month}:`, error);
+            // Skip this month if matrix inversion fails
+            continue;
+        }
+
+        const XtX_inv_Xt = math.multiply(XtX_inv, Xt);
+        const coefficients = math.flatten(math.multiply(XtX_inv_Xt, y)).toArray();
+
+        // 5. Save the trained model for the month
+        const model = {
+            version: isFallback ? '5.2-linear-regression-monthly-fallback' : '5.2-linear-regression-monthly',
+            sourceMonth: sourceMonth,
+            lastUpdated: new Date().toISOString(),
+            coefficients: {
+                intercept: Math.round(coefficients[0] * 100) / 100,
+                cloud_cover: Math.round(coefficients[1] * 100) / 100,
+                temp_diff: Math.round(coefficients[2] * 100) / 100,
+                wind_speed: Math.round(coefficients[3] * 100) / 100,
+                wind_direction: Math.round(coefficients[4] * 100) / 100,
+                suck_effect: Math.round(coefficients[5] * 100) / 100,
+                pressure_drop: Math.round(coefficients[6] * 100) / 100,
+                humidity: Math.round(coefficients[7] * 100) / 100,
+                precipitation: Math.round(coefficients[8] * 100) / 100,
+            },
+            recordsAnalyzed: trainingData.length
+        };
+        monthlyModels[month] = model;
     }
 
-    const XtX_inv_Xt = math.multiply(XtX_inv, Xt);
-    const coefficients = math.flatten(math.multiply(XtX_inv_Xt, y)).toArray();
+    if (Object.keys(monthlyModels).length === 0) {
+        return { success: true, message: 'No monthly models were generated due to insufficient data.' };
+    }
 
-    // 5. Save the trained model
-    const model = {
-        version: '5.0-linear-regression',
-        lastUpdated: new Date().toISOString(),
-        coefficients: {
-            intercept: Math.round(coefficients[0] * 100) / 100,
-            cloud_cover: Math.round(coefficients[1] * 100) / 100,
-            temp_diff: Math.round(coefficients[2] * 100) / 100,
-            wind_speed: Math.round(coefficients[3] * 100) / 100,
-            wind_direction: Math.round(coefficients[4] * 100) / 100,
-            suck_effect: Math.round(coefficients[5] * 100) / 100,
-            pressure_drop: Math.round(coefficients[6] * 100) / 100,
-            humidity: Math.round(coefficients[7] * 100) / 100,
-            precipitation: Math.round(coefficients[8] * 100) / 100,
-        },
-        recordsAnalyzed: trainingData.length
-    };
 
-    await redis.set(MODEL_KEY, JSON.stringify(model));
+    await redis.set(MODEL_KEY, JSON.stringify(monthlyModels));
 
-    return { success: true, message: 'Linear regression model trained and saved successfully.', model };
+    return { success: true, message: 'Monthly linear regression models trained and saved successfully.', models: monthlyModels };
 }
 
 /**
