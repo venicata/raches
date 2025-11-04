@@ -417,16 +417,32 @@ export function initAdminButtons() {
     }
 }
 
-export function displayCorrectionModel(model) {
+export function displayCorrectionModel(monthlyModels) {
     const container = document.getElementById('correction-model-container');
     const paramsEl = document.getElementById('correction-model-params');
+    const titleEl = container ? container.querySelector('h3') : null;
 
-    if (model && model.coefficients && container && paramsEl) {
-        // Format for display
+    if (!container || !paramsEl || !titleEl) return;
+
+    const T = translations[state.currentLang];
+    const currentMonth = new Date().getMonth() + 1; // 1-12
+    const modelForCurrentMonth = monthlyModels ? monthlyModels[currentMonth] : null;
+
+
+    if (modelForCurrentMonth && modelForCurrentMonth.coefficients) {
+        let titleText = `${T.correctionModelTitle} (${T.monthNames[currentMonth - 1]})`;
+        if (modelForCurrentMonth.sourceMonth !== currentMonth) {
+            titleText += ` - ${T.fallbackModelLabel} ${T.monthNames[modelForCurrentMonth.sourceMonth - 1]}`;
+        }
+        titleEl.textContent = titleText;
+
+
         const displayModel = {
-            lastUpdated: model.lastUpdated,
-            recordsAnalyzed: model.recordsAnalyzed,
-            coefficients: model.coefficients
+            version: modelForCurrentMonth.version,
+            sourceMonth: modelForCurrentMonth.sourceMonth,
+            lastUpdated: modelForCurrentMonth.lastUpdated,
+            recordsAnalyzed: modelForCurrentMonth.recordsAnalyzed,
+            coefficients: modelForCurrentMonth.coefficients
         };
 
         paramsEl.textContent = JSON.stringify(displayModel, null, 2);
