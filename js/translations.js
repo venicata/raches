@@ -91,6 +91,9 @@ export const translations = {
         legendPressureDrop: '<b>Pressure Drop (Max: 3 pts):</b> A significant pressure drop during the day indicates a strong thermal effect. Scores range from +3 for a large drop to -2 for a pressure increase.',
         legendHumidity: '<b>Humidity (Max: 2 pts):</b> Lower humidity is better for land heating. Scores range from +2 for very dry air to -2 for very humid air.',
         legendPrecipitation: '<b>Precipitation (Max: 1 pt):</b> Rain is a thermal killer. Scores range from +1 for no rain probability to -4 for a high chance of rain.',
+        correctionModelTitle: "Correction Model Parameters",
+        fallbackModelLabel: "using data from",
+        monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
     },
     bg: {
         datePickerPlaceholder: 'Селектирайте дати...',
@@ -188,5 +191,8 @@ export const translations = {
         legendPressureDrop: '<b>Спад в налягането (Макс: 3 т.):</b> Значителният спад в налягането през деня е индикатор за силен термичен ефект. Оценките варират от +3 за голям спад до -2 за покачване на налягането.',
         legendHumidity: '<b>Влажност (Макс: 2 т.):</b> По-ниската влажност е по-добра за нагряването на сушата. Оценките варират от +2 за много сух въздух до -2 за много влажен.',
         legendPrecipitation: '<b>Вероятност за валежи (Макс: 1 т.):</b> Дъждът е убиец на термичния ефект. Оценките варират от +1 за нулева вероятност за дъжд до -4 за висока вероятност.',
+        correctionModelTitle: "Параметри на Корекционния Модел",
+        fallbackModelLabel: "използват се данни от",
+        monthNames: ["Януари", "Февруари", "Март", "Април", "Май", "Юни", "Юли", "Август", "Септември", "Октомври", "Ноември", "Декември"],
     }
 };
