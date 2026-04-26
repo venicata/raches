@@ -225,7 +225,7 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
         let weatherInfoHtml = `
             <h3>${new Date(result.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
             <p class="forecast-label ${forecastClass === 'bad' ? 'bad' : ''}">💨 ${T.forecastLabel} ${finalForecastText}</p>
-            <p>${T.baselineLabel}: ${result.baselineAvgKnots.toFixed(1)} ${T.knotsUnit}, ${T.correctionLabel}: ${result.correction.toFixed(1)} ${T.knotsUnit}</p>
+            <p>${T.baselineLabel}: ${result.baselineAvgKnots.toFixed(1)} ${T.knotsUnit}, ${T.correctionLabel}: ${result.correction.toFixed(1)} ${T.knotsUnit}${result.isLimitedCorrection ? ' ' + T.limitedCorrectionNote : ''}</p>
             <p class="baseline-correction">${result.scoreText}</p>
             <p>${predictedWindText}</p>
             <h4>${T.detailsLabel}</h4>

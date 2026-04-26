@@ -144,16 +144,19 @@ export function predictWindSpeedRange(scores, monthlyModels, date) {
 
 
     // 3. Use the trained model to get the corrected prediction if it exists for the month.
+    let isLimitedCorrection = false;
     if (model && model.coefficients) {
         const currentMonth = new Date().getMonth() + 1; // 1-12
         const predictionMonth = new Date(date).getMonth() + 1; // 1-12
         const maxCorrection = (predictionMonth === currentMonth) ? 3 : 20;
+        isLimitedCorrection = (maxCorrection === 3);
         
         console.log(`Using model for month ${predictionMonth} for prediction with max correction: ${maxCorrection}`);
         finalPrediction = predictWindSpeedWithModel(scores, model, maxCorrection);
     } else {
         // Fallback to limited correction model when no monthly data is available
         console.log('No model available for current month, using limited correction (+/-3)');
+        isLimitedCorrection = true;
         // Create a dummy model with zero coefficients to apply only limited correction
         const dummyModel = {
             coefficients: {
@@ -186,6 +189,7 @@ export function predictWindSpeedRange(scores, monthlyModels, date) {
         avgPredictedMs,
         text: `${finalMinKnots}-${finalMaxKnots} ${T.knotsUnit} (${avgPredictedMs.toFixed(1)} ${T.msUnit})`,
         baselineAvgKnots: finalPrediction.baselineAvgKnots,
-        correction: finalPrediction.correction
+        correction: finalPrediction.correction,
+        isLimitedCorrection: isLimitedCorrection
     };
 }
