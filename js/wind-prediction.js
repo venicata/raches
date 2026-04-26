@@ -78,7 +78,7 @@ function predictWindSpeedWithScore(overallScore) {
 }
 
 // Main prediction function that uses the trained model
-function predictWindSpeedWithModel(scores, model) {
+function predictWindSpeedWithModel(scores, model, maxCorrection = 20) {
     // 1. Get the baseline prediction from the score-based system
     const baselinePrediction = predictWindSpeedWithScore(scores.overallScore);
     const baselineAvgKnots = baselinePrediction.baselineAvgKnots;
@@ -106,9 +106,8 @@ function predictWindSpeedWithModel(scores, model) {
         (coeffs.humidity || 0) * features[6] + // New
         (coeffs.precipitation || 0) * features[7]; // New
 
-    // Clamp the correction to a reasonable range (e.g., +/- 10 knots) to prevent extreme adjustments
-    const MAX_CORRECTION = 20;
-    correction = Math.max(-MAX_CORRECTION, Math.min(MAX_CORRECTION, correction));
+    // Clamp the correction to a reasonable range to prevent extreme adjustments
+    correction = Math.max(-maxCorrection, Math.min(maxCorrection, correction));
 
     // 3. Apply the clamped correction to the baseline
     const correctedKnots = baselineAvgKnots + correction;
@@ -147,11 +146,25 @@ export function predictWindSpeedRange(scores, monthlyModels, date) {
     // 3. Use the trained model to get the corrected prediction if it exists for the month.
     if (model && model.coefficients) {
         console.log(`Using model for month ${new Date(date).getMonth() + 1} for prediction`);
-        finalPrediction = predictWindSpeedWithModel(scores, model);
+        finalPrediction = predictWindSpeedWithModel(scores, model, 20);
     } else {
-        // Fallback to the raw score-based system if no model is available.
-        console.log('Using score-based prediction');
-        finalPrediction = rawPrediction;
+        // Fallback to limited correction model when no monthly data is available
+        console.log('No model available for current month, using limited correction (+/-3)');
+        // Create a dummy model with zero coefficients to apply only limited correction
+        const dummyModel = {
+            coefficients: {
+                intercept: 0,
+                cloud_cover: 0,
+                temp_diff: 0,
+                wind_speed: 0,
+                wind_direction: 0,
+                suck_effect: 0,
+                pressure_drop: 0,
+                humidity: 0,
+                precipitation: 0
+            }
+        };
+        finalPrediction = predictWindSpeedWithModel(scores, dummyModel, 3);
     }
 
     // 4. Finalize values for display.
