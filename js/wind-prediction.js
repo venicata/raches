@@ -145,8 +145,12 @@ export function predictWindSpeedRange(scores, monthlyModels, date) {
 
     // 3. Use the trained model to get the corrected prediction if it exists for the month.
     if (model && model.coefficients) {
-        console.log(`Using model for month ${new Date(date).getMonth() + 1} for prediction`);
-        finalPrediction = predictWindSpeedWithModel(scores, model, 20);
+        const currentMonth = new Date().getMonth() + 1; // 1-12
+        const predictionMonth = new Date(date).getMonth() + 1; // 1-12
+        const maxCorrection = (predictionMonth === currentMonth) ? 3 : 20;
+        
+        console.log(`Using model for month ${predictionMonth} for prediction with max correction: ${maxCorrection}`);
+        finalPrediction = predictWindSpeedWithModel(scores, model, maxCorrection);
     } else {
         // Fallback to limited correction model when no monthly data is available
         console.log('No model available for current month, using limited correction (+/-3)');
