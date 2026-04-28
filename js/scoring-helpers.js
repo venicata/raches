@@ -172,3 +172,10 @@ export function getPrecipitationScore(probability) {
     if (probability <= 50) return { score: -2, icon: '❌' };  // Possible rain, concerning
     return { score: -4, icon: '❌' };  // High chance of rain, very bad
 }
+
+export function getWeatherIcon(totalRain, precipitationProb) {
+    if (totalRain > 0.5) return '🌧️';
+    if (precipitationProb > 30) return '🌦️';
+    if (precipitationProb > 10) return '🌤️';
+    return '☀️';
+}

@@ -147,12 +147,19 @@ export async function processWeatherData(weatherData, marineData, correctionMode
         let afternoonHumiditySum = 0;
         let afternoonHumidityCount = 0;
         let maxPrecipitation = 0;
+        let totalRain = 0;
 
         if (weatherData.hourly && weatherData.hourly.time) {
             weatherData.hourly.time.forEach((datetime, index) => {
                 const entryDate = datetime.split('T')[0];
                 if (entryDate === date) {
                     const hour = parseInt(datetime.split('T')[1].split(':')[0]);
+                    
+                    // Add to total rain if rain data exists
+                    if (weatherData.hourly.rain && weatherData.hourly.rain[index] > 0) {
+                        totalRain += weatherData.hourly.rain[index];
+                    }
+
                     if (hour === 9) {
                         morningPressure = weatherData.hourly.surface_pressure[index];
                     }
@@ -189,6 +196,7 @@ export async function processWeatherData(weatherData, marineData, correctionMode
         score += precipitationResult.score;
         data.precipitation_probability_value = maxPrecipitation;
         data.precipitation_probability_score = precipitationResult.score;
+        data.total_rain = totalRain;
 
         data.score = score;
         const minScoreTotal = -21.5; // Adjusted for new params
@@ -248,12 +256,13 @@ export async function processWeatherData(weatherData, marineData, correctionMode
             humidity_score: data.humidity_score,
             precipitation_probability_value: data.precipitation_probability_value,
             precipitation_probability_score: data.precipitation_probability_score,
-            predicted_wind_knots: data.predicted_wind_knots,
-            predicted_wind_ms: data.predicted_wind_ms,
+            total_rain: data.total_rain,
             pKnots_min: data.pKnots_min,
             pKnots_max: data.pKnots_max,
             pMs_min: data.pMs_min,
             pMs_max: data.pMs_max,
+            predicted_wind_knots: data.predicted_wind_knots,
+            predicted_wind_ms: data.predicted_wind_ms,
             avgPredictedKnots: windPrediction.avgPredictedKnots, // Corrected value
             rawAvgPredictedKnots: windPrediction.rawAvgPredictedKnots, // Raw value
             avgPredictedMs: windPrediction.avgPredictedMs,
