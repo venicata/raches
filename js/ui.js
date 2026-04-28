@@ -208,7 +208,15 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
                 peakTimeText = ` - ${T.peakTimePrediction || 'Пик'}: ~${predictedPeakTime}`;
             }
         }
+        
+        function getWeatherIcon(totalRain, precipitationProb) {
+            if (totalRain > 0.5) return '🌧️';
+            if (precipitationProb > 30) return '🌦️';
+            if (precipitationProb > 10) return '🌤️';
+            return '☀️';
+        }
 
+        const weatherIcon = getWeatherIcon(result.total_rain || 0, result.precipitation_probability_value || 0);
         const predictedWindText = `${T.predictedWindLabel} <b>${result.predicted_wind_knots}</b> ${T.knotsUnit} (${result.predicted_wind_ms} ${T.msUnit})${peakTimeText}`;
         const cloudCoverText = `${getCloudCoverScore(result.cloud_cover_value).icon} ${T.cloudCoverLabel} ${result.cloud_cover_value}% (${result.cloud_cover_score > 0 ? '+' : ''}${result.cloud_cover_score} ${pointSuffix})`;
         const tempDiffText = `${getTempDiffScore(result.temp_diff_value).icon} ${T.tempDiffDetail.replace('{description}', result.temp_diff_description).replace('{value}', result.temp_diff_value.toFixed(1)).replace('{landTemp}', result.air_temp_value.toFixed(1)).replace('{seaTemp}', result.sea_temp_value.toFixed(1))} (${result.temp_diff_score > 0 ? '+' : ''}${result.temp_diff_score} ${pointSuffix})`;
@@ -220,10 +228,11 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
         const pressureDropText = `${getPressureDropScore(result.pressure_drop_value).icon} ${T.pressureDropLabel} ${result.pressure_drop_value} hPa (${result.pressure_drop_score > 0 ? '+' : ''}${result.pressure_drop_score} ${pointSuffix})`;
         const humidityText = `${getHumidityScore(result.humidity_value).icon} ${T.humidityLabel} ${result.humidity_value}% (${result.humidity_score > 0 ? '+' : ''}${result.humidity_score} ${pointSuffix})`;
         const precipitationText = `${getPrecipitationScore(result.precipitation_probability_value).icon} ${T.precipitationLabel} ${result.precipitation_probability_value}% (${result.precipitation_probability_score > 0 ? '+' : ''}${result.precipitation_probability_score} ${pointSuffix})`;
+        const rainText = `${weatherIcon} ${T.rainLabel} ${result.total_rain ? result.total_rain.toFixed(1) : '0.0'} mm`;
 
         // --- Assemble the card's HTML ---
         let weatherInfoHtml = `
-            <h3>${new Date(result.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
+            <h3>${weatherIcon} ${new Date(result.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
             <p class="forecast-label ${forecastClass === 'bad' ? 'bad' : ''}">💨 ${T.forecastLabel} ${finalForecastText}</p>
             <p>${T.baselineLabel}: ${result.baselineAvgKnots.toFixed(1)} ${T.knotsUnit}, ${T.correctionLabel}: ${result.correction.toFixed(1)} ${T.knotsUnit}${result.isLimitedCorrection ? ' ' + T.limitedCorrectionNote : ''}</p>
             <p class="baseline-correction">${result.scoreText}</p>
@@ -269,6 +278,9 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
                     <span class="li-content">${precipitationText}</span>
                     <i class="info-icon">i</i>
                     <div class="custom-tooltip"><strong>${T.criteria8Title}</strong><br>${T.criteria8Desc}</div>
+                </li>
+                <li>
+                    <span class="li-content">${rainText}</span>
                 </li>
             </ul>
         `;

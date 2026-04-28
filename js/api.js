@@ -30,7 +30,7 @@ export async function fetchAndAnalyze(startDate, endDate) {
     const formattedEndDate = formatDate(endDate);
 
     // URL for Raches - wind and other parameters
-    const rachesWeatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${RACHES_LAT}&longitude=${RACHES_LON}&hourly=windspeed_10m,winddirection_80m,precipitation_probability,relative_humidity_2m,surface_pressure&daily=wind_speed_10m_max,wind_direction_10m_dominant&timezone=auto&start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
+    const rachesWeatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${RACHES_LAT}&longitude=${RACHES_LON}&hourly=windspeed_10m,winddirection_80m,precipitation_probability,relative_humidity_2m,surface_pressure,rain&daily=wind_speed_10m_max,wind_direction_10m_dominant&timezone=auto&start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
 
     // URL for Lamia - temperature and cloud cover
     const lamiaWeatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LAMIA_LAT}&longitude=${LAMIA_LON}&hourly=temperature_2m,cloud_cover&daily=cloud_cover_mean,temperature_2m_max&timezone=auto&start_date=${formattedStartDate}&end_date=${formattedEndDate}`;

@@ -446,6 +446,11 @@ export function renderHistoricalChart() {
                                 tooltipLines.push(`${T.predictedWindLabel} ${predictedWindKnotsText} ${predictedWindMsText}`);
                             }
 
+                            // 8. Precipitation & Rain
+                            const precipProbText = `${entry.precipitation_probability_value || 0}%`;
+                            const rainText = entry.total_rain != null ? `${entry.total_rain.toFixed(1)} mm` : '0.0 mm';
+                            tooltipLines.push(`🌧️ ${T.precipitationLabel} ${precipProbText} | ${T.rainLabel} ${rainText}`);
+
                             // 9. Real Wind Data (if available)
                             if (entry.realWind) {
                                 const realWindKnots = entry.realWind.windSpeedKnots.toFixed(1);
