@@ -39,7 +39,7 @@ export function getWindSpeedScore(windSpeed) {
     let icon = '';
     if (windSpeed >= 15 && windSpeed <= 30) { score = 3.5; icon = '✅'; }
     else if (windSpeed > 30 && windSpeed <= 40) { score = 2; icon = '⚠️'; }
-    else if (windSpeed < 15 && windSpeed >= 5) { score = 1; icon = '❌'; }
+    else if (windSpeed < 15 && windSpeed >= 5) { score = 1; icon = '✅'; }
     else if (windSpeed < 5) { score = 0; icon = '❌'; }
     else { score = -1; icon = '❌'; }
     return { score, icon };
