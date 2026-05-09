@@ -91,18 +91,31 @@ export async function calculateCorrectionModel() {
             // Use current month's data as it's sufficient
             trainingData = monthlyTrainingData[month];
         } else {
-            // Not enough data, find the most recent month with sufficient data as a fallback
+            // Not enough data, find the closest month with sufficient data as a fallback
             isFallback = true;
-            let fallbackSearchMonth = month === 1 ? 12 : month - 1;
-            for (let i = 0; i < 12; i++) { // Loop max 12 times to check all other months
-                if (availableDataMonths.includes(fallbackSearchMonth)) {
-                    sourceMonth = fallbackSearchMonth;
-                    trainingData = monthlyTrainingData[sourceMonth];
-                    console.log(`Month ${month} has insufficient data. Using data from month ${sourceMonth}.`);
-                    break;
-                }
-                fallbackSearchMonth = fallbackSearchMonth === 1 ? 12 : fallbackSearchMonth - 1;
-            }
+            
+            // Map all available months with their cyclic distance to the target month
+            const distances = availableDataMonths.map(m => {
+                const absDiff = Math.abs(month - m);
+                const cyclicDist = Math.min(absDiff, 12 - absDiff);
+                return { month: m, distance: cyclicDist };
+            });
+
+            // Sort by distance (closest first)
+            distances.sort((a, b) => {
+                if (a.distance !== b.distance) return a.distance - b.distance;
+                
+                // If distances are equal, prefer the month that is chronologically before
+                const aDistBack = (month - a.month + 12) % 12;
+                const bDistBack = (month - b.month + 12) % 12;
+                return aDistBack - bDistBack;
+            });
+
+            const bestMatch = distances[0];
+            sourceMonth = bestMatch.month;
+
+            trainingData = monthlyTrainingData[sourceMonth];
+            console.log(`Month ${month}: No data. Closest is Month ${sourceMonth} (Distance: ${bestMatch.distance}). Available: ${availableDataMonths.join(',')}`);
         }
 
         if (!trainingData) {
@@ -179,4 +192,3 @@ export default async function handler(request, response) {
         return response.status(500).json({ success: false, error: error.message });
     }
 }
-
