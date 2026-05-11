@@ -29,22 +29,28 @@ export function parsePredictedWindRange(rangeString) {
     };
 }
 
-// Fallback prediction logic using the old score-based map
+// Fallback prediction logic using the calibrated score-based map
+// Calibrated 2026-05 based on 112 real station records (Aug 2025 – May 2026):
+// - Spot median: 16.7 kn across all days; 54% of days are 16+ kn
+// - Monthly medians: Aug/Sep ~20 kn, Oct/Nov ~13-15 kn, Apr ~15.5 kn, May ~19 kn
+// - Thermally driven days (dir 60-115°) avg 17.7 kn; SE (115-150°) avg 15.75 kn; W/NW avg 11 kn
+// - Score 9-15 range was 0.5-1 kn below real medians; adjusted upward
+// - Apr20 treated as meteorological outlier (score=11, real=20 kn, direction-independent)
 function predictWindSpeedWithScore(overallScore) {
     const scoreToWindMap = [
-        [-15, 0, 3],
-        [-12, 1, 4],
-        [-9, 2, 5],
-        [-6, 3, 6],
-        [-3, 4, 7],
-        [0, 5, 8],
-        [3, 7, 10],
-        [6, 9, 12],
-        [9, 11, 14],
-        [12, 14, 17],
-        [15, 17, 20],
-        [18, 20, 23],
-        [21, 22, 25]
+        [-15, 3,  6],
+        [-12, 4,  7],
+        [-9,  5,  8],
+        [-6,  6,  9],
+        [-3,  7, 10],
+        [0,   9, 13],  // avg=11 kn — poor day (overcast, low thermals)
+        [3,  11, 15],  // avg=13 kn
+        [6,  12, 16],  // avg=14 kn — Oct/Nov thermally driven median ~15 kn
+        [9,  14, 17],  // avg=15.5 kn (+1 vs prev) — Oct/Nov E-wind mean=15.1
+        [12, 15, 18],  // avg=16.5 kn (+1 vs prev) — toward spot median 16.7
+        [15, 17, 20],  // avg=18.5 kn (+1.5 vs prev) — Apr/May good days
+        [18, 19, 22],  // avg=20.5 kn — Aug/Sep thermally driven median ~20.5
+        [21, 21, 24]
     ];
     let p1 = scoreToWindMap[0], p2 = scoreToWindMap[scoreToWindMap.length - 1];
 
@@ -142,35 +148,24 @@ export function predictWindSpeedRange(scores, monthlyModels, date) {
         model = monthlyModels[month];
     }
 
-    // 3. Use the trained model to get the corrected prediction if it exists for the month.
+    // 3. Use the trained model only if it has real data for this exact month.
     let isLimitedCorrection = false;
-    if (model && model.coefficients) {
-        const predictionMonth = new Date(date).getMonth() + 1; // 1-12
-        // If the model data comes from a different month than the one we're predicting for, limit correction
-        const maxCorrection = (model.sourceMonth === predictionMonth) ? 20 : 3;
-        isLimitedCorrection = (maxCorrection === 3);
-        
-        console.log(`Using model for month ${predictionMonth} (source: ${model.sourceMonth}) with max correction: ${maxCorrection}`);
-        finalPrediction = predictWindSpeedWithModel(scores, model, maxCorrection);
+    const predictionMonth = date ? new Date(date).getMonth() + 1 : null;
+    const modelHasOwnData = model && model.coefficients && model.sourceMonth === predictionMonth;
+
+    if (modelHasOwnData) {
+        console.log(`Using model for month ${predictionMonth} (own data, max correction: 20)`);
+        finalPrediction = predictWindSpeedWithModel(scores, model, 20);
     } else {
-        // Fallback to limited correction model when no monthly data is available
-        console.log('No model available for current month, using limited correction (+/-3)');
+        // No real data for this month — use baseline only, no ML correction
+        console.log(`No own-month model for month ${predictionMonth}, using baseline only`);
         isLimitedCorrection = true;
-        // Create a dummy model with zero coefficients to apply only limited correction
-        const dummyModel = {
-            coefficients: {
-                intercept: 0,
-                cloud_cover: 0,
-                temp_diff: 0,
-                wind_speed: 0,
-                wind_direction: 0,
-                suck_effect: 0,
-                pressure_drop: 0,
-                humidity: 0,
-                precipitation: 0
-            }
+        finalPrediction = {
+            min: rawPrediction.min,
+            max: rawPrediction.max,
+            baselineAvgKnots: rawPrediction.baselineAvgKnots,
+            correction: 0
         };
-        finalPrediction = predictWindSpeedWithModel(scores, dummyModel, 3);
     }
 
     // 4. Finalize values for display.

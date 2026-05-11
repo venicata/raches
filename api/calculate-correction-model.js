@@ -10,7 +10,7 @@ math.config({
 
 const FORECAST_HISTORY_KEY = 'rachesForecastHistory';
 const REAL_WIND_HISTORY_KEY = 'max_wind_history';
-const MODEL_KEY = 'prediction_model_v5'; // New model key to avoid conflicts
+const MODEL_KEY = 'prediction_model_v6'; // v6: recalibrated baseline, suck_effect 0-2.5, granular windSpeed
 
 /**
  * Core logic for calculating the correction model.

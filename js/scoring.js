@@ -87,8 +87,10 @@ export async function processWeatherData(weatherData, marineData, correctionMode
         }
         if (morningWindSpeed !== null && afternoonWindSpeed !== null) {
             const windIncreaseKmh = afternoonWindSpeed - morningWindSpeed;
-            if (windIncreaseKmh >= 15) { suckEffectScore = 1.5; }
-            else if (windIncreaseKmh >= 10) { suckEffectScore = 1; }
+            if (windIncreaseKmh >= 25) { suckEffectScore = 2.5; }
+            else if (windIncreaseKmh >= 20) { suckEffectScore = 2.0; }
+            else if (windIncreaseKmh >= 15) { suckEffectScore = 1.5; }
+            else if (windIncreaseKmh >= 10) { suckEffectScore = 1.0; }
             else if (windIncreaseKmh >= 5) { suckEffectScore = 0.5; }
         }
         score += suckEffectScore;
@@ -199,8 +201,8 @@ export async function processWeatherData(weatherData, marineData, correctionMode
         data.total_rain = totalRain;
 
         data.score = score;
-        const minScoreTotal = -21.5; // Adjusted for new params
-        const maxScoreTotal = 24.25; // Adjusted for new params
+        const minScoreTotal = -20.5; // v2: suck_effect max=2.5, windSpeed granular
+        const maxScoreTotal = 25.25; // v2: suck_effect max=2.5, windSpeed granular
         data.scoreText = T.scoreLabel.replace('{score}', score.toFixed(2)).replace('{minScore}', minScoreTotal).replace('{maxScore}', maxScoreTotal);
 
 
