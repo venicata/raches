@@ -1,9 +1,15 @@
 import { translations } from './translations.js';
-import { triggerModelCalculation } from './api.js';
+import { triggerModelCalculation, saveHistoricalEntry } from './api.js';
 import { state } from './state.js';
 import { renderHistoricalChart, renderRealWindChart } from './chart.js';
-import { getCloudCoverScore, getTempDiffScore, getWindDirectionScore, getWindDirIcon, getSuckEffectIcon, getPressureDropScore, getHumidityScore, getPrecipitationScore } from './scoring-helpers.js';
-import { saveHistoricalEntry } from './api.js';
+import { getCloudCoverScore, getTempDiffScore, getWindDirIcon, getSuckEffectIcon, getPressureDropScore, getHumidityScore, getPrecipitationScore } from './scoring-helpers.js';
+
+function getWeatherIcon(totalRain, precipitationProb) {
+    if (totalRain > 0.5)       return '🌧️';
+    if (precipitationProb > 30) return '🌦️';
+    if (precipitationProb > 10) return '🌤️';
+    return '☀️';
+}
 
 export function setLanguage(lang) {
     localStorage.setItem('preferredLang', lang);
@@ -209,13 +215,6 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
             }
         }
         
-        function getWeatherIcon(totalRain, precipitationProb) {
-            if (totalRain > 0.5) return '🌧️';
-            if (precipitationProb > 30) return '🌦️';
-            if (precipitationProb > 10) return '🌤️';
-            return '☀️';
-        }
-
         const weatherIcon = getWeatherIcon(result.total_rain || 0, result.precipitation_probability_value || 0);
         const predictedWindText = `${T.predictedWindLabel} <b>${result.predicted_wind_knots}</b> ${T.knotsUnit} (${result.predicted_wind_ms} ${T.msUnit})${peakTimeText}`;
         const cloudCoverText = `${getCloudCoverScore(result.cloud_cover_value).icon} ${T.cloudCoverLabel} ${result.cloud_cover_value}% (${result.cloud_cover_score > 0 ? '+' : ''}${result.cloud_cover_score} ${pointSuffix})`;
