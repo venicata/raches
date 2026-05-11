@@ -37,10 +37,15 @@ export function getWindDirIcon(score) { // Based on windDirectionScore logic
 export function getWindSpeedScore(windSpeed) {
     let score = 0;
     let icon = '';
-    if (windSpeed >= 15 && windSpeed <= 30) { score = 3.5; icon = '✅'; }
-    else if (windSpeed > 30 && windSpeed <= 40) { score = 2; icon = '⚠️'; }
-    else if (windSpeed < 15 && windSpeed >= 5) { score = 1; icon = '✅'; }
-    else if (windSpeed < 5) { score = 0; icon = '❌'; }
+    // Разбита скала за по-добра диференциация в 15-30 km/h диапазона
+    // (преди беше плосък score=3.5 за всички 15-30, = 0 вариация между дните)
+    if (windSpeed >= 25 && windSpeed <= 35) { score = 3.5; icon = '✅'; } // идеален термичен вятър
+    else if (windSpeed >= 18 && windSpeed < 25) { score = 2.5; icon = '✅'; }
+    else if (windSpeed >= 15 && windSpeed < 18) { score = 1.5; icon = '✅'; }
+    else if (windSpeed > 35 && windSpeed <= 45) { score = 2; icon = '⚠️'; } // силен но приемлив
+    else if (windSpeed < 15 && windSpeed >= 8) { score = 1; icon = '⚠️'; }
+    else if (windSpeed < 8 && windSpeed >= 3) { score = 0; icon = '❌'; }
+    else if (windSpeed > 45) { score = -1; icon = '❌'; } // твърде силен
     else { score = -1; icon = '❌'; }
     return { score, icon };
 }
@@ -101,8 +106,8 @@ export function calculateAfternoonWindDirection(weatherData, date) {
 }
 
 export function getSuckEffectIcon(score) {
-    if (score >= 1.5 || score === 1) return '✅';
-    if (score === 0.5) return '⚠️';
+    if (score >= 1.5) return '✅';
+    if (score >= 0.5) return '⚠️';
     return '❌';
 }
 
