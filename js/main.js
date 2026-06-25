@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('admin') === 'true') {
         document.querySelectorAll('.private-controls').forEach(el => el.classList.remove('private-controls'));
+        state.isAdmin = true;
     }
 
     analyzeBtn.addEventListener('click', () => {
@@ -208,6 +209,3 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 });
-
-
-
