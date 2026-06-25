@@ -5,5 +5,6 @@ export const state = {
     realWindChartView: 'daily', // 'daily' or 'weekly'
     realWindHistory: [],
     resultsContainer: null,
-    datePicker: null
+    datePicker: null,
+    isAdmin: false // Admin mode flag
 };

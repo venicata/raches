@@ -229,9 +229,32 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
         const precipitationText = `${getPrecipitationScore(result.precipitation_probability_value).icon} ${T.precipitationLabel} ${result.precipitation_probability_value}% (${result.precipitation_probability_score > 0 ? '+' : ''}${result.precipitation_probability_score} ${pointSuffix})`;
         const rainText = `${weatherIcon} ${T.rainLabel} ${result.total_rain ? result.total_rain.toFixed(1) : '0.0'} mm`;
 
+        // --- Admin mode manual wind input ---
+        let manualWindInputHtml = '';
+        if (state.isAdmin) {
+            const existingManualWind = result.realWind ? result.realWind.windSpeedKnots : '';
+            manualWindInputHtml = `
+                <div class="manual-wind-input" style="display: flex; align-items: center; gap: 8px;">
+                    <label>${T.manualWindLabel}</label>
+                    <input type="number" 
+                           id="manual-wind-${result.date}" 
+                           placeholder="${T.manualWindPlaceholder}" 
+                           value="${existingManualWind}" 
+                           min="0" 
+                           max="50" 
+                           step="0.1"
+                           style="width: 70px; padding: 4px;">
+                    <button onclick="saveManualWind('${result.date}')" style="padding: 4px 8px;">${T.saveManualWind}</button>
+                </div>
+            `;
+        }
+
         // --- Assemble the card's HTML ---
         let weatherInfoHtml = `
-            <h3>${weatherIcon} ${new Date(result.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>${weatherIcon} ${new Date(result.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
+                ${manualWindInputHtml}
+            </div>
             <p class="forecast-label ${forecastClass === 'bad' ? 'bad' : ''}">💨 ${T.forecastLabel} ${finalForecastText}</p>
             <p>${T.baselineLabel}: ${result.baselineAvgKnots.toFixed(1)} ${T.knotsUnit}, ${T.correctionLabel}: ${result.correction.toFixed(1)} ${T.knotsUnit}${result.isLimitedCorrection ? ' ' + T.limitedCorrectionNote : ''}</p>
             <p class="baseline-correction">${result.scoreText}</p>
@@ -506,3 +529,43 @@ function displayScoringLegend(T) {
 
     legendContainer.innerHTML = legendHtml;
 }
+
+// --- Function to save manual wind data ---
+window.saveManualWind = async function(date) {
+    const input = document.getElementById(`manual-wind-${date}`);
+    const windKnots = parseFloat(input.value);
+    
+    if (isNaN(windKnots) || windKnots < 0 || windKnots > 50) {
+        alert('Please enter a valid wind speed between 0 and 50 knots');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/save-manual-wind', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                date: date,
+                windSpeedKnots: windKnots,
+                timestamp: `${date}T12:00:00Z`
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to save manual wind data');
+        }
+
+        const result = await response.json();
+        alert('Manual wind data saved successfully!');
+        
+        // Optionally trigger model recalculation
+        if (confirm('Do you want to recalculate the correction model with this new data?')) {
+            await triggerModelCalculation();
+        }
+    } catch (error) {
+        console.error('Error saving manual wind:', error);
+        alert('Error saving manual wind data: ' + error.message);
+    }
+};
