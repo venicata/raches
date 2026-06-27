@@ -99,6 +99,28 @@ export const translations = {
         correctionModelTitle: "Correction Model Parameters",
         fallbackModelLabel: "using data from",
         monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+        modelVersion: "Version",
+        modelSourceMonth: "Source Month",
+        modelLastUpdated: "Last Updated",
+        modelRecordsAnalyzed: "Records Analyzed",
+        modelFormula: "Formula: correction = intercept + (score × coefficient)",
+        modelIntercept: "Base value (intercept)",
+        modelPerPoint: "per point",
+        modelAdds: "adds",
+        modelRemoves: "removes",
+        modelFactor: "Factor",
+        modelCoefficient: "Coefficient",
+        modelEffect: "Effect",
+        factorNames: {
+            cloud_cover: 'Cloud Cover',
+            temp_diff: 'Temp Difference',
+            wind_speed: 'Wind Speed',
+            wind_direction: 'Wind Direction',
+            suck_effect: 'Suck Effect',
+            pressure_drop: 'Pressure Drop',
+            humidity: 'Humidity',
+            precipitation: 'Precipitation'
+        }
     },
     bg: {
         datePickerPlaceholder: 'Селектирайте дати...',
@@ -204,5 +226,27 @@ export const translations = {
         correctionModelTitle: "Параметри на Корекционния Модел",
         fallbackModelLabel: "използват се данни от",
         monthNames: ["Януари", "Февруари", "Март", "Април", "Май", "Юни", "Юли", "Август", "Септември", "Октомври", "Ноември", "Декември"],
+        modelVersion: "Версия",
+        modelSourceMonth: "Месец източник",
+        modelLastUpdated: "Последно обновяване",
+        modelRecordsAnalyzed: "Анализирани записи",
+        modelFormula: "Формула: корекция = intercept + (точки × коефициент)",
+        modelIntercept: "Базова стойност (intercept)",
+        modelPerPoint: "на точка",
+        modelAdds: "добавя",
+        modelRemoves: "маха",
+        modelFactor: "Фактор",
+        modelCoefficient: "Коефициент",
+        modelEffect: "Ефект",
+        factorNames: {
+            cloud_cover: 'Облачност',
+            temp_diff: 'Темп. разлика',
+            wind_speed: 'Скорост на вятър',
+            wind_direction: 'Посока на вятър',
+            suck_effect: 'Suck ефект',
+            pressure_drop: 'Спад налягане',
+            humidity: 'Влажност',
+            precipitation: 'Валежи'
+        }
     }
 };

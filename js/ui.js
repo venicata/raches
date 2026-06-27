@@ -470,16 +470,57 @@ export function displayCorrectionModel(monthlyModels) {
         }
         titleEl.textContent = titleText;
 
+        const coeff = modelForCurrentMonth.coefficients;
+        const lastUpdated = new Date(modelForCurrentMonth.lastUpdated).toLocaleString(state.currentLang === 'bg' ? 'bg-BG' : 'en-GB');
 
-        const displayModel = {
-            version: modelForCurrentMonth.version,
-            sourceMonth: modelForCurrentMonth.sourceMonth,
-            lastUpdated: modelForCurrentMonth.lastUpdated,
-            recordsAnalyzed: modelForCurrentMonth.recordsAnalyzed,
-            coefficients: modelForCurrentMonth.coefficients
-        };
+        let html = `
+            <div style="background: white; padding: 0;">
+                <div style="font-size: 13px;">
+                    <div style="color: #666;">${T.modelVersion}: <strong>${modelForCurrentMonth.version}</strong></div>
+                    <div style="color: #666;">${T.modelSourceMonth}: <strong>${T.monthNames[modelForCurrentMonth.sourceMonth - 1]}</strong></div>
+                    <div style="color: #666;">${T.modelRecordsAnalyzed}: <strong>${modelForCurrentMonth.recordsAnalyzed}</strong></div>
+                </div>
+                <div style="padding: 8px 12px; margin-top: 15px; background: #f0f7ff; border-left: 3px solid #4a90e2; border-radius: 4px; margin-bottom: 12px; font-size: 12px;">
+                    <span style="color: #4a90e2; font-weight: 600;">${T.modelFormula}</span>
+                    <span style="margin: 0 10px; color: #999;">|</span>
+                    <span style="color: #555;">${T.modelIntercept}: <strong>${coeff.intercept.toFixed(2)} ${T.knotsUnit}</strong></span>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                    <thead>
+                        <tr style="background: #e0e0e0;">
+                            <th style="padding: 4px 6px; text-align: left;">${T.modelFactor}</th>
+                            <th style="padding: 4px 6px; text-align: right;">${T.modelCoefficient}</th>
+                            <th style="padding: 4px 6px; text-align: right;">${T.modelEffect} ${T.modelPerPoint}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
 
-        paramsEl.textContent = JSON.stringify(displayModel, null, 2);
+        for (const [key, value] of Object.entries(coeff)) {
+            if (key === 'intercept') continue;
+
+            const absValue = Math.abs(value);
+            const isPositive = value >= 0;
+            const effectText = isPositive 
+                ? `<span style="color: #2e7d32;">+${absValue.toFixed(2)} ${T.knotsUnit}</span>`
+                : `<span style="color: #c62828;">-${absValue.toFixed(2)} ${T.knotsUnit}</span>`;
+
+            html += `
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="padding: 4px 6px;">${T.factorNames[key] || key}</td>
+                    <td style="padding: 4px 6px; text-align: right;">${value.toFixed(2)}</td>
+                    <td style="padding: 4px 6px; text-align: right;">${effectText}</td>
+                </tr>
+            `;
+        }
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        paramsEl.innerHTML = html;
         container.style.display = 'block';
     } else if (container) {
         container.style.display = 'none';
