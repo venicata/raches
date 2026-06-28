@@ -109,6 +109,11 @@ export function displayRealWindData(history) {
 
             let realWindText = `${T.realWindLabel} <b>${realWindKnots}</b> (пориви до <b>${realWindGustKnots}</b>) ${T.knotsUnit} (${realWindMs} ${T.msUnit})`;
 
+            // Проверка и добавяне на часа на пика
+            if (record.peakHour) {
+                realWindText += ` | ${T.peakHourLabel}: <b>${record.peakHour}</b>`;
+            }
+
             // Проверка и добавяне на средната скорост около пика
             if (record.avgWindSpeedAroundPeak) {
                 const avgWindKnots = record.avgWindSpeedAroundPeak.toFixed(1);
@@ -233,17 +238,27 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
         let manualWindInputHtml = '';
         if (state.isAdmin) {
             const existingManualWind = result.realWind ? result.realWind.windSpeedKnots : '';
+            const existingPeakHour = result.realWind && result.realWind.peakHour ? result.realWind.peakHour : '';
             manualWindInputHtml = `
-                <div class="manual-wind-input" style="display: flex; align-items: center; gap: 8px;">
-                    <label>${T.manualWindLabel}</label>
-                    <input type="number" 
-                           id="manual-wind-${result.date}" 
-                           placeholder="${T.manualWindPlaceholder}" 
-                           value="${existingManualWind}" 
-                           min="0" 
-                           max="50" 
-                           step="0.1"
-                           style="width: 70px; padding: 4px;">
+                <div class="manual-wind-input" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <label>${T.manualWindLabel}</label>
+                        <input type="number" 
+                               id="manual-wind-${result.date}" 
+                               placeholder="${T.manualWindPlaceholder}" 
+                               value="${existingManualWind}" 
+                               min="0" 
+                               max="50" 
+                               step="0.1"
+                               style="width: 60px; padding: 4px;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <label>${T.manualPeakHourLabel}</label>
+                        <input type="time" 
+                               id="manual-peak-hour-${result.date}" 
+                               value="${existingPeakHour}"
+                               style="padding: 4px;">
+                    </div>
                     <button onclick="saveManualWind('${result.date}')" style="padding: 4px 8px;">${T.saveManualWind}</button>
                 </div>
             `;
@@ -574,7 +589,9 @@ function displayScoringLegend(T) {
 // --- Function to save manual wind data ---
 window.saveManualWind = async function(date) {
     const input = document.getElementById(`manual-wind-${date}`);
+    const peakHourInput = document.getElementById(`manual-peak-hour-${date}`);
     const windKnots = parseFloat(input.value);
+    const peakHour = peakHourInput ? peakHourInput.value : '';
     
     if (isNaN(windKnots) || windKnots < 0 || windKnots > 50) {
         alert('Please enter a valid wind speed between 0 and 50 knots');
@@ -590,7 +607,8 @@ window.saveManualWind = async function(date) {
             body: JSON.stringify({
                 date: date,
                 windSpeedKnots: windKnots,
-                timestamp: `${date}T12:00:00Z`
+                peakHour: peakHour,
+                timestamp: peakHour ? `${date}T${peakHour}:00Z` : `${date}T12:00:00Z`
             })
         });
 
