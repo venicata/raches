@@ -12,7 +12,7 @@ export default async function handler(request, response) {
     }
 
     try {
-        const { date, windSpeedKnots, timestamp } = request.body;
+        const { date, windSpeedKnots, timestamp, peakHour } = request.body;
 
         if (!date || windSpeedKnots === undefined || !timestamp) {
             return response.status(400).json({ error: 'Missing required fields: date, windSpeedKnots, timestamp' });
@@ -29,7 +29,8 @@ export default async function handler(request, response) {
             timestamp: timestamp,
             windSpeedKnots: windSpeed,
             windGustKnots: windSpeed * 1.2, // Estimate gusts as 1.2x of sustained wind
-            source: 'manual' // Mark as manually entered
+            source: 'manual', // Mark as manually entered
+            peakHour: peakHour || null // Add peak hour if provided
         };
 
         // Fetch existing history
