@@ -2,7 +2,7 @@ import { translations } from './translations.js';
 import { triggerModelCalculation, saveHistoricalEntry } from './api.js';
 import { state } from './state.js';
 import { renderHistoricalChart, renderRealWindChart } from './chart.js';
-import { getCloudCoverScore, getTempDiffScore, getWindDirIcon, getSuckEffectIcon, getPressureDropScore, getHumidityScore, getPrecipitationScore } from './scoring-helpers.js';
+import { getCloudCoverScore, getTempDiffScore, getWindDirIcon, getSuckEffectIcon, getPressureDropScore, getHumidityScore, getPrecipitationScore, getLapseRateScore, getVpdScore, getStratifiedCloudScore } from './scoring-helpers.js';
 
 function getWeatherIcon(totalRain, precipitationProb) {
     if (totalRain > 0.5)       return '🌧️';
@@ -33,7 +33,19 @@ export function setLanguage(lang) {
                 if (link && translations[lang][key].includes('{link}')) {
                     element.innerHTML = translations[lang][key].replace('{link}', link.outerHTML);
                 } else {
-                    element.innerHTML = translations[lang][key];
+                    // For criteria descriptions, preserve newlines as formatted paragraphs
+                    const raw = translations[lang][key];
+                    if (key.match(/^criteria\d+Desc$/)) {
+                        element.innerHTML = raw
+                            .split('\n\n')
+                            .map(block => {
+                                const lines = block.split('\n').map(l => l.replace(/^- /, '&bull; '));
+                                return '<p>' + lines.join('<br>') + '</p>';
+                            })
+                            .join('');
+                    } else {
+                        element.innerHTML = raw;
+                    }
                 }
             }
         }
@@ -109,9 +121,13 @@ export function displayRealWindData(history) {
 
             let realWindText = `${T.realWindLabel} <b>${realWindKnots}</b> (пориви до <b>${realWindGustKnots}</b>) ${T.knotsUnit} (${realWindMs} ${T.msUnit})`;
 
-            // Проверка и добавяне на часа на пика
-            if (record.peakHour) {
-                realWindText += ` | ${T.peakHourLabel}: <b>${record.peakHour}</b>`;
+            // Show peak hour — prefer explicit peakHour field, else parse from timestamp directly
+            const peakHourDisplay = record.peakHour
+                || (record.timestamp && record.timestamp.includes('T')
+                    ? record.timestamp.split('T')[1].replace(/Z.*$/, '').slice(0, 5)
+                    : null);
+            if (peakHourDisplay) {
+                realWindText += ` | ${T.peakHourLabel}: <b>${peakHourDisplay}</b>`;
             }
 
             // Проверка и добавяне на средната скорост около пика
@@ -203,11 +219,17 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
         let peakTimeText = '';
 
         if (realPeakWindTimes[forecastDate]) {
-            // Real peak wind time exists for this day
-            const peakTimestamp = new Date(realPeakWindTimes[forecastDate]);
-            const formattedPeakTime = peakTimestamp.toLocaleTimeString(state.currentLang === 'bg' ? 'bg-BG' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
-            peakTimeText = ` - ${T.peakLabel}: ${formattedPeakTime}`; // No tilde, as it's a real value
-        } else if (peakWindModel && peakWindModel.monthly_avg_peak_hour) {
+            // Timestamps are in Greek local time without timezone suffix — parse directly
+            const ts = realPeakWindTimes[forecastDate];
+            const timePart = ts.includes('T') ? ts.split('T')[1].replace(/Z.*$/, '') : null;
+            const peakHour = timePart ? parseInt(timePart.slice(0, 2), 10) : null;
+            // Only show real peak if it falls within the expected thermal window (11-20h).
+            // Outside that range the record is a morning/night non-thermal reading — fall through to model.
+            if (peakHour !== null && peakHour >= 11 && peakHour <= 20) {
+                peakTimeText = ` - ${T.peakLabel}: ${timePart.slice(0, 5)}`;
+            }
+        }
+        if (!peakTimeText && peakWindModel && peakWindModel.monthly_avg_peak_hour) {
             // Fallback to predicted peak wind time
             const month = new Date(forecastDate).getUTCMonth() + 1;
             const averageHour = peakWindModel.monthly_avg_peak_hour[month];
@@ -224,15 +246,38 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
         const predictedWindText = `${T.predictedWindLabel} <b>${result.predicted_wind_knots}</b> ${T.knotsUnit} (${result.predicted_wind_ms} ${T.msUnit})${peakTimeText}`;
         const cloudCoverText = `${getCloudCoverScore(result.cloud_cover_value).icon} ${T.cloudCoverLabel} ${result.cloud_cover_value}% (${result.cloud_cover_score > 0 ? '+' : ''}${result.cloud_cover_score} ${pointSuffix})`;
         const tempDiffText = `${getTempDiffScore(result.temp_diff_value).icon} ${T.tempDiffDetail.replace('{description}', result.temp_diff_description).replace('{value}', result.temp_diff_value.toFixed(1)).replace('{landTemp}', result.air_temp_value.toFixed(1)).replace('{seaTemp}', result.sea_temp_value.toFixed(1))} (${result.temp_diff_score > 0 ? '+' : ''}${result.temp_diff_score} ${pointSuffix})`;
+
+        // Show 80m wind speed if available and different from 10m
         const windSpeedKnots = result.wind_speed_value * 0.539957;
         const windSpeedMs = result.wind_speed_value * 0.277778;
-        const maxWindText = `${result.wind_speed_icon || '❓'} ${T.apiWindSpeedLabel} <b>${windSpeedKnots.toFixed(1)}</b> ${T.knotsUnit} (${windSpeedMs.toFixed(1)} ${T.msUnit}) (${result.wind_speed_score > 0 ? '+' : ''}${result.wind_speed_score} ${pointSuffix})`;
+        const windLabelSuffix = result.wind_speed_10m_value && Math.abs(result.wind_speed_value - result.wind_speed_10m_value) > 0.5 ? ' @80m' : '';
+        const maxWindText = `${result.wind_speed_icon || '❓'} ${T.apiWindSpeedLabel} <b>${windSpeedKnots.toFixed(1)}</b> ${T.knotsUnit} (${windSpeedMs.toFixed(1)} ${T.msUnit})${windLabelSuffix} (${result.wind_speed_score > 0 ? '+' : ''}${result.wind_speed_score} ${pointSuffix})`;
+
         const windDirText = `<span class="wind-direction-container">${getWindDirIcon(result.wind_direction_score)} <span class="wind-arrow" style="transform: rotate(${result.wind_direction_value + 180}deg);"></span> <span>${T.windDirDetail.replace('{value}', result.wind_direction_value).replace('{description}', result.wind_direction_description)} (${result.wind_direction_score > 0 ? '+' : ''}${result.wind_direction_score} ${pointSuffix})</span></span>`;
         const suckEffectText = `${getSuckEffectIcon(result.suck_effect_score_value)} ${T.suckEffectLabel} ${result.suck_effect_score_value}/3 (${result.suck_effect_score_value > 0 ? '+' : ''}${result.suck_effect_score_value} ${pointSuffix})`;
         const pressureDropText = `${getPressureDropScore(result.pressure_drop_value).icon} ${T.pressureDropLabel} ${result.pressure_drop_value} hPa (${result.pressure_drop_score > 0 ? '+' : ''}${result.pressure_drop_score} ${pointSuffix})`;
         const humidityText = `${getHumidityScore(result.humidity_value).icon} ${T.humidityLabel} ${result.humidity_value}% (${result.humidity_score > 0 ? '+' : ''}${result.humidity_score} ${pointSuffix})`;
         const precipitationText = `${getPrecipitationScore(result.precipitation_probability_value).icon} ${T.precipitationLabel} ${result.precipitation_probability_value}% (${result.precipitation_probability_score > 0 ? '+' : ''}${result.precipitation_probability_score} ${pointSuffix})`;
         const rainText = `${weatherIcon} ${T.rainLabel} ${result.total_rain ? result.total_rain.toFixed(1) : '0.0'} mm`;
+
+        // New factors
+        const lapseRateText = result.lapse_rate_value !== null && result.lapse_rate_value !== undefined
+            ? `${result.lapse_rate_icon || '⚠️'} ${T.lapseRateLabel || 'Atm. Instability:'} ${result.lapse_rate_value}°C (${result.lapse_rate_score > 0 ? '+' : ''}${result.lapse_rate_score} ${pointSuffix})`
+            : null;
+        const vpdText = result.vpd_value !== null && result.vpd_value !== undefined
+            ? `${result.vpd_icon || '⚠️'} ${T.vpdLabel || 'VPD:'} ${result.vpd_value} kPa (${result.vpd_score > 0 ? '+' : ''}${result.vpd_score} ${pointSuffix})`
+            : null;
+        const stratCloudText = result.low_cloud_value !== null && result.low_cloud_value !== undefined
+            ? `${result.strat_cloud_icon || '⚠️'} ${T.stratCloudLabel || 'Low/Mid Cloud:'} ${result.low_cloud_value}% / ${result.mid_cloud_value}% (${result.strat_cloud_score > 0 ? '+' : ''}${result.strat_cloud_score} ${pointSuffix})`
+            : null;
+
+        // Score bar: show visual progress of score relative to max
+        const scoreMin = -20.5;
+        const scoreMax = 30;  // slightly above max to leave headroom
+        const scoreRange = scoreMax - scoreMin;
+        const scorePct = Math.max(0, Math.min(100, ((result.score - scoreMin) / scoreRange) * 100));
+        const scoreBarColor = forecastClass === 'high' ? 'var(--color-high)' : forecastClass === 'mid' ? 'var(--color-mid)' : 'var(--color-bad)';
+        const scoreBarHtml = `<div class="score-bar-wrap"><div class="score-bar-fill" style="width:${scorePct.toFixed(1)}%;background:${scoreBarColor};"></div></div>`;
 
         // --- Admin mode manual wind input ---
         let manualWindInputHtml = '';
@@ -273,6 +318,7 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
             <p class="forecast-label ${forecastClass === 'bad' ? 'bad' : ''}">💨 ${T.forecastLabel} ${finalForecastText}</p>
             <p>${T.baselineLabel}: ${result.baselineAvgKnots.toFixed(1)} ${T.knotsUnit}, ${T.correctionLabel}: ${result.correction.toFixed(1)} ${T.knotsUnit}${result.isLimitedCorrection ? ' ' + T.limitedCorrectionNote : ''}</p>
             <p class="baseline-correction">${result.scoreText}</p>
+            ${scoreBarHtml}
             <p>${predictedWindText}</p>
             <h4>${T.detailsLabel}</h4>
             <ul>
@@ -316,6 +362,21 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
                     <i class="info-icon">i</i>
                     <div class="custom-tooltip"><strong>${T.criteria8Title}</strong><br>${T.criteria8Desc}</div>
                 </li>
+                ${lapseRateText ? `<li>
+                    <span class="li-content">${lapseRateText}</span>
+                    <i class="info-icon">i</i>
+                    <div class="custom-tooltip"><strong>${T.criteria9Title || 'Atm. Instability'}</strong><br>${T.criteria9Desc || ''}</div>
+                </li>` : ''}
+                ${vpdText ? `<li>
+                    <span class="li-content">${vpdText}</span>
+                    <i class="info-icon">i</i>
+                    <div class="custom-tooltip"><strong>${T.criteria10Title || 'VPD'}</strong><br>${T.criteria10Desc || ''}</div>
+                </li>` : ''}
+                ${stratCloudText ? `<li>
+                    <span class="li-content">${stratCloudText}</span>
+                    <i class="info-icon">i</i>
+                    <div class="custom-tooltip"><strong>${T.criteria11Title || 'Low/Mid Cloud Layer'}</strong><br>${T.criteria11Desc || ''}</div>
+                </li>` : ''}
                 <li>
                     <span class="li-content">${rainText}</span>
                 </li>
@@ -388,6 +449,15 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
             humidity_score: parseFloat(result.humidity_score),
             precipitation_probability_value: parseFloat(result.precipitation_probability_value),
             precipitation_probability_score: parseFloat(result.precipitation_probability_score),
+
+            // New thermal instability parameters (added without breaking existing fields)
+            lapse_rate_value: result.lapse_rate_value,
+            lapse_rate_score: result.lapse_rate_score,
+            vpd_value: result.vpd_value,
+            vpd_score: result.vpd_score,
+            low_cloud_value: result.low_cloud_value,
+            mid_cloud_value: result.mid_cloud_value,
+            strat_cloud_score: result.strat_cloud_score,
 
             // Water Temp
             waterTemp: result.waterTemp
@@ -486,14 +556,23 @@ export function displayCorrectionModel(monthlyModels) {
         titleEl.textContent = titleText;
 
         const coeff = modelForCurrentMonth.coefficients;
-        const lastUpdated = new Date(modelForCurrentMonth.lastUpdated).toLocaleString(state.currentLang === 'bg' ? 'bg-BG' : 'en-GB');
+
+        // Build blended months summary if present
+        let blendNote = '';
+        if (modelForCurrentMonth.blendedMonths && modelForCurrentMonth.blendedMonths.length > 0) {
+            const parts = modelForCurrentMonth.blendedMonths.map(b => `${T.monthNames[b.month - 1]} (+${b.recordsAdded})`);
+            blendNote = `<div style="color: #888; font-size: 11px; margin-top: 2px;">+ blended: ${parts.join(', ')}</div>`;
+        }
 
         let html = `
             <div style="background: white; padding: 0;">
                 <div style="font-size: 13px;">
                     <div style="color: #666;">${T.modelVersion}: <strong>${modelForCurrentMonth.version}</strong></div>
                     <div style="color: #666;">${T.modelSourceMonth}: <strong>${T.monthNames[modelForCurrentMonth.sourceMonth - 1]}</strong></div>
-                    <div style="color: #666;">${T.modelRecordsAnalyzed}: <strong>${modelForCurrentMonth.recordsAnalyzed}</strong></div>
+                    <div style="color: #666;">${T.modelRecordsAnalyzed}: <strong>${modelForCurrentMonth.recordsAnalyzed}</strong>
+                        ${modelForCurrentMonth.ownMonthRecords != null ? `<span style="color:#888;font-size:11px;"> (${modelForCurrentMonth.ownMonthRecords} ${T.ownMonthLabel || 'own month'})</span>` : ''}
+                    </div>
+                    ${blendNote}
                 </div>
                 <div style="padding: 8px 12px; margin-top: 15px; background: #f0f7ff; border-left: 3px solid #4a90e2; border-radius: 4px; margin-bottom: 12px; font-size: 12px;">
                     <span style="color: #4a90e2; font-weight: 600;">${T.modelFormula}</span>
@@ -561,6 +640,14 @@ export function initModal() {
             modal.style.display = 'none';
         }
     };
+
+    // Accordion: click header to expand/collapse criteria body
+    modal.addEventListener('click', function (e) {
+        const h3 = e.target.closest('.criteria-item h3');
+        if (!h3) return;
+        const item = h3.closest('.criteria-item');
+        item.classList.toggle('open');
+    });
 }
 
 // --- Function to display the scoring legend ---
@@ -580,6 +667,9 @@ function displayScoringLegend(T) {
             <li>${T.legendPressureDrop}</li>
             <li>${T.legendHumidity}</li>
             <li>${T.legendPrecipitation}</li>
+            <li>${T.legendLapseRate}</li>
+            <li>${T.legendVpd}</li>
+            <li>${T.legendStratCloud}</li>
         </ul>
     `;
 

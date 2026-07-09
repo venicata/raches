@@ -242,6 +242,20 @@ header p {
     margin-top: 2px !important;
 }
 
+.score-bar-wrap {
+    height: 6px;
+    background: #e4e9f0;
+    border-radius: 3px;
+    margin: 6px 0 10px;
+    overflow: hidden;
+}
+
+.score-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width .4s ease;
+}
+
 .real-wind-data {
     background: #f0fdf4;
     border-left: 3px solid var(--color-high);
@@ -316,14 +330,14 @@ header p {
 .custom-tooltip {
     visibility: hidden;
     opacity: 0;
-    width: 240px;
+    width: min(520px, 90vw);
     background: #1e293b;
     color: #f1f5f9;
     text-align: left;
     border-radius: var(--radius-sm);
-    padding: 10px 12px;
+    padding: 12px 16px;
     font-size: .82em;
-    line-height: 1.5;
+    line-height: 1.55;
     position: absolute;
     z-index: 100;
     bottom: calc(100% + 8px);
@@ -577,25 +591,57 @@ canvas { height: 420px !important; }
 
 .criteria-item {
     margin-bottom: 14px;
-    padding: 12px 14px;
-    background: #f8fafc;
     border-radius: var(--radius-sm);
     border-left: 3px solid var(--color-primary);
+    overflow: hidden;
 }
 
 .criteria-item h3 {
-    margin: 0 0 6px;
-    font-size: 1em;
+    margin: 0;
+    padding: 10px 14px 8px;
+    font-size: .95em;
     font-weight: 600;
     color: var(--color-text);
+    background: #f0f4f8;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
 }
 
+.criteria-item h3::after {
+    content: '+';
+    font-size: 1.1em;
+    font-weight: 400;
+    color: var(--color-primary);
+    flex-shrink: 0;
+    margin-left: 8px;
+    transition: transform var(--transition);
+}
+
+.criteria-item.open h3::after { content: '-'; }
+
+.criteria-item-body {
+    display: none;
+    padding: 12px 14px;
+    background: #f8fafc;
+}
+
+.criteria-item.open .criteria-item-body { display: block; }
+
 .criteria-item p {
-    margin: 0;
-    font-size: .9em;
-    line-height: 1.55;
+    margin: 0 0 8px;
+    font-size: .87em;
+    line-height: 1.6;
     color: var(--color-text-muted);
 }
+
+.criteria-item p:last-child { margin-bottom: 0; }
+
+/* Score table lines inside descriptions */
+.criteria-item p br + span,
+.criteria-item p { word-break: break-word; }
 
 /* ============================================================
    Footer
@@ -664,7 +710,7 @@ footer {
     header h1 { font-size: 1.3em; }
 
     .custom-tooltip {
-        width: 200px;
+        width: calc(100vw - 32px);
         left: 0;
         transform: none;
     }

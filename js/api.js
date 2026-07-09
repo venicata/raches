@@ -1,4 +1,4 @@
-import { RACHES_LAT, RACHES_LON, VOLOS_LAT, VOLOS_LON, LAMIA_LAT, LAMIA_LON } from './constants.js';
+import { RACHES_LAT, RACHES_LON, SEA_TEMP_LAT, SEA_TEMP_LON, LAMIA_LAT, LAMIA_LON } from './constants.js';
 import { processWeatherData } from './scoring.js';
 import { displayResults, displayRealWindData } from './ui.js';
 import { translations } from './translations.js';
@@ -30,13 +30,17 @@ export async function fetchAndAnalyze(startDate, endDate) {
     const formattedEndDate = formatDate(endDate);
 
     // URL for Raches - wind and other parameters
-    const rachesWeatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${RACHES_LAT}&longitude=${RACHES_LON}&hourly=windspeed_10m,winddirection_80m,precipitation_probability,relative_humidity_2m,surface_pressure,rain&daily=wind_speed_10m_max,wind_direction_10m_dominant&timezone=auto&start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
+    // Added: wind_speed_80m (kite-height wind), wind_direction_10m, temperature_180m (lapse rate),
+    //        vapour_pressure_deficit (thermal potential), soil_temperature_0cm (land heating)
+    // wind_speed_80m_max is NOT a valid daily param in Open Meteo — compute daily max from hourly wind_speed_80m in scoring
+    const rachesWeatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${RACHES_LAT}&longitude=${RACHES_LON}&hourly=windspeed_10m,wind_speed_80m,winddirection_80m,wind_direction_10m,precipitation_probability,relative_humidity_2m,surface_pressure,rain,temperature_2m,temperature_180m,vapour_pressure_deficit,soil_temperature_0cm&daily=wind_speed_10m_max,wind_direction_10m_dominant&timezone=auto&start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
 
     // URL for Lamia - temperature and cloud cover
-    const lamiaWeatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LAMIA_LAT}&longitude=${LAMIA_LON}&hourly=temperature_2m,cloud_cover&daily=cloud_cover_mean,temperature_2m_max&timezone=auto&start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
+    // Added: cloud_cover_low, cloud_cover_mid, cloud_cover_high (stratified cloud analysis)
+    const lamiaWeatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LAMIA_LAT}&longitude=${LAMIA_LON}&hourly=temperature_2m,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high&daily=cloud_cover_mean,temperature_2m_max&timezone=auto&start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
 
     // URL for Volos - sea temperature
-    const marineApiUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${VOLOS_LAT}&longitude=${VOLOS_LON}&hourly=sea_surface_temperature&start_date=${formattedStartDate}&end_date=${formattedEndDate}&timezone=auto`;
+    const marineApiUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${SEA_TEMP_LAT}&longitude=${SEA_TEMP_LON}&hourly=sea_surface_temperature&start_date=${formattedStartDate}&end_date=${formattedEndDate}&timezone=auto`;
 
     try {
         const [rachesWeatherResponse, lamiaWeatherResponse, marineResponse] = await Promise.all([
@@ -53,13 +57,18 @@ export async function fetchAndAnalyze(startDate, endDate) {
         const lamiaWeatherData = await lamiaWeatherResponse.json();
         const marineData = await marineResponse.json();
 
-        // Merge weather data
+        // Merge weather data — Raches for wind/pressure/VPD, Lamia for temperature/cloud
         const weatherData = {
             ...rachesWeatherData,
             hourly: {
                 ...rachesWeatherData.hourly,
+                // Lamia temperature (used for land-sea temp diff)
                 temperature_2m: lamiaWeatherData.hourly.temperature_2m,
-                cloud_cover_low: lamiaWeatherData.hourly.cloud_cover,
+                // Cloud cover: use Lamia total as primary, plus stratified layers from Lamia
+                cloud_cover_low: lamiaWeatherData.hourly.cloud_cover_low,
+                cloud_cover_mid: lamiaWeatherData.hourly.cloud_cover_mid,
+                cloud_cover_high: lamiaWeatherData.hourly.cloud_cover_high,
+                cloud_cover_total: lamiaWeatherData.hourly.cloud_cover,
             },
             daily: {
                 ...rachesWeatherData.daily,
