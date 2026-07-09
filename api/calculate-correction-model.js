@@ -10,7 +10,7 @@ math.config({
 
 const FORECAST_HISTORY_KEY = 'rachesForecastHistory';
 const REAL_WIND_HISTORY_KEY = 'max_wind_history';
-const MODEL_KEY = 'prediction_model_v6'; // v6: recalibrated baseline, suck_effect 0-2.5, granular windSpeed
+const MODEL_KEY = 'prediction_model_v7'; // v7: fix intercept ridge, NaN guard, UTC month, tail-slice neighbours, ?? for predictedKnots
 
 /**
  * Core logic for calculating the correction model.
@@ -34,7 +34,7 @@ export async function calculateCorrectionModel() {
 
     // 2. Combine and prepare data
     const forecastMap = new Map(forecastHistory.map(f => [f.date, f]));
-    const realWindMap = new Map(realWindHistory.map(r => [r.timestamp.split('T')[0], r]));
+    const realWindMap = new Map(realWindHistory.map(r => [r.timestamp.replace(' ', 'T').split('T')[0], r]));
 
     const monthlyTrainingData = {};
     let unmatchedRecords = 0;
@@ -57,12 +57,13 @@ export async function calculateCorrectionModel() {
                 forecast.lapse_rate_score,   // v3 new
                 forecast.vpd_score,          // v3 new
                 forecast.strat_cloud_score,  // v3 new
-            ].map(v => (typeof v === 'number' ? v : 0));
+            ].map(v => (typeof v === 'number' && isFinite(v) ? v : 0));
 
-            const predictedKnots = forecast.rawAvgPredictedKnots || forecast.avgPredictedKnots;
+            const predictedKnots = forecast.rawAvgPredictedKnots ?? forecast.avgPredictedKnots;
+            if (!isFinite(predictedKnots) || !isFinite(realKnots)) continue;
             const wind_diff = realKnots - predictedKnots;
 
-            const month = new Date(realWindRecord.timestamp).getMonth() + 1; // 1-12
+            const month = new Date(realWindRecord.timestamp).getUTCMonth() + 1; // 1-12
             if (!monthlyTrainingData[month]) {
                 monthlyTrainingData[month] = [];
             }
@@ -116,7 +117,7 @@ export async function calculateCorrectionModel() {
             const keepFraction = 1 / dist;
             const keepCount = Math.max(1, Math.round(neighbourData.length * keepFraction));
             // Take a deterministic slice (first N records after sorting by insertion order)
-            const slice = neighbourData.slice(0, keepCount);
+            const slice = neighbourData.slice(-keepCount);
             pool = pool.concat(slice);
             blendedMonths.push({ month: nm, dist, recordsAdded: slice.length });
         }
@@ -154,6 +155,7 @@ export async function calculateCorrectionModel() {
 
         const lambda = 0.1;
         const I = math.identity(XtX.size()[0]);
+        I.set([0, 0], 0); // don't penalize the intercept (standard ridge)
         XtX = math.add(XtX, math.multiply(I, lambda));
 
         let XtX_inv;
@@ -169,7 +171,7 @@ export async function calculateCorrectionModel() {
 
         const ownCount = (monthlyTrainingData[month] || []).length;
         const model = {
-            version: '6.0-aggregated-cross-year',
+            version: '7.0-aggregated-cross-year',
             sourceMonth: sourceMonth,
             isFallback: isFallback,
             blendedMonths: blendedMonths,
