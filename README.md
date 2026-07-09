@@ -1,105 +1,133 @@
 # 💨 Raches Thermal Wind Forecaster
 
-Live site
-
-https://raches.vercel.app/
-
-## 🎯 About the Project
-
-**Raches Thermal Wind Forecaster** is a web application that provides a specialized forecast for the thermal wind in Raches, Greece – a popular destination for kitesurfing and windsurfing. The goal is to give riders a more accurate and easy-to-understand forecast by analyzing key meteorological factors that influence the local thermal wind.
-
-The forecast is based on **8 key criteria** for thermal wind intensification:
-
-1.  **☀️ Sunny and clear sky:** Allows the sun to heat the land.
-2.  **🌡️ Land-sea temperature difference:** The main driver of the thermal breeze.
-3.  **💨 Weak E/NE synoptic wind:** Helps the thermal without overpowering it.
-4.  **🌬️ No opposing W/S wind:** Winds from the west or south can cancel the thermal effect.
-5.  **⚡ Local suction effect:** A sharp increase in wind speed in the afternoon indicates thermal intensification.
-6.  **📉 Drop in atmospheric pressure:** A drop of 2-3 hPa during the day is a good indicator.
-7.  **💧 Low relative humidity:** Dry air allows the land to heat up more intensely.
-8.  **🌧️ No precipitation:** Rain cools the ground and stops the thermal effect.
-
-## ✨ Main Features
-
-*   **8-Factor Analysis:** The application analyzes 8 key meteorological factors for a comprehensive forecast.
-*   **Self-Correcting AI Model:** Uses historical forecast data and real wind observations to continuously calibrate its prediction model, improving accuracy over time.
-*   **Historical Data Chart:** Visualizes past forecasts against real wind data, helping to track model performance.
-*   **Interactive UI:**
-    *   Detailed explanations for each scoring criterion are available on hover (tooltips).
-    *   A modal window explains the criteria for thermal wind.
-*   **Visual Indicators:** Each forecast is accompanied by icons (✅, ⚠️, ❌) for a quick visual assessment.
-*   **Bilingual Interface:** Available in English and Bulgarian.
-
-## 🛠️ Technologies
-
-*   **Frontend:** HTML5, CSS3, Vanilla JavaScript
-*   **Backend:** Node.js Serverless Functions
-*   **Database:** Upstash Redis (for storing the AI correction model)
-*   **Deployment:** Vercel
-*   **Libraries:**
-    *   [Flatpickr.js](https://flatpickr.js.org/) - for the calendar.
-    *   [Chart.js](https://www.chartjs.org/) - for the historical data chart.
-*   **APIs:**
-    *   [Open-Meteo API](https://open-meteo.com/) - for meteorological data.
-
-## 🚀 How to use?
-
-1.  Visit the live site: [raches.vercel.app](https://raches.vercel.app/)
-2.  Use the calendar to select a date or a date range.
-3.  Press the **"Analyze"** button.
-4.  Review the detailed forecast for each selected day.
-
-## 💡 How does it work?
-
-The application fetches weather data from the Open-Meteo API. A set of serverless functions (`/api`) processes this data, applying a scoring system based on the 8 criteria. A machine learning model, stored in Redis, corrects the final wind prediction based on past performance. The results, including a detailed breakdown and a historical chart, are displayed on the frontend.
+**Live site:** [raches.vercel.app](https://raches.vercel.app/)
 
 ---
 
-## 🎯 За Проекта
+## 🎯 About the Project
 
-**Raches Thermal Wind Forecaster** е уеб приложение, което предоставя специализирана прогноза за термичния вятър в Рахес, Гърция. Целта е да даде на карачите по-точна и лесна за разбиране прогноза, като анализира ключови метеорологични фактори.
+**Raches Thermal Wind Forecaster** is a web application that provides a specialized forecast for the thermal wind in Raches, Greece – a popular destination for kitesurfing and windsurfing. The goal is to give riders a more accurate and easy-to-understand forecast by analyzing key meteorological factors that drive the local thermal wind.
 
-Прогнозата се базира на **8 ключови критерия** за засилване на термичния вятър:
+The forecast is based on **11 scoring criteria** across three data sources (Raches spot, Lamia inland, Volos marine).
 
-1.  **☀️ Слънчево и ясно небе:** Позволява на слънцето да нагрее сушата.
-2.  **🌡️ Температурна разлика суша-море:** Основният двигател на термичния бриз.
-3.  **💨 Слаб източен/североизточен синоптичен вятър:** Подпомага термиката, без да я надделява.
-4.  **🌬️ Липса на противоположен западен/южен вятър:** Ветрове от запад или юг могат да неутрализират термичния ефект.
-5.  **⚡ Местен ефект на засмукване:** Рязкото усилване на вятъра следобед е индикатор за термично засилване.
-6.  **📉 Спад в атмосферното налягане:** Спад от 2-3 hPa през деня е добър индикатор.
-7.  **💧 Ниска относителна влажност:** Сухият въздух позволява на сушата да се нагрее по-интензивно.
-8.  **🌧️ Липса на валежи:** Дъждът охлажда земята и спира термичния ефект.
+### Scoring Criteria (v3)
 
-## ✨ Основни Функционалности
+| # | Factor | Max pts | Min pts | Description |
+|---|--------|---------|---------|-------------|
+| 1 | ☀️ Total cloud cover | +5 | −2 | Daytime avg 05–16h from Lamia. Clear sky = land heats faster. |
+| 2 | 🌡️ Land–sea temp difference | +5.25 | −1.5 | Lamia max air temp minus Volos sea temp at 13:00. Primary thermal driver. |
+| 3 | 💨 Wind speed at 80m | +3.5 | −1 | Daily max from hourly 80m data — kite-relevant altitude. |
+| 4 | 🧭 Wind direction (80m, 13–17h) | +3 | −8 | NE–E ideal (+3). W–NW kills thermal (−8). SE–S–SW stops it (−4). |
+| 5 | ⚡ Suck effect | +2.5 | 0 | Morning → afternoon wind acceleration. Sharp rise = thermal intensification. |
+| 6 | 📉 Pressure drop (09h→16h) | +3 | −2 | ≥4 hPa drop = strong thermal. Pressure rise = negative. |
+| 7 | 💧 Afternoon humidity (13–17h) | +2 | −2 | Dry air (<40%) heats land faster. Very humid air inhibits heating. |
+| 8 | 🌧️ Precipitation probability (13–17h) | +1 | −4 | Rain cools land and stops thermals. |
+| 9 | 🌪️ Atmospheric instability (lapse rate) | +3 | −2 | Temp difference 2m − 180m at 11–14h. ≥6°C = unstable air = strong thermals. |
+| 10 | 🔥 Vapour Pressure Deficit (VPD) | +2.5 | −1 | Afternoon avg. High VPD (>2 kPa) = dry+warm air = high thermal potential. |
+| 11 | 🌫️ Low/mid cloud layer | +1.5 | −1.5 | Low clouds block solar radiation far more than high cirrus. Bonus for clear low sky. |
 
-*   **Анализ по 8 фактора:** Приложението анализира 8 ключови метеорологични фактора за пълна прогноза.
-*   **Самокоригиращ се AI модел:** Използва исторически данни от прогнози и реални наблюдения на вятъра, за да калибрира непрекъснато своя модел за прогнозиране, подобрявайки точността с времето.
-*   **Графика с исторически данни:** Визуализира минали прогнози спрямо реални данни за вятъра, помагайки за проследяване на ефективността на модела.
-*   **Интерактивен интерфейс:**
-    *   Подробни обяснения за всеки критерий за точкуване са достъпни при посочване с мишката (tooltips).
-    *   Модален прозорец обяснява критериите за термичен вятър.
-*   **Визуални индикатори:** Всяка прогноза е придружена от икони (✅, ⚠️, ❌) за бърза визуална оценка.
-*   **Двуезичен интерфейс:** Наличен на английски и български език.
+**Score range:** −25 to +32.25
 
-## 🛠️ Технологии
+### Wind Forecast Categories
 
-*   **Frontend:** HTML5, CSS3, Vanilla JavaScript
-*   **Backend:** Node.js Serverless Functions
-*   **База данни:** Upstash Redis (за съхранение на AI корекционния модел)
-*   **Deployment:** Vercel
-*   **Библиотеки:**
-    *   [Flatpickr.js](https://flatpickr.js.org/) - за календара.
-    *   [Chart.js](https://www.chartjs.org/) - за графиката с исторически данни.
-*   **API:**
-    *   [Open-Meteo API](https://open-meteo.com/) - за метеорологични данни.
+| Category | Avg predicted knots |
+|----------|-------------------|
+| 🟢 HIGH probability of good conditions | ≥ 16 kn |
+| 🟡 MEDIUM probability | 12–15 kn |
+| 🔴 LOW probability | 8–11 kn |
+| ⛔ Unsuitable for kiting | < 8 kn |
 
-## 🚀 Как да използвам?
+---
 
-1.  Посетете сайта: [raches.vercel.app](https://raches.vercel.app/)
-2.  Използвайте календара, за да изберете дата или период.
-3.  Натиснете бутона **"Анализирай"**.
-4.  Разгледайте детайлната прогноза за всеки избран ден.
+## ✨ Main Features
 
-## 💡 Как работи?
+- **11-Factor Scoring:** Comprehensive analysis across wind, temperature, clouds, pressure, humidity, lapse rate, and VPD.
+- **Self-Correcting ML Model:** Monthly ridge regression models trained on cross-year aggregated historical data. Each month's model pools all available records from that calendar month across all years, blending in neighbouring months when data is thin.
+- **Accurate Wind Prediction:** Score → baseline knot range via calibrated lookup table, then per-month linear regression correction (±20 kn clamped).
+- **Visual Score Bar:** Colour-coded progress bar showing daily score level at a glance.
+- **Historical Charts:** Predicted vs. real wind overlay; real station wind bar chart (daily max + best 90-min avg).
+- **Real Station Data:** Wind observations from kiting.live (5-min intervals), matched to forecast records for model training.
+- **Bilingual:** English and Bulgarian throughout.
 
-Приложението извлича метеорологични данни от Open-Meteo API. Набор от serverless функции (`/api`) обработва тези данни, като прилага точкова система, базирана на 8-те критерия. Модел за машинно обучение, съхранен в Redis, коригира финалната прогноза за вятъра на базата на минали резултати. Резултатите, включително подробна разбивка и историческа графика, се показват на фронтенда.
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Vanilla JS (ES modules), HTML5, CSS3 |
+| Charts | Chart.js 3.9.1 |
+| Date picker | Flatpickr |
+| Backend | Node.js Serverless Functions (Vercel) |
+| Database | Upstash Redis |
+| Math / ML | mathjs (ridge regression) |
+| Deployment | Vercel (with cron jobs) |
+| Weather data | [Open-Meteo API](https://open-meteo.com/) (3 locations) |
+| Station data | kiting.live API |
+
+### Open-Meteo Data Sources
+
+| Location | Purpose | Key parameters |
+|----------|---------|----------------|
+| Raches (38.867°N, 22.759°E) | Wind, pressure, lapse rate, VPD | `wind_speed_80m`, `wind_direction_80m`, `temperature_2m`, `temperature_180m`, `vapour_pressure_deficit`, `surface_pressure` |
+| Lamia (38.903°N, 22.443°E) | Temperature, cloud cover | `temperature_2m`, `cloud_cover`, `cloud_cover_low`, `cloud_cover_mid`, `cloud_cover_high` |
+| Volos marine (38.953°N, 22.967°E) | Sea surface temperature | `sea_surface_temperature` at 13:00 |
+
+---
+
+## 🚀 How to Use
+
+1. Visit [raches.vercel.app](https://raches.vercel.app/)
+2. Double-click a single date, or drag to select a range.
+3. Press **"Analyze"**.
+4. Review the forecast card for each day — each factor is scored and explained.
+
+---
+
+## 💡 How It Works
+
+1. **Data fetch:** Three parallel Open-Meteo requests (Raches, Lamia, Volos marine) plus historical data from Redis.
+2. **Scoring:** 11 sub-scores computed from hourly data (afternoon windows, daytime averages, lapse rate peaks).
+3. **Wind prediction:** Score → baseline knot range (calibrated lookup table) → per-month ridge regression correction.
+4. **Model training:** Nightly cron (15:00 UTC) fetches real station data, retrains correction models, and updates peak-hour averages.
+5. **Display:** Forecast cards with score breakdown, score bar, predicted wind range, real wind overlay if available.
+
+---
+
+## 🎯 За Проекта (Bulgarian)
+
+**Raches Thermal Wind Forecaster** е уеб приложение за специализирана прогноза на термичния вятър в Рахес, Гърция. Анализира 11 метеорологични фактора от три различни локации.
+
+### Критерии за точкуване (v3)
+
+| # | Фактор | Макс | Мин | Описание |
+|---|--------|------|-----|----------|
+| 1 | ☀️ Обща облачност | +5 | −2 | Дневна средна 05–16h от Ламия. |
+| 2 | 🌡️ Темп. разлика суша-море | +5.25 | −1.5 | Макс. температура Ламия минус морска температура Рахес в 13:00. |
+| 3 | 💨 Скорост на вятъра на 80m | +3.5 | −1 | Дневен максимум от почасови данни за 80m — кайт-релевантна височина. |
+| 4 | 🧭 Посока на вятъра (80m, 13–17h) | +3 | −8 | СИ–И идеална (+3). З–СЗ убива термиката (−8). |
+| 5 | ⚡ Suck ефект | +2.5 | 0 | Ускорение на вятъра от сутринта към следобеда. |
+| 6 | 📉 Спад в налягане (09h→16h) | +3 | −2 | ≥4 hPa спад = силна термика. |
+| 7 | 💧 Следобедна влажност | +2 | −2 | Сух въздух (<40%) нагрява сушата по-бързо. |
+| 8 | 🌧️ Вероятност за валежи | +1 | −4 | Дъждът охлажда земята и спира термиката. |
+| 9 | 🌪️ Атм. нестабилност (лапс рейт) | +3 | −2 | Разлика temp 2m − 180m при 11–14h. ≥6°C = нестабилен въздух = силна термика. |
+| 10 | 🔥 Дефицит на парно налягане (VPD) | +2.5 | −1 | Следобедна средна. Висок VPD (>2 kPa) = сух+топъл въздух = висок термичен потенциал. |
+| 11 | 🌫️ Нисък/среден облачен слой | +1.5 | −1.5 | Ниските облаци блокират слънчевата радиация много повече от перести облаци. |
+
+**Диапазон на оценката:** −25 до +32.25
+
+### Категории прогноза
+
+| Категория | Средно прогнозирани възли |
+|-----------|--------------------------|
+| 🟢 ВИСОКА вероятност за добри условия | ≥ 16 kn |
+| 🟡 СРЕДНА вероятност | 12–15 kn |
+| 🔴 НИСКА вероятност | 8–11 kn |
+| ⛔ Неподходящо за кайт | < 8 kn |
+
+### Технологии
+
+- **Frontend:** Vanilla JS ES модули, HTML5, CSS3, Chart.js, Flatpickr
+- **Backend:** Node.js Serverless (Vercel), Upstash Redis, mathjs (ridge regression)
+- **Данни:** Open-Meteo (3 локации), kiting.live (реална станция)
+- **ML модел:** Месечна ridge regression, обучена върху агрегирани данни от всички години за съответния месец

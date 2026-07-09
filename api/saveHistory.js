@@ -3,7 +3,7 @@ import { Redis } from '@upstash/redis';
 
 const redis = Redis.fromEnv();
 const HISTORY_KEY = 'rachesForecastHistory';
-const MAX_HISTORY_DAYS = 450; // Align with your desired limit
+const MAX_HISTORY_DAYS = 5000; // Align with your desired limit
 
 export default async function handler(request, response) {
     if (request.method !== 'POST') {

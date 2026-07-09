@@ -15,9 +15,26 @@ export function calculateMonthlyAverages(maxWindHistory) {
 
     for (const record of maxWindHistory) {
         if (record.timestamp) {
-            const date = new Date(record.timestamp);
-            const month = date.getUTCMonth() + 1; // 1-12
-            const minutesPastMidnight = date.getUTCHours() * 60 + date.getUTCMinutes();
+            // Timestamps from kiting.live are in Greek local time (UTC+3 summer)
+            // stored WITHOUT a timezone suffix (e.g. "2025-07-08T14:30:00").
+            // Using getUTCHours() would subtract 3h and give wrong peak times.
+            // Parse the time components directly from the string instead.
+            const ts = record.timestamp;
+            const datePart = ts.split('T')[0]; // "2025-07-08"
+            const timePart = ts.split('T')[1]; // "14:30:00" or "14:30:00Z" etc.
+
+            if (!datePart || !timePart) continue;
+
+            const [yearStr, monthStr] = datePart.split('-');
+            const month = parseInt(monthStr, 10); // 1-12
+
+            const [hourStr, minStr] = timePart.replace(/Z.*$/, '').split(':');
+            const minutesPastMidnight = parseInt(hourStr, 10) * 60 + parseInt(minStr, 10);
+
+            // Sanity check: thermal peak should be between 11:00 and 20:00 local
+            // If we're outside that window it's likely a night/morning outlier
+            const hour = parseInt(hourStr, 10);
+            if (hour < 11 || hour > 20) continue;
 
             if (!monthlyPeakMinutes[month]) {
                 monthlyPeakMinutes[month] = [];

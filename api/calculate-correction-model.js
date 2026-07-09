@@ -53,7 +53,10 @@ export async function calculateCorrectionModel() {
                 forecast.suck_effect_score_value,
                 forecast.pressure_drop_score,
                 forecast.humidity_score,
-                forecast.precipitation_probability_score
+                forecast.precipitation_probability_score,
+                forecast.lapse_rate_score,   // v3 new
+                forecast.vpd_score,          // v3 new
+                forecast.strat_cloud_score,  // v3 new
             ].map(v => (typeof v === 'number' ? v : 0));
 
             const predictedKnots = forecast.rawAvgPredictedKnots || forecast.avgPredictedKnots;
@@ -70,62 +73,82 @@ export async function calculateCorrectionModel() {
         }
     }
 
-    const NUM_FEATURES = 8;
+    const NUM_FEATURES = 11; // v3: +lapse_rate, +vpd, +strat_cloud
+    // Minimum records to consider a month's own data as the primary source
+    const MIN_OWN_RECORDS = NUM_FEATURES + 1;
+    // Target pool size: if own data is below this, blend in neighbour months
+    const TARGET_POOL_SIZE = 20;
+
     const monthlyModels = {};
     const allMonths = Array.from({ length: 12 }, (_, i) => i + 1);
 
-    // Find which months have enough data to be a source for a model
-    const availableDataMonths = allMonths.filter(m => monthlyTrainingData[m] && monthlyTrainingData[m].length >= NUM_FEATURES + 1);
+    // Cyclic distance between two months (1-12)
+    function cyclicDist(a, b) {
+        const d = Math.abs(a - b);
+        return Math.min(d, 12 - d);
+    }
 
-    // If no month has enough data, we can't generate any models
-    if (availableDataMonths.length === 0) {
+    // Build an aggregated training pool for a given month by blending data from
+    // all years for that month first, then adding neighbour months if still thin.
+    // Records from the target month get weight 1.0; neighbours are down-weighted
+    // by replicating them (weight applied by including fewer copies as distance grows).
+    function buildPool(targetMonth) {
+        const ownData = monthlyTrainingData[targetMonth] || [];
+        // Already aggregated across all years — own month from any year counts equally
+        let pool = [...ownData];
+
+        if (pool.length >= TARGET_POOL_SIZE) {
+            return { pool, sourceMonth: targetMonth, blendedMonths: [] };
+        }
+
+        // Gather neighbour months sorted by cyclic distance
+        const neighbours = allMonths
+            .filter(m => m !== targetMonth && monthlyTrainingData[m] && monthlyTrainingData[m].length > 0)
+            .map(m => ({ month: m, dist: cyclicDist(targetMonth, m) }))
+            .sort((a, b) => a.dist - b.dist || a.month - b.month);
+
+        const blendedMonths = [];
+
+        for (const { month: nm, dist } of neighbours) {
+            if (pool.length >= TARGET_POOL_SIZE) break;
+            const neighbourData = monthlyTrainingData[nm];
+            // Down-weight by distance: distance 1 → full copy, distance 2 → half, 3 → third, etc.
+            const keepFraction = 1 / dist;
+            const keepCount = Math.max(1, Math.round(neighbourData.length * keepFraction));
+            // Take a deterministic slice (first N records after sorting by insertion order)
+            const slice = neighbourData.slice(0, keepCount);
+            pool = pool.concat(slice);
+            blendedMonths.push({ month: nm, dist, recordsAdded: slice.length });
+        }
+
+        const sourceMonth = ownData.length >= MIN_OWN_RECORDS ? targetMonth
+            : (neighbours.length > 0 ? neighbours[0].month : targetMonth);
+
+        return { pool, sourceMonth, blendedMonths };
+    }
+
+    // Check if any data exists at all
+    const totalRecords = Object.values(monthlyTrainingData).reduce((s, a) => s + a.length, 0);
+    if (totalRecords === 0) {
         return { success: true, message: 'Insufficient data for any month to generate models.' };
     }
 
     for (const month of allMonths) {
-        let trainingData;
-        let sourceMonth = month;
-        let isFallback = false;
+        const { pool, sourceMonth, blendedMonths } = buildPool(month);
 
-        if (monthlyTrainingData[month] && monthlyTrainingData[month].length >= NUM_FEATURES + 1) {
-            // Use current month's data as it's sufficient
-            trainingData = monthlyTrainingData[month];
-        } else {
-            // Not enough data, find the closest month with sufficient data as a fallback
-            isFallback = true;
-            
-            // Map all available months with their cyclic distance to the target month
-            const distances = availableDataMonths.map(m => {
-                const absDiff = Math.abs(month - m);
-                const cyclicDist = Math.min(absDiff, 12 - absDiff);
-                return { month: m, distance: cyclicDist };
-            });
-
-            // Sort by distance (closest first)
-            distances.sort((a, b) => {
-                if (a.distance !== b.distance) return a.distance - b.distance;
-                
-                // If distances are equal, prefer the month that is chronologically before
-                const aDistBack = (month - a.month + 12) % 12;
-                const bDistBack = (month - b.month + 12) % 12;
-                return aDistBack - bDistBack;
-            });
-
-            const bestMatch = distances[0];
-            sourceMonth = bestMatch.month;
-
-            trainingData = monthlyTrainingData[sourceMonth];
-            console.log(`Month ${month}: No data. Closest is Month ${sourceMonth} (Distance: ${bestMatch.distance}). Available: ${availableDataMonths.join(',')}`);
-        }
-
-        if (!trainingData) {
-            console.log(`Skipping month ${month}, no sufficient data or fallback found.`);
+        if (pool.length < MIN_OWN_RECORDS) {
+            console.log(`Month ${month}: Only ${pool.length} records after blending, skipping.`);
             continue;
         }
 
-        // 3. Build matrices and calculate coefficients
-        const X = math.matrix(trainingData.map(d => [1, ...d.features]), 'dense');
-        const y = math.matrix(trainingData.map(d => [d.target]), 'dense');
+        const isFallback = sourceMonth !== month;
+        if (blendedMonths.length > 0) {
+            console.log(`Month ${month}: ${(monthlyTrainingData[month] || []).length} own records + blended from [${blendedMonths.map(b => `M${b.month}(+${b.recordsAdded})`).join(', ')}] → pool=${pool.length}`);
+        }
+
+        // 3. Build matrices and calculate coefficients via ridge regression
+        const X = math.matrix(pool.map(d => [1, ...d.features]), 'dense');
+        const y = math.matrix(pool.map(d => [d.target]), 'dense');
         const Xt = math.transpose(X);
         let XtX = math.multiply(Xt, X);
 
@@ -138,30 +161,35 @@ export async function calculateCorrectionModel() {
             XtX_inv = math.inv(XtX);
         } catch (error) {
             console.error(`Error inverting matrix for month ${month}:`, error);
-            // Skip this month if matrix inversion fails
             continue;
         }
 
         const XtX_inv_Xt = math.multiply(XtX_inv, Xt);
         const coefficients = math.flatten(math.multiply(XtX_inv_Xt, y)).toArray();
 
-        // 5. Save the trained model for the month
+        const ownCount = (monthlyTrainingData[month] || []).length;
         const model = {
-            version: isFallback ? '5.2-linear-regression-monthly-fallback' : '5.2-linear-regression-monthly',
+            version: '6.0-aggregated-cross-year',
             sourceMonth: sourceMonth,
+            isFallback: isFallback,
+            blendedMonths: blendedMonths,
             lastUpdated: new Date().toISOString(),
             coefficients: {
-                intercept: Math.round(coefficients[0] * 100) / 100,
-                cloud_cover: Math.round(coefficients[1] * 100) / 100,
-                temp_diff: Math.round(coefficients[2] * 100) / 100,
-                wind_speed: Math.round(coefficients[3] * 100) / 100,
-                wind_direction: Math.round(coefficients[4] * 100) / 100,
-                suck_effect: Math.round(coefficients[5] * 100) / 100,
-                pressure_drop: Math.round(coefficients[6] * 100) / 100,
-                humidity: Math.round(coefficients[7] * 100) / 100,
-                precipitation: Math.round(coefficients[8] * 100) / 100,
+                intercept:      Math.round(coefficients[0]  * 100) / 100,
+                cloud_cover:    Math.round(coefficients[1]  * 100) / 100,
+                temp_diff:      Math.round(coefficients[2]  * 100) / 100,
+                wind_speed:     Math.round(coefficients[3]  * 100) / 100,
+                wind_direction: Math.round(coefficients[4]  * 100) / 100,
+                suck_effect:    Math.round(coefficients[5]  * 100) / 100,
+                pressure_drop:  Math.round(coefficients[6]  * 100) / 100,
+                humidity:       Math.round(coefficients[7]  * 100) / 100,
+                precipitation:  Math.round(coefficients[8]  * 100) / 100,
+                lapse_rate:     Math.round(coefficients[9]  * 100) / 100,
+                vpd:            Math.round(coefficients[10] * 100) / 100,
+                strat_cloud:    Math.round(coefficients[11] * 100) / 100,
             },
-            recordsAnalyzed: trainingData.length
+            recordsAnalyzed: pool.length,
+            ownMonthRecords: ownCount,
         };
         monthlyModels[month] = model;
     }

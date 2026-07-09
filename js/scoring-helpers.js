@@ -184,3 +184,49 @@ export function getWeatherIcon(totalRain, precipitationProb) {
     if (precipitationProb > 10) return '🌤️';
     return '☀️';
 }
+
+/**
+ * Scores atmospheric lapse rate (temperature difference between 2m and 180m altitude).
+ * A larger negative lapse rate (surface much warmer than 180m) = strong thermal instability.
+ * @param {number} lapseRate - temp_2m minus temp_180m (°C). Positive = unstable.
+ * @returns {object} { score, icon }
+ */
+export function getLapseRateScore(lapseRate) {
+    if (lapseRate >= 8)  return { score: 3, icon: '✅' };   // Very unstable, strong thermals
+    if (lapseRate >= 6)  return { score: 2, icon: '✅' };   // Unstable, good thermals
+    if (lapseRate >= 4)  return { score: 1, icon: '⚠️' };  // Mildly unstable
+    if (lapseRate >= 2)  return { score: 0, icon: '⚠️' };  // Near neutral
+    if (lapseRate >= 0)  return { score: -1, icon: '❌' }; // Slightly stable
+    return { score: -2, icon: '❌' };                        // Inversion, kills thermals
+}
+
+/**
+ * Scores vapour pressure deficit (VPD).
+ * High VPD = dry air + warm = strong thermal potential.
+ * @param {number} vpd - Vapour pressure deficit in kPa (afternoon average).
+ * @returns {object} { score, icon }
+ */
+export function getVpdScore(vpd) {
+    if (vpd >= 3.0) return { score: 2.5, icon: '✅' };   // Very high thermal potential
+    if (vpd >= 2.0) return { score: 2, icon: '✅' };     // High thermal potential
+    if (vpd >= 1.2) return { score: 1, icon: '✅' };     // Moderate
+    if (vpd >= 0.6) return { score: 0, icon: '⚠️' };   // Low
+    return { score: -1, icon: '❌' };                     // Very low, humid/cool
+}
+
+/**
+ * Scores low cloud cover specifically (low clouds block solar heating much more than high clouds).
+ * Uses separate low/mid/high cloud layers for more accurate thermal suppression detection.
+ * @param {number} lowCloud - average low cloud cover % (0-100)
+ * @param {number} midCloud - average mid cloud cover % (0-100)
+ * @returns {object} { score, icon }
+ */
+export function getStratifiedCloudScore(lowCloud, midCloud) {
+    // Low clouds block direct sunlight completely; mid clouds partially
+    const effectiveBlockage = lowCloud + midCloud * 0.4;
+    if (effectiveBlockage <= 8)  return { score: 1.5, icon: '✅' };  // Bonus: clear low+mid sky
+    if (effectiveBlockage <= 20) return { score: 0.5, icon: '✅' };
+    if (effectiveBlockage <= 40) return { score: 0, icon: '⚠️' };
+    if (effectiveBlockage <= 60) return { score: -0.5, icon: '⚠️' };
+    return { score: -1.5, icon: '❌' };                                // Heavy low cloud layer
+}
