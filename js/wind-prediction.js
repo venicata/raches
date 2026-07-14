@@ -112,18 +112,24 @@ function predictWindSpeedWithModel(scores, model, maxCorrection = 20) {
         scores.strat_cloud_score || 0,
     ];
 
+    // Per-parameter contribution to the correction (coefficient * this day's score),
+    // so the UI can show how much of the total correction each factor is responsible for.
+    const contributions = {
+        cloud_cover:    (coeffs.cloud_cover || 0)    * features[0],
+        temp_diff:      (coeffs.temp_diff || 0)      * features[1],
+        wind_speed:     (coeffs.wind_speed || 0)     * features[2],
+        wind_direction: (coeffs.wind_direction || 0) * features[3],
+        suck_effect:    (coeffs.suck_effect || 0)    * features[4],
+        pressure_drop:  (coeffs.pressure_drop || 0)  * features[5],
+        humidity:       (coeffs.humidity || 0)       * features[6],
+        precipitation:  (coeffs.precipitation || 0)  * features[7],
+        lapse_rate:     (coeffs.lapse_rate || 0)     * features[8],
+        vpd:            (coeffs.vpd || 0)            * features[9],
+        strat_cloud:    (coeffs.strat_cloud || 0)    * features[10],
+    };
+
     let correction = (coeffs.intercept || 0) +
-        (coeffs.cloud_cover || 0)   * features[0] +
-        (coeffs.temp_diff || 0)     * features[1] +
-        (coeffs.wind_speed || 0)    * features[2] +
-        (coeffs.wind_direction || 0)* features[3] +
-        (coeffs.suck_effect || 0)   * features[4] +
-        (coeffs.pressure_drop || 0) * features[5] +
-        (coeffs.humidity || 0)      * features[6] +
-        (coeffs.precipitation || 0) * features[7] +
-        (coeffs.lapse_rate || 0)    * features[8] +
-        (coeffs.vpd || 0)           * features[9] +
-        (coeffs.strat_cloud || 0)   * features[10];
+        Object.values(contributions).reduce((sum, v) => sum + v, 0);
 
     // Clamp the correction to a reasonable range to prevent extreme adjustments
     correction = Math.max(-maxCorrection, Math.min(maxCorrection, correction));
@@ -139,7 +145,8 @@ function predictWindSpeedWithModel(scores, model, maxCorrection = 20) {
         min: minKnots,
         max: maxKnots,
         baselineAvgKnots: baselineAvgKnots,
-        correction: correction
+        correction: correction,
+        contributions: contributions
     };
 }
 
@@ -180,7 +187,8 @@ export function predictWindSpeedRange(scores, monthlyModels, date) {
             min: rawPrediction.min,
             max: rawPrediction.max,
             baselineAvgKnots: rawPrediction.baselineAvgKnots,
-            correction: 0
+            correction: 0,
+            contributions: null
         };
     }
 
@@ -200,6 +208,7 @@ export function predictWindSpeedRange(scores, monthlyModels, date) {
         text: `${finalMinKnots}-${finalMaxKnots} ${T.knotsUnit} (${avgPredictedMs.toFixed(1)} ${T.msUnit})`,
         baselineAvgKnots: finalPrediction.baselineAvgKnots,
         correction: finalPrediction.correction,
+        contributions: finalPrediction.contributions,
         isLimitedCorrection: isLimitedCorrection
     };
 }

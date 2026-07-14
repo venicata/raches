@@ -375,6 +375,7 @@ export async function processWeatherData(weatherData, marineData, correctionMode
             rawAvgPredictedMs: windPrediction.rawAvgPredictedMs,
             baselineAvgKnots: windPrediction.baselineAvgKnots,
             correction: windPrediction.correction,
+            contributions: windPrediction.contributions,
             isLimitedCorrection: windPrediction.isLimitedCorrection,
             waterTemp: data.sea_temp_value
         });
