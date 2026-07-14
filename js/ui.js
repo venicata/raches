@@ -11,6 +11,14 @@ function getWeatherIcon(totalRain, precipitationProb) {
     return '☀️';
 }
 
+// Shows how much of the correction-model's total adjustment (in knots) came from this
+// specific parameter, so a day with a big correction can be broken down factor-by-factor.
+function formatContribution(value, knotsUnit) {
+    if (value === undefined || value === null || !isFinite(value)) return '';
+    const sign = value > 0 ? '+' : '';
+    return ` <span class="correction-contrib">[${sign}${value.toFixed(2)} ${knotsUnit}]</span>`;
+}
+
 export function setLanguage(lang) {
     localStorage.setItem('preferredLang', lang);
     if (!translations[lang]) return;
@@ -243,32 +251,33 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
         }
         
         const weatherIcon = getWeatherIcon(result.total_rain || 0, result.precipitation_probability_value || 0);
+        const contrib = result.contributions || {};
         const predictedWindText = `${T.predictedWindLabel} <b>${result.predicted_wind_knots}</b> ${T.knotsUnit} (${result.predicted_wind_ms} ${T.msUnit})${peakTimeText}`;
-        const cloudCoverText = `${getCloudCoverScore(result.cloud_cover_value).icon} ${T.cloudCoverLabel} ${result.cloud_cover_value}% (${result.cloud_cover_score > 0 ? '+' : ''}${result.cloud_cover_score} ${pointSuffix})`;
-        const tempDiffText = `${getTempDiffScore(result.temp_diff_value).icon} ${T.tempDiffDetail.replace('{description}', result.temp_diff_description).replace('{value}', result.temp_diff_value.toFixed(1)).replace('{landTemp}', result.air_temp_value.toFixed(1)).replace('{seaTemp}', result.sea_temp_value.toFixed(1))} (${result.temp_diff_score > 0 ? '+' : ''}${result.temp_diff_score} ${pointSuffix})`;
+        const cloudCoverText = `${getCloudCoverScore(result.cloud_cover_value).icon} ${T.cloudCoverLabel} ${result.cloud_cover_value}% (${result.cloud_cover_score > 0 ? '+' : ''}${result.cloud_cover_score} ${pointSuffix})${formatContribution(contrib.cloud_cover, T.knotsUnit)}`;
+        const tempDiffText = `${getTempDiffScore(result.temp_diff_value).icon} ${T.tempDiffDetail.replace('{description}', result.temp_diff_description).replace('{value}', result.temp_diff_value.toFixed(1)).replace('{landTemp}', result.air_temp_value.toFixed(1)).replace('{seaTemp}', result.sea_temp_value.toFixed(1))} (${result.temp_diff_score > 0 ? '+' : ''}${result.temp_diff_score} ${pointSuffix})${formatContribution(contrib.temp_diff, T.knotsUnit)}`;
 
         // Show 80m wind speed if available and different from 10m
         const windSpeedKnots = result.wind_speed_value * 0.539957;
         const windSpeedMs = result.wind_speed_value * 0.277778;
         const windLabelSuffix = result.wind_speed_10m_value && Math.abs(result.wind_speed_value - result.wind_speed_10m_value) > 0.5 ? ' @80m' : '';
-        const maxWindText = `${result.wind_speed_icon || '❓'} ${T.apiWindSpeedLabel} <b>${windSpeedKnots.toFixed(1)}</b> ${T.knotsUnit} (${windSpeedMs.toFixed(1)} ${T.msUnit})${windLabelSuffix} (${result.wind_speed_score > 0 ? '+' : ''}${result.wind_speed_score} ${pointSuffix})`;
+        const maxWindText = `${result.wind_speed_icon || '❓'} ${T.apiWindSpeedLabel} <b>${windSpeedKnots.toFixed(1)}</b> ${T.knotsUnit} (${windSpeedMs.toFixed(1)} ${T.msUnit})${windLabelSuffix} (${result.wind_speed_score > 0 ? '+' : ''}${result.wind_speed_score} ${pointSuffix})${formatContribution(contrib.wind_speed, T.knotsUnit)}`;
 
-        const windDirText = `<span class="wind-direction-container">${getWindDirIcon(result.wind_direction_score)} <span class="wind-arrow" style="transform: rotate(${result.wind_direction_value + 180}deg);"></span> <span>${T.windDirDetail.replace('{value}', result.wind_direction_value).replace('{description}', result.wind_direction_description)} (${result.wind_direction_score > 0 ? '+' : ''}${result.wind_direction_score} ${pointSuffix})</span></span>`;
-        const suckEffectText = `${getSuckEffectIcon(result.suck_effect_score_value)} ${T.suckEffectLabel} ${result.suck_effect_score_value}/3 (${result.suck_effect_score_value > 0 ? '+' : ''}${result.suck_effect_score_value} ${pointSuffix})`;
-        const pressureDropText = `${getPressureDropScore(result.pressure_drop_value).icon} ${T.pressureDropLabel} ${result.pressure_drop_value} hPa (${result.pressure_drop_score > 0 ? '+' : ''}${result.pressure_drop_score} ${pointSuffix})`;
-        const humidityText = `${getHumidityScore(result.humidity_value).icon} ${T.humidityLabel} ${result.humidity_value}% (${result.humidity_score > 0 ? '+' : ''}${result.humidity_score} ${pointSuffix})`;
-        const precipitationText = `${getPrecipitationScore(result.precipitation_probability_value).icon} ${T.precipitationLabel} ${result.precipitation_probability_value}% (${result.precipitation_probability_score > 0 ? '+' : ''}${result.precipitation_probability_score} ${pointSuffix})`;
+        const windDirText = `<span class="wind-direction-container">${getWindDirIcon(result.wind_direction_score)} <span class="wind-arrow" style="transform: rotate(${result.wind_direction_value + 180}deg);"></span> <span>${T.windDirDetail.replace('{value}', result.wind_direction_value).replace('{description}', result.wind_direction_description)} (${result.wind_direction_score > 0 ? '+' : ''}${result.wind_direction_score} ${pointSuffix})${formatContribution(contrib.wind_direction, T.knotsUnit)}</span></span>`;
+        const suckEffectText = `${getSuckEffectIcon(result.suck_effect_score_value)} ${T.suckEffectLabel} ${result.suck_effect_score_value}/3 (${result.suck_effect_score_value > 0 ? '+' : ''}${result.suck_effect_score_value} ${pointSuffix})${formatContribution(contrib.suck_effect, T.knotsUnit)}`;
+        const pressureDropText = `${getPressureDropScore(result.pressure_drop_value).icon} ${T.pressureDropLabel} ${result.pressure_drop_value} hPa (${result.pressure_drop_score > 0 ? '+' : ''}${result.pressure_drop_score} ${pointSuffix})${formatContribution(contrib.pressure_drop, T.knotsUnit)}`;
+        const humidityText = `${getHumidityScore(result.humidity_value).icon} ${T.humidityLabel} ${result.humidity_value}% (${result.humidity_score > 0 ? '+' : ''}${result.humidity_score} ${pointSuffix})${formatContribution(contrib.humidity, T.knotsUnit)}`;
+        const precipitationText = `${getPrecipitationScore(result.precipitation_probability_value).icon} ${T.precipitationLabel} ${result.precipitation_probability_value}% (${result.precipitation_probability_score > 0 ? '+' : ''}${result.precipitation_probability_score} ${pointSuffix})${formatContribution(contrib.precipitation, T.knotsUnit)}`;
         const rainText = `${weatherIcon} ${T.rainLabel} ${result.total_rain ? result.total_rain.toFixed(1) : '0.0'} mm`;
 
         // New factors
         const lapseRateText = result.lapse_rate_value !== null && result.lapse_rate_value !== undefined
-            ? `${result.lapse_rate_icon || '⚠️'} ${T.lapseRateLabel || 'Atm. Instability:'} ${result.lapse_rate_value}°C (${result.lapse_rate_score > 0 ? '+' : ''}${result.lapse_rate_score} ${pointSuffix})`
+            ? `${result.lapse_rate_icon || '⚠️'} ${T.lapseRateLabel || 'Atm. Instability:'} ${result.lapse_rate_value}°C (${result.lapse_rate_score > 0 ? '+' : ''}${result.lapse_rate_score} ${pointSuffix})${formatContribution(contrib.lapse_rate, T.knotsUnit)}`
             : null;
         const vpdText = result.vpd_value !== null && result.vpd_value !== undefined
-            ? `${result.vpd_icon || '⚠️'} ${T.vpdLabel || 'VPD:'} ${result.vpd_value} kPa (${result.vpd_score > 0 ? '+' : ''}${result.vpd_score} ${pointSuffix})`
+            ? `${result.vpd_icon || '⚠️'} ${T.vpdLabel || 'VPD:'} ${result.vpd_value} kPa (${result.vpd_score > 0 ? '+' : ''}${result.vpd_score} ${pointSuffix})${formatContribution(contrib.vpd, T.knotsUnit)}`
             : null;
         const stratCloudText = result.low_cloud_value !== null && result.low_cloud_value !== undefined
-            ? `${result.strat_cloud_icon || '⚠️'} ${T.stratCloudLabel || 'Low/Mid Cloud:'} ${result.low_cloud_value}% / ${result.mid_cloud_value}% (${result.strat_cloud_score > 0 ? '+' : ''}${result.strat_cloud_score} ${pointSuffix})`
+            ? `${result.strat_cloud_icon || '⚠️'} ${T.stratCloudLabel || 'Low/Mid Cloud:'} ${result.low_cloud_value}% / ${result.mid_cloud_value}% (${result.strat_cloud_score > 0 ? '+' : ''}${result.strat_cloud_score} ${pointSuffix})${formatContribution(contrib.strat_cloud, T.knotsUnit)}`
             : null;
 
         // Score bar: show visual progress of score relative to max

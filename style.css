@@ -303,6 +303,13 @@ header p {
     padding-right: 8px;
 }
 
+/* Per-parameter correction-model contribution (knots), shown after the points score */
+.correction-contrib {
+    color: var(--color-primary);
+    font-style: italic;
+    font-weight: 600;
+}
+
 /* Info icon */
 .info-icon {
     flex-shrink: 0;
