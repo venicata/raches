@@ -114,6 +114,7 @@ export async function triggerRealDataSync() {
     try {
         const response = await fetch('/api/process-max-wind', {
             method: 'POST', // Използваме POST, за да е ясно, че задействаме процес
+            headers: { 'x-admin-key': state.adminKey || '' }
         });
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
@@ -152,7 +153,8 @@ export async function triggerModelCalculation() {
         const response = await fetch('/api/calculate-correction-model', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'x-admin-key': state.adminKey || ''
             }
         });
         if (!response.ok) {
@@ -245,7 +247,10 @@ export async function triggerNightlyTasks() {
  */
 export async function trainPeakTimeModel() {
     try {
-        const response = await fetch('/api/predict-peak-wind-time', { method: 'POST' });
+        const response = await fetch('/api/predict-peak-wind-time', {
+            method: 'POST',
+            headers: { 'x-admin-key': state.adminKey || '' }
+        });
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.message || 'Failed to train peak time model');
@@ -255,4 +260,41 @@ export async function trainPeakTimeModel() {
         console.error("Error triggering peak time model training:", error);
         throw error; // Rethrow to be caught by the caller
     }
+}
+
+/**
+ * Deletes the real wind record for a specific date (e.g. when the station reading is bugged).
+ * @param {string} date - The date (YYYY-MM-DD) whose real wind record should be removed.
+ */
+export async function deleteRealWindForDate(date) {
+    const response = await fetch('/api/delete-real-wind-by-date', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-admin-key': state.adminKey || ''
+        },
+        body: JSON.stringify({ date })
+    });
+    const result = await response.json();
+    if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete real wind data');
+    }
+    return result;
+}
+
+/**
+ * Verifies the admin password against the server and returns whether it was correct.
+ * @param {string} password
+ */
+export async function adminLogin(password) {
+    const response = await fetch('/api/admin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+    });
+    const result = await response.json();
+    if (!response.ok) {
+        throw new Error(result.error || 'Грешна парола');
+    }
+    return result;
 }

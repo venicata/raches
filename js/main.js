@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { translations } from './translations.js';
-import { setLanguage, displayResults, initModal, initAdminButtons } from './ui.js';
+import { setLanguage, displayResults, initModal, initAdminButtons, initAdminLogin } from './ui.js';
 import { fetchAndAnalyze, formatDate, triggerRealDataSync, fetchAndDisplayRealWind, triggerNightlyTasks, trainPeakTimeModel } from './api.js';
 import { renderHistoricalChart, renderRealWindChart } from './chart.js';
 
@@ -13,6 +13,15 @@ document.addEventListener('click', () => {
 
 document.addEventListener('DOMContentLoaded', async () => {
     state.resultsContainer = document.getElementById('results-container');
+
+    // Restore admin session (password stored after a successful admin-login modal submit)
+    const storedAdminKey = localStorage.getItem('adminKey');
+    if (storedAdminKey) {
+        document.querySelectorAll('.private-controls').forEach(el => el.classList.remove('private-controls'));
+        state.isAdmin = true;
+        state.adminKey = storedAdminKey;
+    }
+    initAdminLogin();
 
     // --- START: Language and Translations ---
     document.getElementById('lang-bg').addEventListener('click', () => setLanguage('bg'));
@@ -41,12 +50,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const analyzeBtn = document.getElementById('analyze-btn');
 
     state.resultsContainer.innerHTML = `<p class="placeholder">${translations[state.currentLang].placeholderDefault}</p>`;
-
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('admin') === 'true') {
-        document.querySelectorAll('.private-controls').forEach(el => el.classList.remove('private-controls'));
-        state.isAdmin = true;
-    }
 
     analyzeBtn.addEventListener('click', () => {
         const selectedDates = state.datePicker.selectedDates;

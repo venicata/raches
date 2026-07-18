@@ -24,6 +24,8 @@
                 <a href="https://www.google.com/maps/@38.8703885,22.7571867,16z?entry=ttu" target="_blank" class="map-link" data-lang-key="mapLink">📍 Карта</a>
                 <br />
                 <a href="#" id="criteria-link" class="map-link" data-lang-key="criteriaLink">📋 Критерии</a>
+                <br />
+                <a href="#" id="admin-link" class="map-link">🔒 Admin</a>
             </div>
             <a class="text-decoration-none" href="/"><h1 data-lang-key="title">💨 Raches Thermal Wind Forecaster</h1></a>
             <p data-lang-key="subtitle">AI Асистент за прогноза на термичния вятър в Рахес</p>
@@ -35,7 +37,6 @@
             <button id="trainPeakTimeModelBtn">Обучи модела за пиков час</button>
             <button id="recalibrateModelBtn">Калибрирай модела</button>
             <button id="refreshBtn">Рефрешни данните</button>
-            <button id="deleteLastRealWindBtn">Изтрий последния запис</button>
             <span id="recalibrateStatus"></span>
         </div>
         <div class="controls">
@@ -87,6 +88,18 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.0.2/dist/chartjs-plugin-annotation.min.js"></script>
     <script type="module" src="js/main.js"></script>
+
+    <div id="admin-login-modal" class="modal">
+        <div class="modal-content admin-modal-content">
+            <span class="close-button" id="admin-modal-close">&times;</span>
+            <h2>Admin вход</h2>
+            <form id="admin-login-form">
+                <input type="password" id="admin-password-input" placeholder="Парола" autocomplete="current-password" required>
+                <button type="submit">Вход</button>
+            </form>
+            <p id="admin-login-error" class="admin-login-error"></p>
+        </div>
+    </div>
 
     <div id="criteria-modal" class="modal">
         <div class="modal-content">

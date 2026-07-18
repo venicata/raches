@@ -1,6 +1,7 @@
 import { Redis } from '@upstash/redis';
 import { create, all } from 'mathjs';
 import md5 from 'md5';
+import { isAdminAuthorized } from './_auth.js';
 
 const redis = Redis.fromEnv();
 const math = create(all, {});
@@ -212,6 +213,10 @@ export async function calculateCorrectionModel() {
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
         return response.status(405).json({ error: 'Method Not Allowed' });
+    }
+
+    if (!isAdminAuthorized(request)) {
+        return response.status(401).json({ error: 'Unauthorized' });
     }
 
     try {

@@ -510,8 +510,7 @@ canvas { height: 420px !important; }
 
 #recalibrateModelBtn,
 #refreshBtn,
-#trainPeakTimeModelBtn,
-#deleteLastRealWindBtn {
+#trainPeakTimeModelBtn {
     padding: 8px 16px;
     font-size: .88rem;
     cursor: pointer;
@@ -526,11 +525,22 @@ canvas { height: 420px !important; }
 
 #recalibrateModelBtn:hover,
 #refreshBtn:hover,
-#trainPeakTimeModelBtn:hover,
-#deleteLastRealWindBtn:hover {
+#trainPeakTimeModelBtn:hover {
     background: #e2e8f0;
     border-color: #94a3b8;
 }
+
+.delete-real-wind-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: .9em;
+    padding: 0 0 0 4px;
+    opacity: .6;
+    transition: opacity var(--transition);
+}
+
+.delete-real-wind-btn:hover { opacity: 1; }
 
 #recalibrateStatus {
     display: block;
@@ -595,6 +605,40 @@ canvas { height: 420px !important; }
 }
 
 .close-button:hover { color: var(--color-text); }
+
+.admin-modal-content {
+    max-width: 340px;
+}
+
+#admin-login-form {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+#admin-password-input {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+}
+
+#admin-login-form button {
+    padding: 8px 16px;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: #fff;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.admin-login-error {
+    display: none;
+    color: #c62828;
+    font-size: .85em;
+    margin-top: 8px;
+}
 
 .criteria-item {
     margin-bottom: 14px;

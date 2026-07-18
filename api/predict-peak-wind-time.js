@@ -1,4 +1,5 @@
 import { Redis } from '@upstash/redis';
+import { isAdminAuthorized } from './_auth.js';
 
 const redis = Redis.fromEnv();
 const MAX_WIND_HISTORY_KEY = 'max_wind_history';
@@ -91,6 +92,10 @@ export async function trainAndSavePeakTimeModel(maxWindHistoryData = null) {
 export default async function handler(request, response) {
     if (request.method !== 'GET' && request.method !== 'POST') {
         return response.status(405).json({ error: 'Method Not Allowed' });
+    }
+
+    if (!isAdminAuthorized(request)) {
+        return response.status(401).json({ error: 'Unauthorized' });
     }
 
     try {
