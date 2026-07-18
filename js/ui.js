@@ -1,5 +1,5 @@
 import { translations } from './translations.js';
-import { triggerModelCalculation, saveHistoricalEntry } from './api.js';
+import { triggerModelCalculation, saveHistoricalEntry, deleteRealWindForDate, adminLogin } from './api.js';
 import { state } from './state.js';
 import { renderHistoricalChart, renderRealWindChart } from './chart.js';
 import { getCloudCoverScore, getTempDiffScore, getWindDirIcon, getSuckEffectIcon, getPressureDropScore, getHumidityScore, getPrecipitationScore, getLapseRateScore, getVpdScore, getStratifiedCloudScore } from './scoring-helpers.js';
@@ -147,6 +147,17 @@ export function displayRealWindData(history) {
             const p = document.createElement('p');
             p.className = 'real-wind-data'; // Клас за идентификация
             p.innerHTML = `🌬️ ${realWindText}`;
+
+            // Admin-only: allow deleting a single day's real (station) data when it's buggy
+            if (state.isAdmin) {
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-real-wind-btn';
+                deleteBtn.type = 'button';
+                deleteBtn.title = T.deleteRealWindForDay || 'Изтрий данните от станцията за този ден';
+                deleteBtn.textContent = '🗑️';
+                deleteBtn.onclick = () => deleteRealWindDay(recordDate);
+                p.appendChild(deleteBtn);
+            }
 
             // Добавяме го след прогнозата за вятъра
             const predictedWindElement = resultCard.querySelector('p:nth-of-type(3)');
@@ -509,40 +520,74 @@ export function initAdminButtons() {
             btn.disabled = false;
         }
     });
+}
 
-    const deleteBtn = document.getElementById('deleteLastRealWindBtn');
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', async () => {
-            if (!confirm('Are you sure you want to delete the last real wind entry?')) {
-                return;
-            }
-
-            deleteBtn.disabled = true;
-            statusEl.textContent = 'Deleting...';
-            statusEl.style.color = '#555';
-
-            try {
-                const response = await fetch('/api/delete-last-real-wind', { method: 'POST' });
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.error || 'Unknown error');
-                }
-
-                statusEl.textContent = result.message || 'Entry deleted!';
-                statusEl.style.color = 'green';
-                alert('Success: ' + (result.message || 'Entry deleted!'));
-                // Optionally, you can refresh the page or the data
-                // location.reload();
-            } catch (error) {
-                statusEl.textContent = `Error: ${error.message}`;
-                statusEl.style.color = 'red';
-                alert(`Error: ${error.message}`);
-            } finally {
-                deleteBtn.disabled = false;
-            }
-        });
+/**
+ * Deletes the real wind record for a single day (used when station data is bugged).
+ */
+async function deleteRealWindDay(date) {
+    if (!confirm(`Да изтрия ли реалните данни за ${date}?`)) {
+        return;
     }
+    try {
+        const result = await deleteRealWindForDate(date);
+        alert(result.message || 'Данните бяха изтрити.');
+        location.reload();
+    } catch (error) {
+        alert(`Грешка: ${error.message}`);
+    }
+}
+
+/**
+ * Wires up the admin login modal (password from ADMIN_KEY_PASS) and logout,
+ * replacing the old ?admin=true URL flag.
+ */
+export function initAdminLogin() {
+    const adminLink = document.getElementById('admin-link');
+    const modal = document.getElementById('admin-login-modal');
+    const closeButton = document.getElementById('admin-modal-close');
+    const form = document.getElementById('admin-login-form');
+    const passwordInput = document.getElementById('admin-password-input');
+    const errorEl = document.getElementById('admin-login-error');
+
+    if (!adminLink || !modal || !form) return;
+
+    function updateAdminLinkLabel() {
+        adminLink.textContent = state.isAdmin ? '🔓 Изход' : '🔒 Admin';
+    }
+    updateAdminLinkLabel();
+
+    adminLink.onclick = (event) => {
+        event.preventDefault();
+        if (state.isAdmin) {
+            if (confirm('Изход от admin режим?')) {
+                localStorage.removeItem('adminKey');
+                location.reload();
+            }
+            return;
+        }
+        errorEl.style.display = 'none';
+        passwordInput.value = '';
+        modal.style.display = 'block';
+        passwordInput.focus();
+    };
+
+    if (closeButton) {
+        closeButton.onclick = () => { modal.style.display = 'none'; };
+    }
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        errorEl.style.display = 'none';
+        try {
+            await adminLogin(passwordInput.value);
+            localStorage.setItem('adminKey', passwordInput.value);
+            location.reload();
+        } catch (error) {
+            errorEl.textContent = error.message || 'Грешна парола';
+            errorEl.style.display = 'block';
+        }
+    });
 }
 
 export function displayCorrectionModel(monthlyModels) {
@@ -701,7 +746,8 @@ window.saveManualWind = async function(date) {
         const response = await fetch('/api/save-manual-wind', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'x-admin-key': state.adminKey || ''
             },
             body: JSON.stringify({
                 date: date,

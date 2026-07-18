@@ -9,6 +9,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 // and saves it to the database.
 
 import { Redis } from '@upstash/redis';
+import { isAdminAuthorized } from './_auth.js';
 const redis = Redis.fromEnv();
 
 const API_URL = 'https://kiting.live/api/observations/history-5m';
@@ -182,6 +183,10 @@ export async function processMaxWind() {
  * Vercel Serverless Function handler.
  */
 export default async function handler(request, response) {
+    if (!isAdminAuthorized(request)) {
+        return response.status(401).json({ error: 'Unauthorized' });
+    }
+
     try {
         const result = await processMaxWind();
         return response.status(200).json(result);

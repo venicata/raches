@@ -6,5 +6,6 @@ export const state = {
     realWindHistory: [],
     resultsContainer: null,
     datePicker: null,
-    isAdmin: false // Admin mode flag
+    isAdmin: false, // Admin mode flag
+    adminKey: null // Password sent as the x-admin-key header on admin API calls
 };
