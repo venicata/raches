@@ -14,6 +14,7 @@ const redis = Redis.fromEnv();
 
 const API_URL = 'https://kiting.live/api/observations/history-5m';
 const MAX_WIND_HISTORY_KEY = 'max_wind_history';
+const REAL_WIND_HISTORY_DAYS = 3;
 // ВАЖНО: Стойностите за API_KEY и CLIENT_USERNAME се взимат от Environment Variables в Vercel.
 const API_KEY = process.env.KITING_LIVE_API_KEY;
 const CLIENT_USERNAME = process.env.KITING_LIVE_CLIENT_USERNAME;
@@ -38,6 +39,21 @@ async function fetchHistoricalData() {
     }
 
     return response.json();
+}
+
+/**
+ * Филтрира само наблюденията от последните N дни (ръчно, без промяна на API заявката).
+ * @param {Array<Object>} observations - Масив с обекти от API-то.
+ * @param {number} days - Брой дни назад, които да запазим.
+ * @returns {Array<Object>} Филтриран масив с наблюдения.
+ */
+function filterRecentObservations(observations, days) {
+    if (!observations || observations.length === 0) {
+        return [];
+    }
+
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+    return observations.filter(obs => new Date(obs.timestamp).getTime() >= cutoff);
 }
 
 /**
@@ -163,7 +179,10 @@ export async function processMaxWind() {
     const observations = await fetchHistoricalData();
     console.log(`Successfully fetched ${observations.length} records.`);
 
-    const maxWindRecords = findMaxWindForEachDay(observations);
+    const recentObservations = filterRecentObservations(observations, REAL_WIND_HISTORY_DAYS);
+    console.log(`Filtered to ${recentObservations.length} records from the last ${REAL_WIND_HISTORY_DAYS} days.`);
+
+    const maxWindRecords = findMaxWindForEachDay(recentObservations);
 
     if (maxWindRecords.length > 0) {
         console.log(`Found max wind records for ${maxWindRecords.length} days.`);
