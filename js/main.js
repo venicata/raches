@@ -178,16 +178,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     refreshBtn.addEventListener('click', async () => {
         const statusSpan = document.getElementById('recalibrateStatus');
         statusSpan.textContent = 'Refreshing data...';
+        statusSpan.style.color = '#555';
         refreshBtn.disabled = true;
 
         try {
             const result = await triggerNightlyTasks();
             statusSpan.textContent = result.message || 'Data refreshed successfully!';
-            alert('Success: ' + (result.message || 'Data refreshed successfully!'));
+            statusSpan.style.color = 'green';
         } catch (error) {
             console.error('Failed to refresh data:', error);
             statusSpan.textContent = `Error: ${error.message}`;
-            alert(`Error: ${error.message}`);
+            statusSpan.style.color = 'red';
         } finally {
             refreshBtn.disabled = false;
         }
@@ -196,16 +197,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     const trainPeakTimeModelBtn = document.getElementById('trainPeakTimeModelBtn');
     trainPeakTimeModelBtn.addEventListener('click', async () => {
         const T = translations[state.currentLang];
+        const statusSpan = document.getElementById('recalibrateStatus');
         const originalText = trainPeakTimeModelBtn.textContent;
         trainPeakTimeModelBtn.textContent = T.trainingModel || 'Обучение...';
         trainPeakTimeModelBtn.disabled = true;
+        statusSpan.textContent = 'Обучение на модела...';
+        statusSpan.style.color = '#555';
 
         try {
             const result = await trainPeakTimeModel();
-            alert(result.message || 'Моделът е обучен успешно!');
+            statusSpan.textContent = result.message || 'Моделът е обучен успешно!';
+            statusSpan.style.color = 'green';
         } catch (error) {
             console.error('Failed to train peak time model:', error);
-            alert(`Грешка при обучение на модела: ${error.message}`);
+            statusSpan.textContent = `Грешка при обучение на модела: ${error.message}`;
+            statusSpan.style.color = 'red';
         } finally {
             trainPeakTimeModelBtn.textContent = originalText;
             trainPeakTimeModelBtn.disabled = false;
