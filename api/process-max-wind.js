@@ -56,6 +56,23 @@ function filterRecentObservations(observations, days) {
     return observations.filter(obs => new Date(obs.timestamp).getTime() >= cutoff);
 }
 
+// Термичният вятър в Рахес обикновено задухва следобед. Наблюдения преди
+// обяд не са реален термичен вятър и не трябва да се броят/записват.
+const MIN_VALID_HOUR = 12;
+
+/**
+ * Взима часа от timestamp низа директно (без Date обект), тъй като
+ * timestamp-ите от kiting.live са в местно гръцко време БЕЗ timezone суфикс
+ * (напр. "2025-07-08T14:30:00"). Date/getUTCHours() би изместил часа.
+ * @param {string} timestamp
+ * @returns {number}
+ */
+function getLocalHour(timestamp) {
+    const timePart = timestamp.split('T')[1];
+    if (!timePart) return NaN;
+    return parseInt(timePart.replace(/Z.*$/, '').split(':')[0], 10);
+}
+
 /**
  * Намира записа с максимална скорост на вятъра за всеки ден.
  * @param {Array<Object>} observations - Масив с обекти от API-то.
@@ -66,8 +83,12 @@ function findMaxWindForEachDay(observations) {
         return [];
     }
 
-    // 1. Групираме всички записи по дата (напр. '2025-08-16')
+    // 1. Групираме всички записи по дата (напр. '2025-08-16'), пропускайки
+    // наблюденията преди 12:00 местно време - те не са реален термичен вятър.
     const dailyObservations = observations.reduce((acc, obs) => {
+        if (getLocalHour(obs.timestamp) < MIN_VALID_HOUR) {
+            return acc;
+        }
         const date = obs.timestamp.split('T')[0];
         if (!acc[date]) {
             acc[date] = [];
