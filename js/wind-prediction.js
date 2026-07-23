@@ -128,11 +128,32 @@ function predictWindSpeedWithModel(scores, model, maxCorrection = 20) {
         strat_cloud:    (coeffs.strat_cloud || 0)    * features[10],
     };
 
-    let correction = (coeffs.intercept || 0) +
-        Object.values(contributions).reduce((sum, v) => sum + v, 0);
+    const contributionsSum = Object.values(contributions).reduce((sum, v) => sum + v, 0);
+    let correction = (coeffs.intercept || 0) + contributionsSum;
 
     // Clamp the correction to a reasonable range to prevent extreme adjustments
     correction = Math.max(-maxCorrection, Math.min(maxCorrection, correction));
+
+    // The per-factor contributions above don't include the model's intercept or any
+    // clamping adjustment, so they don't sum to the final correction shown in the UI.
+    // Redistribute that leftover (intercept + clamp delta) across the factors, weighted
+    // by each factor's share of the total magnitude, so the displayed bracket values
+    // always add up exactly to the final correction.
+    const leftover = correction - contributionsSum;
+    if (leftover !== 0) {
+        const totalAbs = Object.values(contributions).reduce((sum, v) => sum + Math.abs(v), 0);
+        const keys = Object.keys(contributions);
+        if (totalAbs > 0) {
+            for (const key of keys) {
+                contributions[key] += leftover * (Math.abs(contributions[key]) / totalAbs);
+            }
+        } else {
+            const share = leftover / keys.length;
+            for (const key of keys) {
+                contributions[key] += share;
+            }
+        }
+    }
 
     // 3. Apply the clamped correction to the baseline
     const correctedKnots = baselineAvgKnots + correction;
