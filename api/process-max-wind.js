@@ -14,6 +14,7 @@ const redis = Redis.fromEnv();
 
 const API_URL = 'https://kiting.live/api/observations/history-5m';
 const MAX_WIND_HISTORY_KEY = 'max_wind_history';
+const EXCLUDED_DATES_KEY = 'excluded_wind_dates';
 const REAL_WIND_HISTORY_DAYS = 3;
 // ВАЖНО: Стойностите за API_KEY и CLIENT_USERNAME се взимат от Environment Variables в Vercel.
 const API_KEY = process.env.KITING_LIVE_API_KEY;
@@ -157,15 +158,45 @@ function findMaxWindForEachDay(observations) {
     return dailyMaxRecords;
 }
 
+/**
+ * Връща датите, за които реалните данни са били ръчно изтрити и не трябва
+ * да се добавят автоматично отново. Изчиства и записи по-стари от прозореца
+ * на cron-а (REAL_WIND_HISTORY_DAYS), за да не расте списъкът неограничено.
+ */
+async function getExcludedDates() {
+    const excludedRaw = await redis.get(EXCLUDED_DATES_KEY);
+    let excludedDates = excludedRaw ? (typeof excludedRaw === 'string' ? JSON.parse(excludedRaw) : excludedRaw) : [];
+    if (!Array.isArray(excludedDates)) {
+        excludedDates = [];
+    }
+
+    const cutoffDate = new Date(Date.now() - REAL_WIND_HISTORY_DAYS * 24 * 60 * 60 * 1000)
+        .toISOString().split('T')[0];
+    const prunedDates = excludedDates.filter(date => date >= cutoffDate);
+
+    if (prunedDates.length !== excludedDates.length) {
+        await redis.set(EXCLUDED_DATES_KEY, JSON.stringify(prunedDates));
+    }
+
+    return prunedDates;
+}
+
 async function saveRecordsToDatabase(records) {
     if (!records || records.length === 0) {
         return { success: false, savedCount: 0 };
     }
 
+    const excludedDates = await getExcludedDates();
+    const filteredRecords = records.filter(record => !excludedDates.includes(record.timestamp.split('T')[0]));
+
+    if (filteredRecords.length === 0) {
+        return { success: true, savedCount: 0 };
+    }
+
     let historyArray = await redis.get(MAX_WIND_HISTORY_KEY) || [];
 
     let updatedCount = 0;
-    records.forEach(record => {
+    filteredRecords.forEach(record => {
         const recordDate = record.timestamp.split('T')[0];
         const existingEntryIndex = historyArray.findIndex(
             item => item.timestamp.split('T')[0] === recordDate
