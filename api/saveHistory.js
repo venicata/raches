@@ -1,9 +1,22 @@
 // File: api/saveHistory.js
 import { Redis } from '@upstash/redis';
+import { getSettings } from './settings.js';
 
 const redis = Redis.fromEnv();
 const HISTORY_KEY = 'rachesForecastHistory';
+const MAX_WIND_HISTORY_KEY = 'max_wind_history';
 const MAX_HISTORY_DAYS = 5000; // Align with your desired limit
+
+/**
+ * Checks whether real wind data has already been recorded for a given date,
+ * meaning the day is "resolved" and its forecast should no longer be revised.
+ */
+async function hasRealDataForDate(date) {
+    const raw = await redis.get(MAX_WIND_HISTORY_KEY);
+    const maxWindHistory = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : [];
+    if (!Array.isArray(maxWindHistory)) return false;
+    return maxWindHistory.some(record => record.timestamp && record.timestamp.split('T')[0] === date);
+}
 
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
@@ -39,6 +52,17 @@ export default async function handler(request, response) {
         const existingEntryIndex = currentHistoryArray.findIndex(item => item.date === newEntry.date);
 
         if (existingEntryIndex !== -1) {
+            const settings = await getSettings();
+            if (settings.lockForecastAfterActual && await hasRealDataForDate(newEntry.date)) {
+                // The real outcome for this day is already known, so keep the
+                // originally saved forecast untouched for historical accuracy
+                // tracking instead of overwriting it with a later, model-revised value.
+                return response.status(200).json({
+                    message: 'Forecast is locked (real data already recorded for this date); entry left unchanged',
+                    locked: true,
+                    entry: currentHistoryArray[existingEntryIndex]
+                });
+            }
             currentHistoryArray[existingEntryIndex] = newEntry; // Update existing entry
         } else {
             currentHistoryArray.push(newEntry); // Add new entry

@@ -283,6 +283,43 @@ export async function deleteRealWindForDate(date) {
 }
 
 /**
+ * Fetches the current app settings (e.g. whether forecasts lock once real data arrives).
+ */
+export async function getSettings() {
+    try {
+        const response = await fetch('/api/settings');
+        if (!response.ok) {
+            console.error("Failed to fetch settings:", response.status, response.statusText);
+            return { lockForecastAfterActual: true };
+        }
+        return response.json();
+    } catch (error) {
+        console.error("Error fetching settings:", error);
+        return { lockForecastAfterActual: true };
+    }
+}
+
+/**
+ * Updates app settings (admin only).
+ * @param {object} settings - Partial settings to update, e.g. { lockForecastAfterActual: false }.
+ */
+export async function updateSettings(settings) {
+    const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-admin-key': state.adminKey || ''
+        },
+        body: JSON.stringify(settings)
+    });
+    const result = await response.json();
+    if (!response.ok) {
+        throw new Error(result.error || 'Failed to update settings');
+    }
+    return result;
+}
+
+/**
  * Verifies the admin password against the server and returns whether it was correct.
  * @param {string} password
  */
