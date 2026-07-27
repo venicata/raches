@@ -1,5 +1,5 @@
 import { translations } from './translations.js';
-import { triggerModelCalculation, saveHistoricalEntry, deleteRealWindForDate, adminLogin } from './api.js';
+import { triggerModelCalculation, saveHistoricalEntry, deleteRealWindForDate, adminLogin, getSettings, updateSettings } from './api.js';
 import { state } from './state.js';
 import { renderHistoricalChart, renderRealWindChart } from './chart.js';
 import { getCloudCoverScore, getTempDiffScore, getWindDirIcon, getSuckEffectIcon, getPressureDropScore, getHumidityScore, getPrecipitationScore, getLapseRateScore, getVpdScore, getStratifiedCloudScore } from './scoring-helpers.js';
@@ -588,6 +588,54 @@ export function initAdminLogin() {
             errorEl.style.display = 'block';
         }
     });
+}
+
+/**
+ * Wires up the global settings modal (admin only) — currently just the
+ * forecast-locking toggle, but built to hold more settings items later.
+ */
+export function initSettingsModal() {
+    const settingsLink = document.getElementById('settings-link');
+    const modal = document.getElementById('settings-modal');
+    const closeButton = document.getElementById('settings-modal-close');
+    const lockForecastToggle = document.getElementById('lockForecastToggle');
+
+    if (!settingsLink || !modal) return;
+
+    settingsLink.onclick = (event) => {
+        event.preventDefault();
+        modal.style.display = 'block';
+    };
+
+    if (closeButton) {
+        closeButton.onclick = () => { modal.style.display = 'none'; };
+    }
+
+    window.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    if (lockForecastToggle) {
+        getSettings().then(settings => {
+            lockForecastToggle.checked = settings.lockForecastAfterActual;
+        });
+
+        lockForecastToggle.addEventListener('change', async () => {
+            const desired = lockForecastToggle.checked;
+            lockForecastToggle.disabled = true;
+            try {
+                await updateSettings({ lockForecastAfterActual: desired });
+            } catch (error) {
+                console.error('Failed to update forecast-lock setting:', error);
+                alert(`Грешка: ${error.message}`);
+                lockForecastToggle.checked = !desired; // revert on failure
+            } finally {
+                lockForecastToggle.disabled = false;
+            }
+        });
+    }
 }
 
 export function displayCorrectionModel(monthlyModels) {

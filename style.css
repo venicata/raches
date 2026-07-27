@@ -610,6 +610,106 @@ canvas { height: 420px !important; }
     max-width: 340px;
 }
 
+/* ============================================================
+   Settings modal
+   ============================================================ */
+.settings-modal-content {
+    max-width: 480px;
+}
+
+.settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 16px;
+}
+
+.settings-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.settings-item:last-child {
+    border-bottom: none;
+}
+
+.settings-item-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.settings-item-title {
+    font-weight: 600;
+    color: var(--color-text);
+    font-size: 0.95em;
+}
+
+.settings-item-desc {
+    font-size: 0.82em;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+}
+
+/* Toggle switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.switch-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background-color: var(--color-border);
+    border-radius: 999px;
+    transition: background-color var(--transition);
+}
+
+.switch-slider::before {
+    content: "";
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 3px;
+    top: 3px;
+    background-color: #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,.3);
+    transition: transform var(--transition);
+}
+
+.switch input:checked + .switch-slider {
+    background-color: var(--color-primary);
+}
+
+.switch input:checked + .switch-slider::before {
+    transform: translateX(20px);
+}
+
+.switch input:disabled + .switch-slider {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.switch input:focus-visible + .switch-slider {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
 #admin-login-form {
     display: flex;
     gap: 8px;

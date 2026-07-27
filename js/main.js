@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { translations } from './translations.js';
-import { setLanguage, displayResults, initModal, initAdminButtons, initAdminLogin } from './ui.js';
-import { fetchAndAnalyze, formatDate, triggerRealDataSync, fetchAndDisplayRealWind, triggerNightlyTasks, trainPeakTimeModel, getSettings, updateSettings } from './api.js';
+import { setLanguage, displayResults, initModal, initAdminButtons, initAdminLogin, initSettingsModal } from './ui.js';
+import { fetchAndAnalyze, formatDate, triggerRealDataSync, fetchAndDisplayRealWind, triggerNightlyTasks, trainPeakTimeModel } from './api.js';
 import { renderHistoricalChart, renderRealWindChart } from './chart.js';
 
 // Hide tooltips when clicking anywhere else on the page
@@ -149,29 +149,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     initAdminButtons();
+    initSettingsModal();
     renderHistoricalChart();
-
-    // Forecast-locking toggle (admin only)
-    const lockForecastToggle = document.getElementById('lockForecastToggle');
-    if (lockForecastToggle) {
-        getSettings().then(settings => {
-            lockForecastToggle.checked = settings.lockForecastAfterActual;
-        });
-
-        lockForecastToggle.addEventListener('change', async () => {
-            const desired = lockForecastToggle.checked;
-            lockForecastToggle.disabled = true;
-            try {
-                await updateSettings({ lockForecastAfterActual: desired });
-            } catch (error) {
-                console.error('Failed to update forecast-lock setting:', error);
-                alert(`Грешка: ${error.message}`);
-                lockForecastToggle.checked = !desired; // revert on failure
-            } finally {
-                lockForecastToggle.disabled = false;
-            }
-        });
-    }
 
     const syncBtn = document.getElementById('sync-btn');
     syncBtn.addEventListener('click', async () => {

@@ -26,6 +26,8 @@
                 <a href="#" id="criteria-link" class="map-link" data-lang-key="criteriaLink">📋 Критерии</a>
                 <br />
                 <a href="#" id="admin-link" class="map-link">🔒 Admin</a>
+                <br />
+                <a href="#" id="settings-link" class="map-link private-controls">⚙️ Настройки</a>
             </div>
             <a class="text-decoration-none" href="/"><h1 data-lang-key="title">💨 Raches Thermal Wind Forecaster</h1></a>
             <p data-lang-key="subtitle">AI Асистент за прогноза на термичния вятър в Рахес</p>
@@ -37,10 +39,6 @@
             <button id="trainPeakTimeModelBtn">Обучи модела за пиков час</button>
             <button id="recalibrateModelBtn">Калибрирай модела</button>
             <button id="refreshBtn">Рефрешни данните</button>
-            <label id="lockForecastLabel" title="Когато е включено, веднъж записана прогноза за ден с вече известни реални данни повече не се презаписва от последващи преизчисления на корекционния модел.">
-                <input type="checkbox" id="lockForecastToggle">
-                Заключвай прогнозата след реални данни
-            </label>
             <span id="recalibrateStatus"></span>
         </div>
         <div class="controls">
@@ -102,6 +100,25 @@
                 <button type="submit">Вход</button>
             </form>
             <p id="admin-login-error" class="admin-login-error"></p>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal">
+        <div class="modal-content settings-modal-content">
+            <span class="close-button" id="settings-modal-close">&times;</span>
+            <h2>Настройки</h2>
+            <div class="settings-list">
+                <div class="settings-item">
+                    <div class="settings-item-text">
+                        <span class="settings-item-title">Заключвай прогнозата след реални данни</span>
+                        <span class="settings-item-desc">Веднъж записана прогноза за ден с вече известни реални данни повече не се презаписва от последващи преизчисления на корекционния модел — стойността остава заключена за проследяване на историческата точност.</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="lockForecastToggle">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+            </div>
         </div>
     </div>
 
