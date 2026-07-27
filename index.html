@@ -15,6 +15,12 @@
 <body>
     <div class="container">
         <header>
+            <div class="header-main">
+                <a class="text-decoration-none" href="/"><h1 data-lang-key="title">💨 Raches Thermal Wind Forecaster</h1></a>
+                <p data-lang-key="subtitle">AI Асистент за прогноза на термичния вятър в Рахес</p>
+                <p id="peak-wind-prediction-container" class="peak-wind-prediction"></p>
+                <p data-lang-key="instructions">Кликнете 2 пъти на една дата, или селектирайте период от дати</p>
+            </div>
             <div class="header-controls">
                 <div class="lang-switcher">
                     <button id="lang-bg" class="lang-btn">BG</button>
@@ -29,10 +35,6 @@
                 <br />
                 <a href="#" id="settings-link" class="map-link private-controls">⚙️ Настройки</a>
             </div>
-            <a class="text-decoration-none" href="/"><h1 data-lang-key="title">💨 Raches Thermal Wind Forecaster</h1></a>
-            <p data-lang-key="subtitle">AI Асистент за прогноза на термичния вятър в Рахес</p>
-            <p id="peak-wind-prediction-container" class="peak-wind-prediction"></p>
-            <p data-lang-key="instructions">Кликнете 2 пъти на една дата, или селектирайте период от дати</p>
         </header>
         
         <div class="manual-controls private-controls">
@@ -111,7 +113,7 @@
                 <div class="settings-item">
                     <div class="settings-item-text">
                         <span class="settings-item-title">Заключвай прогнозата след реални данни</span>
-                        <span class="settings-item-desc">Веднъж записана прогноза за ден с вече известни реални данни повече не се презаписва от последващи преизчисления на корекционния модел — стойността остава заключена за проследяване на историческата точност.</span>
+                        <span class="settings-item-desc">Когато за даден ден вече има записани реални данни от станцията, коригираната от модела прогноза (крайния диапазон възли) остава заключена, за да се проследява историческата точност на модела. Суровата прогноза продължава да се обновява, ако метео данните се променят през деня.</span>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="lockForecastToggle">
