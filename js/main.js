@@ -3,6 +3,7 @@ import { translations } from './translations.js';
 import { setLanguage, displayResults, initModal, initAdminButtons, initAdminLogin, initSettingsModal } from './ui.js';
 import { fetchAndAnalyze, formatDate, triggerRealDataSync, fetchAndDisplayRealWind, triggerNightlyTasks, trainPeakTimeModel } from './api.js';
 import { renderHistoricalChart, renderRealWindChart } from './chart.js';
+import { initThemeToggle } from './theme.js';
 
 // Hide tooltips when clicking anywhere else on the page
 document.addEventListener('click', () => {
@@ -12,6 +13,10 @@ document.addEventListener('click', () => {
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Set up dark/light/auto theme before any chart is created so Chart.js
+    // picks up the right default text/grid colors from the very first render.
+    initThemeToggle();
+
     state.resultsContainer = document.getElementById('results-container');
 
     // Restore admin session (password stored after a successful admin-login modal submit)
@@ -179,17 +184,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     refreshBtn.addEventListener('click', async () => {
         const statusSpan = document.getElementById('recalibrateStatus');
         statusSpan.textContent = 'Refreshing data...';
-        statusSpan.style.color = '#555';
+        statusSpan.style.color = 'var(--color-text-muted)';
         refreshBtn.disabled = true;
 
         try {
             const result = await triggerNightlyTasks();
             statusSpan.textContent = result.message || 'Data refreshed successfully!';
-            statusSpan.style.color = 'green';
+            statusSpan.style.color = 'var(--color-high)';
         } catch (error) {
             console.error('Failed to refresh data:', error);
             statusSpan.textContent = `Error: ${error.message}`;
-            statusSpan.style.color = 'red';
+            statusSpan.style.color = 'var(--color-bad)';
         } finally {
             refreshBtn.disabled = false;
         }
@@ -203,16 +208,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         trainPeakTimeModelBtn.textContent = T.trainingModel || 'Обучение...';
         trainPeakTimeModelBtn.disabled = true;
         statusSpan.textContent = 'Обучение на модела...';
-        statusSpan.style.color = '#555';
+        statusSpan.style.color = 'var(--color-text-muted)';
 
         try {
             const result = await trainPeakTimeModel();
             statusSpan.textContent = result.message || 'Моделът е обучен успешно!';
-            statusSpan.style.color = 'green';
+            statusSpan.style.color = 'var(--color-high)';
         } catch (error) {
             console.error('Failed to train peak time model:', error);
             statusSpan.textContent = `Грешка при обучение на модела: ${error.message}`;
-            statusSpan.style.color = 'red';
+            statusSpan.style.color = 'var(--color-bad)';
         } finally {
             trainPeakTimeModelBtn.textContent = originalText;
             trainPeakTimeModelBtn.disabled = false;

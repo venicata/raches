@@ -3,6 +3,7 @@ import { triggerModelCalculation, saveHistoricalEntry, deleteRealWindForDate, ad
 import { state } from './state.js';
 import { renderHistoricalChart, renderRealWindChart } from './chart.js';
 import { getCloudCoverScore, getTempDiffScore, getWindDirIcon, getSuckEffectIcon, getPressureDropScore, getHumidityScore, getPrecipitationScore, getLapseRateScore, getVpdScore, getStratifiedCloudScore } from './scoring-helpers.js';
+import { refreshThemeToggleLabel } from './theme.js';
 
 function getWeatherIcon(totalRain, precipitationProb) {
     if (totalRain > 0.5)       return '🌧️';
@@ -305,34 +306,33 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
             const existingManualWind = result.realWind ? result.realWind.windSpeedKnots : '';
             const existingPeakHour = result.realWind && result.realWind.peakHour ? result.realWind.peakHour : '';
             manualWindInputHtml = `
-                <div class="manual-wind-input" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <div style="display: flex; align-items: center; gap: 4px;">
+                <div class="manual-wind-input">
+                    <div class="manual-wind-field">
                         <label>${T.manualWindLabel}</label>
-                        <input type="number" 
-                               id="manual-wind-${result.date}" 
-                               placeholder="${T.manualWindPlaceholder}" 
-                               value="${existingManualWind}" 
-                               min="0" 
-                               max="50" 
+                        <input type="number"
+                               id="manual-wind-${result.date}"
+                               placeholder="${T.manualWindPlaceholder}"
+                               value="${existingManualWind}"
+                               min="0"
+                               max="50"
                                step="0.1"
-                               style="width: 60px; padding: 4px;">
+                               style="width: 60px;">
                     </div>
-                    <div style="display: flex; align-items: center; gap: 4px;">
+                    <div class="manual-wind-field">
                         <label>${T.manualPeakHourLabel}</label>
-                        <input type="time" 
-                               id="manual-peak-hour-${result.date}" 
-                               value="${existingPeakHour}"
-                               style="padding: 4px;">
+                        <input type="time"
+                               id="manual-peak-hour-${result.date}"
+                               value="${existingPeakHour}">
                     </div>
-                    <button onclick="saveManualWind('${result.date}')" style="padding: 4px 8px;">${T.saveManualWind}</button>
+                    <button onclick="saveManualWind('${result.date}')">${T.saveManualWind}</button>
                 </div>
             `;
         }
 
         // --- Assemble the card's HTML ---
         let weatherInfoHtml = `
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3>${weatherIcon} ${new Date(result.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; row-gap: 8px;">
+                <h3 style="flex: 1 1 auto; min-width: 0;">${weatherIcon} ${new Date(result.date).toLocaleDateString(state.currentLang === 'bg' ? 'bg-BG' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
                 ${manualWindInputHtml}
             </div>
             <p class="forecast-label ${forecastClass === 'bad' ? 'bad' : ''}">💨 ${T.forecastLabel} ${finalForecastText}</p>
@@ -505,17 +505,17 @@ export function initAdminButtons() {
     btn.addEventListener('click', async () => {
         btn.disabled = true;
         statusEl.textContent = 'Изчисляване...';
-        statusEl.style.color = '#555';
+        statusEl.style.color = 'var(--color-text-muted)';
 
         try {
             const result = await triggerModelCalculation();
             statusEl.textContent = result.message || 'Готово!';
-            statusEl.style.color = 'green';
+            statusEl.style.color = 'var(--color-high)';
             // Optionally, refresh the chart or data
             // await fetchAndAnalyze(state.startDate, state.endDate);
         } catch (error) {
             statusEl.textContent = `Грешка: ${error.message}`;
-            statusEl.style.color = 'red';
+            statusEl.style.color = 'var(--color-bad)';
         } finally {
             btn.disabled = false;
         }
@@ -663,33 +663,32 @@ export function displayCorrectionModel(monthlyModels) {
         let blendNote = '';
         if (modelForCurrentMonth.blendedMonths && modelForCurrentMonth.blendedMonths.length > 0) {
             const parts = modelForCurrentMonth.blendedMonths.map(b => `${T.monthNames[b.month - 1]} (+${b.recordsAdded})`);
-            blendNote = `<div style="color: #888; font-size: 11px; margin-top: 2px;">+ blended: ${parts.join(', ')}</div>`;
+            blendNote = `<div class="model-blend-note">+ blended: ${parts.join(', ')}</div>`;
         }
 
         let html = `
-            <div style="background: white; padding: 0;">
-                <div style="font-size: 13px;">
-                    <div style="color: #666;">${T.modelVersion}: <strong>${modelForCurrentMonth.version}</strong></div>
-                    <div style="color: #666;">${T.modelSourceMonth}: <strong>${T.monthNames[modelForCurrentMonth.sourceMonth - 1]}</strong></div>
-                    <div style="color: #666;">${T.modelRecordsAnalyzed}: <strong>${modelForCurrentMonth.recordsAnalyzed}</strong>
-                        ${modelForCurrentMonth.ownMonthRecords != null ? `<span style="color:#888;font-size:11px;"> (${modelForCurrentMonth.ownMonthRecords} ${T.ownMonthLabel || 'own month'})</span>` : ''}
-                    </div>
-                    ${blendNote}
+            <div class="model-summary">
+                <div class="model-summary-row">${T.modelVersion}: <strong>${modelForCurrentMonth.version}</strong></div>
+                <div class="model-summary-row">${T.modelSourceMonth}: <strong>${T.monthNames[modelForCurrentMonth.sourceMonth - 1]}</strong></div>
+                <div class="model-summary-row">${T.modelRecordsAnalyzed}: <strong>${modelForCurrentMonth.recordsAnalyzed}</strong>
+                    ${modelForCurrentMonth.ownMonthRecords != null ? `<span class="model-own-month-note"> (${modelForCurrentMonth.ownMonthRecords} ${T.ownMonthLabel || 'own month'})</span>` : ''}
                 </div>
-                <div style="padding: 8px 12px; margin-top: 15px; background: #f0f7ff; border-left: 3px solid #4a90e2; border-radius: 4px; margin-bottom: 12px; font-size: 12px;">
-                    <span style="color: #4a90e2; font-weight: 600;">${T.modelFormula}</span>
-                    <span style="margin: 0 10px; color: #999;">|</span>
-                    <span style="color: #555;">${T.modelIntercept}: <strong>${coeff.intercept.toFixed(2)} ${T.knotsUnit}</strong></span>
-                </div>
-                <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-                    <thead>
-                        <tr style="background: #e0e0e0;">
-                            <th style="padding: 4px 6px; text-align: left;">${T.modelFactor}</th>
-                            <th style="padding: 4px 6px; text-align: right;">${T.modelCoefficient}</th>
-                            <th style="padding: 4px 6px; text-align: right;">${T.modelEffect} ${T.modelPerPoint}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                ${blendNote}
+            </div>
+            <div class="model-formula-box">
+                <span class="model-formula-label">${T.modelFormula}</span>
+                <span class="model-formula-sep">|</span>
+                <span class="model-formula-intercept">${T.modelIntercept}: <strong>${coeff.intercept.toFixed(2)} ${T.knotsUnit}</strong></span>
+            </div>
+            <table class="model-table">
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">${T.modelFactor}</th>
+                        <th style="text-align: right;">${T.modelCoefficient}</th>
+                        <th style="text-align: right;">${T.modelEffect} ${T.modelPerPoint}</th>
+                    </tr>
+                </thead>
+                <tbody>
         `;
 
         for (const [key, value] of Object.entries(coeff)) {
@@ -697,15 +696,15 @@ export function displayCorrectionModel(monthlyModels) {
 
             const absValue = Math.abs(value);
             const isPositive = value >= 0;
-            const effectText = isPositive 
-                ? `<span style="color: #2e7d32;">+${absValue.toFixed(2)} ${T.knotsUnit}</span>`
-                : `<span style="color: #c62828;">-${absValue.toFixed(2)} ${T.knotsUnit}</span>`;
+            const effectText = isPositive
+                ? `<span class="effect-positive">+${absValue.toFixed(2)} ${T.knotsUnit}</span>`
+                : `<span class="effect-negative">-${absValue.toFixed(2)} ${T.knotsUnit}</span>`;
 
             html += `
-                <tr style="border-bottom: 1px solid #f0f0f0;">
-                    <td style="padding: 4px 6px;">${T.factorNames[key] || key}</td>
-                    <td style="padding: 4px 6px; text-align: right;">${value.toFixed(2)}</td>
-                    <td style="padding: 4px 6px; text-align: right;">${effectText}</td>
+                <tr>
+                    <td>${T.factorNames[key] || key}</td>
+                    <td style="text-align: right;">${value.toFixed(2)}</td>
+                    <td style="text-align: right;">${effectText}</td>
                 </tr>
             `;
         }
@@ -713,7 +712,6 @@ export function displayCorrectionModel(monthlyModels) {
         html += `
                     </tbody>
                 </table>
-            </div>
         `;
 
         paramsEl.innerHTML = html;

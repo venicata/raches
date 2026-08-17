@@ -7,12 +7,26 @@
     --color-bg:          #f0f4f8;
     --color-surface:     #ffffff;
     --color-border:      #e4e9f0;
+    --color-border-strong: #94a3b8;
     --color-text:        #1e293b;
     --color-text-muted:  #64748b;
     --color-high:        #16a34a;
     --color-mid:         #d97706;
     --color-low:         #dc2626;
     --color-bad:         #dc2626;
+
+    /* Soft / secondary backgrounds (badges, hovers, panels) */
+    --color-bg-soft:        #f8fafc;
+    --color-bg-soft-2:      #f1f5f9;
+    --color-bg-soft-hover:  #e2e8f0;
+    --color-accent-soft:    #e8f4fd;
+    --color-bad-soft:       #fde8e8;
+    --color-good-soft:      #f0fdf4;
+    --color-icon-muted:     #cbd5e1;
+    --color-arrow:          #475569;
+    --color-tooltip-bg:     #1e293b;
+    --color-tooltip-text:   #f1f5f9;
+
     --radius-sm:  6px;
     --radius-md:  10px;
     --radius-lg:  14px;
@@ -20,6 +34,43 @@
     --shadow-md:  0 4px 12px rgba(0,0,0,.08);
     --shadow-lg:  0 8px 24px rgba(0,0,0,.10);
     --transition: .2s ease;
+}
+
+/* ============================================================
+   Dark theme (applied via [data-theme="dark"] on <html>, set by js/theme.js)
+   ============================================================ */
+:root[data-theme="dark"] {
+    --color-primary:     #5b8def;
+    --color-primary-dk:  #7ba3f2;
+    --color-bg:          #0f172a;
+    --color-surface:     #1e293b;
+    --color-border:      #334155;
+    --color-border-strong: #64748b;
+    --color-text:        #e2e8f0;
+    --color-text-muted:  #94a3b8;
+    --color-high:        #4ade80;
+    --color-mid:         #fbbf24;
+    --color-low:         #f87171;
+    --color-bad:         #f87171;
+
+    --color-bg-soft:        #263449;
+    --color-bg-soft-2:      #263449;
+    --color-bg-soft-hover:  #334155;
+    --color-accent-soft:    #1e3a5f;
+    --color-bad-soft:       #4c1d1d;
+    --color-good-soft:      #14301f;
+    --color-icon-muted:     #475569;
+    --color-arrow:          #94a3b8;
+    --color-tooltip-bg:     #0b1220;
+    --color-tooltip-text:   #f1f5f9;
+
+    --shadow-sm:  0 1px 3px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.25);
+    --shadow-md:  0 4px 12px rgba(0,0,0,.4);
+    --shadow-lg:  0 8px 24px rgba(0,0,0,.5);
+}
+
+:root[data-theme="dark"] body {
+    background: var(--color-bg);
 }
 
 /* ============================================================
@@ -38,6 +89,7 @@ body {
     align-items: flex-start;
     min-height: 100vh;
     overflow-x: hidden;
+    transition: background var(--transition), color var(--transition);
 }
 
 a { color: var(--color-primary); text-decoration: none; }
@@ -117,21 +169,43 @@ header p {
 }
 
 .lang-btn {
-    background: #f1f5f9;
+    background: var(--color-bg-soft-2);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     padding: 4px 10px;
     cursor: pointer;
     font-weight: 700;
     font-size: .82em;
+    color: var(--color-text);
     transition: background var(--transition), color var(--transition);
 }
 
-.lang-btn:hover { background: #e2e8f0; }
+.lang-btn:hover { background: var(--color-bg-soft-hover); }
 
 .lang-btn.active {
     background: var(--color-primary);
     color: #fff;
+    border-color: var(--color-primary);
+}
+
+/* ============================================================
+   Theme Switcher (day / night / auto)
+   ============================================================ */
+.theme-toggle-btn {
+    background: var(--color-bg-soft-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 3px 10px;
+    cursor: pointer;
+    font-size: .95em;
+    line-height: 1.4;
+    color: var(--color-text);
+    transition: background var(--transition), border-color var(--transition);
+    margin-top: 4px;
+}
+
+.theme-toggle-btn:hover {
+    background: var(--color-bg-soft-hover);
     border-color: var(--color-primary);
 }
 
@@ -152,6 +226,7 @@ header p {
     font-size: 15px;
     font-family: inherit;
     color: var(--color-text);
+    background: var(--color-surface);
     transition: border-color var(--transition), box-shadow var(--transition);
     outline: none;
 }
@@ -227,11 +302,11 @@ header p {
     margin: 6px 0 4px;
     padding: 3px 10px;
     border-radius: 20px;
-    background: #e8f4fd;
+    background: var(--color-accent-soft);
     color: var(--color-primary);
 }
 
-.forecast-label.bad { background: #fde8e8; color: var(--color-bad); }
+.forecast-label.bad { background: var(--color-bad-soft); color: var(--color-bad); }
 
 .result-card p {
     margin: 6px 0;
@@ -249,7 +324,7 @@ header p {
 
 .score-bar-wrap {
     height: 6px;
-    background: #e4e9f0;
+    background: var(--color-border);
     border-radius: 3px;
     margin: 6px 0 10px;
     overflow: hidden;
@@ -262,7 +337,7 @@ header p {
 }
 
 .real-wind-data {
-    background: #f0fdf4;
+    background: var(--color-good-soft);
     border-left: 3px solid var(--color-high);
     padding: 6px 10px;
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
@@ -301,7 +376,7 @@ header p {
     position: relative;
 }
 
-.result-card ul li:hover { background: #f8fafc; }
+.result-card ul li:hover { background: var(--color-bg-soft); }
 
 .li-content {
     flex-grow: 1;
@@ -326,7 +401,7 @@ header p {
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: #cbd5e1;
+    background: var(--color-icon-muted);
     color: #fff;
     font-size: 11px;
     font-weight: 700;
@@ -343,8 +418,8 @@ header p {
     visibility: hidden;
     opacity: 0;
     width: min(520px, 90vw);
-    background: #1e293b;
-    color: #f1f5f9;
+    background: var(--color-tooltip-bg);
+    color: var(--color-tooltip-text);
     text-align: left;
     border-radius: var(--radius-sm);
     padding: 12px 16px;
@@ -367,7 +442,7 @@ header p {
     left: 50%;
     margin-left: -5px;
     border: 5px solid transparent;
-    border-top-color: #1e293b;
+    border-top-color: var(--color-tooltip-bg);
 }
 
 .result-card ul li.show-tooltip .custom-tooltip {
@@ -391,7 +466,7 @@ header p {
     height: 0;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-bottom: 19px solid #475569;
+    border-bottom: 19px solid var(--color-arrow);
     transition: transform .3s ease;
     margin: 0 4px;
 }
@@ -429,7 +504,7 @@ header p {
 .chart-controls button {
     padding: 5px 11px;
     border: 1.5px solid var(--color-border);
-    background: #f8fafc;
+    background: var(--color-bg-soft);
     cursor: pointer;
     border-radius: var(--radius-sm);
     font-size: .82em;
@@ -439,7 +514,7 @@ header p {
 }
 
 .chart-controls button:hover {
-    background: #e8f4fd;
+    background: var(--color-accent-soft);
     border-color: var(--color-primary);
     color: var(--color-primary);
 }
@@ -458,7 +533,7 @@ canvas { height: 420px !important; }
 #scoring-legend,
 #correction-model-container {
     padding: 16px 18px;
-    background: #f8fafc;
+    background: var(--color-bg-soft);
     border: 1.5px solid var(--color-border);
     border-radius: var(--radius-md);
     margin-top: 18px;
@@ -492,23 +567,93 @@ canvas { height: 420px !important; }
     word-wrap: break-word;
     font-size: .8em;
     color: var(--color-text-muted);
-    background: #fff;
+    background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     padding: 10px 12px;
     margin: 0;
 }
 
+/* Correction-model admin table (built dynamically in ui.js) */
+.model-summary { font-size: 13px; }
+.model-summary-row { color: var(--color-text-muted); }
+.model-blend-note { color: var(--color-text-muted); font-size: 11px; margin-top: 2px; }
+.model-own-month-note { color: var(--color-text-muted); font-size: 11px; }
+
+.model-formula-box {
+    padding: 8px 12px;
+    margin-top: 15px;
+    background: var(--color-accent-soft);
+    border-left: 3px solid var(--color-primary);
+    border-radius: 4px;
+    margin-bottom: 12px;
+    font-size: 12px;
+}
+
+.model-formula-label { color: var(--color-primary); font-weight: 600; }
+.model-formula-sep { margin: 0 10px; color: var(--color-text-muted); }
+.model-formula-intercept { color: var(--color-text-muted); }
+
+.model-table { width: 100%; border-collapse: collapse; font-size: 11px; color: var(--color-text); }
+.model-table thead tr { background: var(--color-border); }
+.model-table th { padding: 4px 6px; }
+.model-table td { padding: 4px 6px; }
+.model-table tbody tr { border-bottom: 1px solid var(--color-border); }
+
+.effect-positive { color: var(--color-high); }
+.effect-negative { color: var(--color-bad); }
+
 /* ============================================================
    Admin / Private Controls
    ============================================================ */
 .private-controls { display: none; }
 
+/* Per-card admin manual wind/peak-hour entry, shown next to the date title */
+.manual-wind-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: .85em;
+    color: var(--color-text-muted);
+}
+
+.manual-wind-field {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.manual-wind-input input {
+    padding: 4px;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-family: inherit;
+}
+
+.manual-wind-input button {
+    padding: 4px 8px;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background var(--transition), border-color var(--transition);
+}
+
+.manual-wind-input button:hover {
+    background: var(--color-bg-soft-hover);
+    border-color: var(--color-border-strong);
+}
+
 .manual-controls {
     text-align: center;
     padding: 16px;
     margin-bottom: 20px;
-    background: #f8fafc;
+    background: var(--color-bg-soft);
     border: 1.5px solid var(--color-border);
     border-radius: var(--radius-md);
 }
@@ -521,7 +666,7 @@ canvas { height: 420px !important; }
     cursor: pointer;
     border: 1.5px solid var(--color-border);
     border-radius: var(--radius-sm);
-    background: #fff;
+    background: var(--color-surface);
     color: var(--color-text);
     margin: 4px;
     transition: background var(--transition), border-color var(--transition);
@@ -531,8 +676,8 @@ canvas { height: 420px !important; }
 #recalibrateModelBtn:hover,
 #refreshBtn:hover,
 #trainPeakTimeModelBtn:hover {
-    background: #e2e8f0;
-    border-color: #94a3b8;
+    background: var(--color-bg-soft-hover);
+    border-color: var(--color-border-strong);
 }
 
 .delete-real-wind-btn {
@@ -727,20 +872,23 @@ canvas { height: 420px !important; }
     border: 1.5px solid var(--color-border);
     border-radius: var(--radius-sm);
     font-family: inherit;
+    background: var(--color-surface);
+    color: var(--color-text);
 }
 
 #admin-login-form button {
     padding: 8px 16px;
     border: 1.5px solid var(--color-border);
     border-radius: var(--radius-sm);
-    background: #fff;
+    background: var(--color-surface);
+    color: var(--color-text);
     cursor: pointer;
     font-family: inherit;
 }
 
 .admin-login-error {
     display: none;
-    color: #c62828;
+    color: var(--color-bad);
     font-size: .85em;
     margin-top: 8px;
 }
@@ -758,7 +906,7 @@ canvas { height: 420px !important; }
     font-size: .95em;
     font-weight: 600;
     color: var(--color-text);
-    background: #f0f4f8;
+    background: var(--color-bg);
     cursor: pointer;
     display: flex;
     justify-content: space-between;
@@ -781,7 +929,7 @@ canvas { height: 420px !important; }
 .criteria-item-body {
     display: none;
     padding: 12px 14px;
-    background: #f8fafc;
+    background: var(--color-bg-soft);
 }
 
 .criteria-item.open .criteria-item-body { display: block; }
