@@ -12,6 +12,8 @@ math.config({
 const FORECAST_HISTORY_KEY = 'rachesForecastHistory';
 const REAL_WIND_HISTORY_KEY = 'max_wind_history';
 const MODEL_KEY = 'prediction_model_v7'; // v7: fix intercept ridge, NaN guard, UTC month, tail-slice neighbours, ?? for predictedKnots
+// v7.1: drop records missing any of the 11 parameters instead of zero-filling them,
+// so an incomplete month falls back to the nearest complete neighbour month (usually last month).
 
 /**
  * Core logic for calculating the correction model.
@@ -39,6 +41,7 @@ export async function calculateCorrectionModel() {
 
     const monthlyTrainingData = {};
     let unmatchedRecords = 0;
+    let incompleteRecords = 0;
 
     for (const [date, realWindRecord] of realWindMap.entries()) {
         const forecast = forecastMap.get(date);
@@ -46,7 +49,7 @@ export async function calculateCorrectionModel() {
         if (forecast) {
             const realKnots = realWindRecord.windSpeedKnots;
 
-            const features = [
+            const rawFeatures = [
                 forecast.cloud_cover_score,
                 forecast.temp_diff_score,
                 forecast.wind_speed_score,
@@ -58,7 +61,20 @@ export async function calculateCorrectionModel() {
                 forecast.lapse_rate_score,   // v3 new
                 forecast.vpd_score,          // v3 new
                 forecast.strat_cloud_score,  // v3 new
-            ].map(v => (typeof v === 'number' && isFinite(v) ? v : 0));
+            ];
+
+            // Only train on records that actually have all 11 real parameters.
+            // Older records predating a parameter (e.g. lapse_rate/vpd/strat_cloud)
+            // would otherwise get silently zero-filled and pollute the pool for
+            // their calendar month, making that month's "own data" look sufficient
+            // when it's really incomplete. Dropping them lets buildPool's existing
+            // neighbour-month blending (nearest month first, i.e. usually last month)
+            // fall back to genuinely complete data instead.
+            const isComplete = rawFeatures.every(v => typeof v === 'number' && isFinite(v));
+            if (!isComplete) {
+                incompleteRecords++;
+                continue;
+            }
 
             const predictedKnots = forecast.rawAvgPredictedKnots ?? forecast.avgPredictedKnots;
             if (!isFinite(predictedKnots) || !isFinite(realKnots)) continue;
@@ -68,11 +84,15 @@ export async function calculateCorrectionModel() {
             if (!monthlyTrainingData[month]) {
                 monthlyTrainingData[month] = [];
             }
-            monthlyTrainingData[month].push({ features, target: wind_diff });
+            monthlyTrainingData[month].push({ features: rawFeatures, target: wind_diff });
 
         } else {
             unmatchedRecords++;
         }
+    }
+
+    if (incompleteRecords > 0) {
+        console.log(`Skipped ${incompleteRecords} records missing one or more of the 11 parameters (kept out of training pool).`);
     }
 
     const NUM_FEATURES = 11; // v3: +lapse_rate, +vpd, +strat_cloud
@@ -172,7 +192,7 @@ export async function calculateCorrectionModel() {
 
         const ownCount = (monthlyTrainingData[month] || []).length;
         const model = {
-            version: '7.0-aggregated-cross-year',
+            version: '7.1-complete-params-only',
             sourceMonth: sourceMonth,
             isFallback: isFallback,
             blendedMonths: blendedMonths,
