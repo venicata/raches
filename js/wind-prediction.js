@@ -189,20 +189,25 @@ export function predictWindSpeedRange(scores, monthlyModels, date) {
         model = monthlyModels[month];
     }
 
-    // 3. Apply correction if the model was trained on this month's own data (cross-year aggregated).
-    //    isFallback=true means no own-month records exist at all → use baseline only.
+    // 3. Apply correction as long as a model was produced for this month at all.
+    //    The backend (buildPool) already blends in the nearest complete-parameter
+    //    month whenever this month's own data is too thin, so model.sourceMonth
+    //    differing from predictionMonth does NOT mean "no usable data" — it just
+    //    means the coefficients lean on a neighbour month. Only skip correction
+    //    when no model could be built for this month at all (pool too small even
+    //    after blending).
     let isLimitedCorrection = false;
     const predictionMonth = date ? new Date(date).getMonth() + 1 : null;
-    const modelHasOwnData = model && model.coefficients && model.sourceMonth === predictionMonth;
+    const modelIsUsable = !!(model && model.coefficients);
 
-    if (modelHasOwnData) {
+    if (modelIsUsable) {
         const ownRec = model.ownMonthRecords != null ? model.ownMonthRecords : '?';
         const poolRec = model.recordsAnalyzed || '?';
-        console.log(`Using model for month ${predictionMonth} (own=${ownRec} pool=${poolRec} records, max correction: 20)`);
+        console.log(`Using model for month ${predictionMonth} (own=${ownRec} pool=${poolRec} records, source=${model.sourceMonth}, max correction: 20)`);
         finalPrediction = predictWindSpeedWithModel(scores, model, 20);
     } else {
-        // No own-month records at all — use baseline only, no ML correction
-        console.log(`No own-month model for month ${predictionMonth}, using baseline only`);
+        // No model at all for this month — use baseline only, no ML correction
+        console.log(`No model available for month ${predictionMonth}, using baseline only`);
         isLimitedCorrection = true;
         finalPrediction = {
             min: rawPrediction.min,
