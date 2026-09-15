@@ -77,7 +77,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const initialStartDate = formatDate(initialRangeStart);
     const initialEndDate = formatDate(initialRangeEnd);
     fetchAndAnalyze(initialStartDate, initialEndDate);
-    updateUrlWithDates(initialStartDate, initialEndDate);
+    // Only reflect dates in the URL when they came from the URL itself (a
+    // shared link) or once the user manually picks a range below — not for
+    // the plain default range, so the address bar stays clean on a bare load.
+    if (urlStartDate || urlEndDate) {
+        updateUrlWithDates(initialStartDate, initialEndDate);
+    }
 
     const analyzeBtn = document.getElementById('analyze-btn');
 
