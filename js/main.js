@@ -5,6 +5,24 @@ import { fetchAndAnalyze, formatDate, triggerRealDataSync, fetchAndDisplayRealWi
 import { renderHistoricalChart, renderRealWindChart } from './chart.js';
 import { initThemeToggle } from './theme.js';
 
+// Parses a 'YYYY-MM-DD' URL param into a local Date, avoiding UTC-parsing
+// timezone shifts (new Date('YYYY-MM-DD') parses as UTC midnight).
+function parseDateFromParam(str) {
+    if (!str || !/^\d{4}-\d{2}-\d{2}$/.test(str)) return null;
+    const [year, month, day] = str.split('-').map(Number);
+    const d = new Date(year, month - 1, day);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+// Reflects the currently analyzed date range in the URL so the page can be
+// shared and reopened with the same forecast dates preselected.
+function updateUrlWithDates(startDate, endDate) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('start', startDate);
+    url.searchParams.set('end', endDate);
+    window.history.replaceState({}, '', url);
+}
+
 // Hide tooltips when clicking anywhere else on the page
 document.addEventListener('click', () => {
     document.querySelectorAll('.result-card ul li.show-tooltip').forEach(item => {
@@ -41,16 +59,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         maxDate: new Date().fp_incr(15) // Allows forecast up to 16 days ahead
     });
 
-    // Automatically select today and next 2 days and fetch data
+    // Restore dates from the URL if present (e.g. a shared link); otherwise
+    // default to today and the next 2 days.
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlStartDate = parseDateFromParam(urlParams.get('start'));
+    const urlEndDate = parseDateFromParam(urlParams.get('end'));
+
     const today = new Date();
     const dayAfterTomorrow = new Date();
     dayAfterTomorrow.setDate(today.getDate() + 2);
 
-    state.datePicker.setDate([today, dayAfterTomorrow], true);
+    const initialRangeStart = urlStartDate || today;
+    const initialRangeEnd = urlEndDate || dayAfterTomorrow;
 
-    const initialStartDate = formatDate(today);
-    const initialEndDate = formatDate(dayAfterTomorrow);
+    state.datePicker.setDate([initialRangeStart, initialRangeEnd], true);
+
+    const initialStartDate = formatDate(initialRangeStart);
+    const initialEndDate = formatDate(initialRangeEnd);
     fetchAndAnalyze(initialStartDate, initialEndDate);
+    updateUrlWithDates(initialStartDate, initialEndDate);
 
     const analyzeBtn = document.getElementById('analyze-btn');
 
@@ -71,6 +98,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const endDate = formatDate(state.datePicker.selectedDates[1]);
 
         fetchAndAnalyze(startDate, endDate);
+        updateUrlWithDates(startDate, endDate);
     });
 
     // Modal functionality
