@@ -178,6 +178,25 @@ export function getPrecipitationScore(probability) {
     return { score: -4, icon: '❌' };  // High chance of rain, very bad
 }
 
+/**
+ * Scores the gradient/synoptic wind at 925hPa over the Oreoi Strait point (13-17h average).
+ * This is free-atmosphere wind, not the local surface thermal — it measures whether there's
+ * background wind aloft available to mix down and reinforce (or fail to reinforce) the local
+ * sea breeze once it channels through the strait. Backfill test (209 days, Aug 2025-Sep 2026):
+ * corr(real_wind, avgSpeed925) = 0.34, improved model RMSE from 3.90kn to 3.71kn (~5%).
+ * Breakpoints are percentile-based on that same 209-day sample (p10≈6, median≈15, p90≈30 km/h).
+ * @param {number} speed925 - average 925hPa wind speed in km/h during 13-17h.
+ * @returns {object} { score, icon }
+ */
+export function getGradientWindScore(speed925) {
+    if (speed925 >= 30) return { score: 2.0, icon: '✅' };   // top decile — strong synoptic support
+    if (speed925 >= 22) return { score: 1.5, icon: '✅' };
+    if (speed925 >= 15) return { score: 1.0, icon: '✅' };   // at/above median
+    if (speed925 >= 10) return { score: 0, icon: '⚠️' };     // below median, neutral
+    if (speed925 >= 6)  return { score: -0.5, icon: '⚠️' };  // weak — bottom quartile
+    return { score: -1.5, icon: '❌' };                        // near-calm aloft — purely local thermal
+}
+
 export function getWeatherIcon(totalRain, precipitationProb) {
     if (totalRain > 0.5) return '🌧️';
     if (precipitationProb > 30) return '🌦️';

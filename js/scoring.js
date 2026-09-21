@@ -1,6 +1,6 @@
 import { translations } from './translations.js';
 import { state } from './state.js';
-import { getCloudCoverScore, getTempDiffScore, getWindSpeedScore, getWindDirectionScore, calculateAfternoonWindDirection, getWindDirIcon, getSuckEffectIcon, getPressureDropScore, getHumidityScore, getPrecipitationScore, getLapseRateScore, getVpdScore, getStratifiedCloudScore } from './scoring-helpers.js';
+import { getCloudCoverScore, getTempDiffScore, getWindSpeedScore, getWindDirectionScore, calculateAfternoonWindDirection, getWindDirIcon, getSuckEffectIcon, getPressureDropScore, getHumidityScore, getPrecipitationScore, getLapseRateScore, getVpdScore, getStratifiedCloudScore, getGradientWindScore } from './scoring-helpers.js';
 import { predictWindSpeedRange, parsePredictedWindRange } from './wind-prediction.js';
 
 
@@ -96,29 +96,45 @@ export async function processWeatherData(weatherData, marineData, correctionMode
         score += suckEffectScore;
         data.suck_effect_score_value = suckEffectScore;
 
-        // Calculate daytime total cloud cover average (5 AM to 4 PM) — use cloud_cover_total from Lamia
+        // Calculate daytime total cloud cover average — use cloud_cover_total from Lamia.
+        // Window is 5-17h (not 5-16h): the documented thermal mechanism for this spot
+        // (Malian Gulf / Oreoi Strait sea breeze, onset ~11h, peak 16-17h — Raches and
+        // Kainourgio are the named reference pressure stations) peaks AT hour 17, which
+        // the old 5-16h window silently excluded.
+        // Separately track the peak-window (13-17h) average and score on whichever of
+        // {whole-day, peak-window} is worse: a clear morning (before the breeze has even
+        // onset) must not mask clouds moving in during the 13-17h window that actually
+        // has to sustain the wind to its peak.
         let daytimeCloudCoverSum = 0;
         let daytimeHourCount = 0;
+        let peakCloudCoverSum = 0;
+        let peakCloudHourCount = 0;
         const totalCloudArray = weatherData.hourly.cloud_cover_total || weatherData.hourly.cloud_cover_low;
         if (weatherData.hourly && weatherData.hourly.time && totalCloudArray) {
             weatherData.hourly.time.forEach((datetime, index) => {
                 const entryDate = datetime.split('T')[0];
                 if (entryDate === date) {
                     const hour = parseInt(datetime.split('T')[1].split(':')[0]);
-                    if (hour >= 5 && hour <= 16) {
+                    if (hour >= 5 && hour <= 17) {
                         daytimeCloudCoverSum += totalCloudArray[index];
                         daytimeHourCount++;
+                    }
+                    if (hour >= 13 && hour <= 17) {
+                        peakCloudCoverSum += totalCloudArray[index];
+                        peakCloudHourCount++;
                     }
                 }
             });
         }
 
         const daytimeCloudCoverAvg = daytimeHourCount > 0 ? daytimeCloudCoverSum / daytimeHourCount : data.cloud_cover; // Fallback to daily mean
+        const peakCloudCoverAvg = peakCloudHourCount > 0 ? peakCloudCoverSum / peakCloudHourCount : daytimeCloudCoverAvg;
+        const cloudCoverForScoring = Math.max(daytimeCloudCoverAvg, peakCloudCoverAvg);
 
-        const cloudCoverResult = getCloudCoverScore(daytimeCloudCoverAvg);
+        const cloudCoverResult = getCloudCoverScore(cloudCoverForScoring);
         score += cloudCoverResult.score;
         data.cloud_cover_score = cloudCoverResult.score;
-        data.cloud_cover_value = Math.round(daytimeCloudCoverAvg);
+        data.cloud_cover_value = Math.round(cloudCoverForScoring);
 
         data.air_temp_value = data.temperature_2m_max;
         data.sea_temp_value = data.sea_temp;
@@ -170,6 +186,11 @@ export async function processWeatherData(weatherData, marineData, correctionMode
         let daytimeLowCloudSum = 0;
         let daytimeMidCloudSum = 0;
         let daytimeCloudCount = 0;
+        let peakLowCloudSum = 0;
+        let peakMidCloudSum = 0;
+        let peakCloudLayerCount = 0;
+        let afternoonGradientWindSum = 0;
+        let afternoonGradientWindCount = 0;
 
         if (weatherData.hourly && weatherData.hourly.time) {
             weatherData.hourly.time.forEach((datetime, index) => {
@@ -199,6 +220,11 @@ export async function processWeatherData(weatherData, marineData, correctionMode
                             afternoonVpdSum += weatherData.hourly.vapour_pressure_deficit[index];
                             afternoonVpdCount++;
                         }
+                        // Gradient/synoptic wind at 925hPa over the Oreoi Strait point (thermal peak window)
+                        if (weatherData.hourly.wind_speed_925hPa_gradient && weatherData.hourly.wind_speed_925hPa_gradient[index] != null) {
+                            afternoonGradientWindSum += weatherData.hourly.wind_speed_925hPa_gradient[index];
+                            afternoonGradientWindCount++;
+                        }
                     }
 
                     // Lapse rate during peak solar heating (11-14h)
@@ -210,8 +236,11 @@ export async function processWeatherData(weatherData, marineData, correctionMode
                         }
                     }
 
-                    // Stratified cloud cover during daytime (5-16h)
-                    if (hour >= 5 && hour <= 16) {
+                    // Stratified cloud cover during daytime (5-17h, see cloud_cover_total above
+                    // for why the window includes the documented 17h peak hour), plus a
+                    // dedicated 13-17h peak-window tally so a bad afternoon can't hide behind
+                    // a clear morning.
+                    if (hour >= 5 && hour <= 17) {
                         if (weatherData.hourly.cloud_cover_low && weatherData.hourly.cloud_cover_low[index] != null) {
                             daytimeLowCloudSum += weatherData.hourly.cloud_cover_low[index];
                         }
@@ -219,6 +248,15 @@ export async function processWeatherData(weatherData, marineData, correctionMode
                             daytimeMidCloudSum += weatherData.hourly.cloud_cover_mid[index];
                         }
                         daytimeCloudCount++;
+                    }
+                    if (hour >= 13 && hour <= 17) {
+                        if (weatherData.hourly.cloud_cover_low && weatherData.hourly.cloud_cover_low[index] != null) {
+                            peakLowCloudSum += weatherData.hourly.cloud_cover_low[index];
+                        }
+                        if (weatherData.hourly.cloud_cover_mid && weatherData.hourly.cloud_cover_mid[index] != null) {
+                            peakMidCloudSum += weatherData.hourly.cloud_cover_mid[index];
+                        }
+                        peakCloudLayerCount++;
                     }
                 }
             });
@@ -273,9 +311,18 @@ export async function processWeatherData(weatherData, marineData, correctionMode
         data.vpd_score = vpdScore;
         data.vpd_icon = vpdIcon;
 
-        // Stratified cloud bonus/penalty (low clouds block heating much more than high clouds)
-        const avgLowCloud = daytimeCloudCount > 0 ? daytimeLowCloudSum / daytimeCloudCount : null;
-        const avgMidCloud = daytimeCloudCount > 0 ? daytimeMidCloudSum / daytimeCloudCount : null;
+        // Stratified cloud bonus/penalty (low clouds block heating much more than high clouds).
+        // Score on whichever of {whole daytime window, 13-17h peak window} blocks more sun —
+        // same worse-of-two-windows guard as cloud_cover_total above.
+        const daytimeAvgLowCloud = daytimeCloudCount > 0 ? daytimeLowCloudSum / daytimeCloudCount : null;
+        const daytimeAvgMidCloud = daytimeCloudCount > 0 ? daytimeMidCloudSum / daytimeCloudCount : null;
+        const peakAvgLowCloud = peakCloudLayerCount > 0 ? peakLowCloudSum / peakCloudLayerCount : daytimeAvgLowCloud;
+        const peakAvgMidCloud = peakCloudLayerCount > 0 ? peakMidCloudSum / peakCloudLayerCount : daytimeAvgMidCloud;
+        const daytimeBlockage = daytimeAvgLowCloud !== null ? daytimeAvgLowCloud + daytimeAvgMidCloud * 0.4 : null;
+        const peakBlockage = peakAvgLowCloud !== null ? peakAvgLowCloud + peakAvgMidCloud * 0.4 : null;
+        const useDaytimeWindow = daytimeBlockage === null || (peakBlockage !== null && peakBlockage <= daytimeBlockage);
+        const avgLowCloud = useDaytimeWindow ? daytimeAvgLowCloud : peakAvgLowCloud;
+        const avgMidCloud = useDaytimeWindow ? daytimeAvgMidCloud : peakAvgMidCloud;
         let stratCloudScore = 0;
         let stratCloudIcon = '⚠️';
         if (avgLowCloud !== null && avgMidCloud !== null) {
@@ -289,14 +336,52 @@ export async function processWeatherData(weatherData, marineData, correctionMode
         data.strat_cloud_score = stratCloudScore;
         data.strat_cloud_icon = stratCloudIcon;
 
+        // Gradient/synoptic wind at 925hPa (Oreoi Strait point) — free-atmosphere wind
+        // mixing into the channel, independent of the local land-heating engine (see
+        // getGradientWindScore doc). Not a symptom of Raches's own heating, so it is
+        // NOT part of the thermal-consistency dampening group below.
+        const avgGradientWind = afternoonGradientWindCount > 0 ? afternoonGradientWindSum / afternoonGradientWindCount : null;
+        let gradientWindScore = 0;
+        let gradientWindIcon = '⚠️';
+        if (avgGradientWind !== null) {
+            const gradientResult = getGradientWindScore(avgGradientWind);
+            gradientWindScore = gradientResult.score;
+            gradientWindIcon = gradientResult.icon;
+            score += gradientWindScore;
+        }
+        data.gradient_wind_value = avgGradientWind !== null ? Math.round(avgGradientWind) : null;
+        data.gradient_wind_score = gradientWindScore;
+        data.gradient_wind_icon = gradientWindIcon;
+
         data.score = score;
-        const minScoreTotal = -25; // v3: +lapse_rate(-2), +vpd(-1), +strat_cloud(-1.5)
-        const maxScoreTotal = 32.25; // v3: +lapse_rate(+3), +vpd(+2.5), +strat_cloud(+1.5)
+        const minScoreTotal = -26.5; // v4: +gradient_wind(-1.5) on top of v3's -25
+        const maxScoreTotal = 34.25; // v4: +gradient_wind(+2.0) on top of v3's +32.25
         data.scoreText = T.scoreLabel.replace('{score}', score.toFixed(2)).replace('{minScore}', minScoreTotal).replace('{maxScore}', maxScoreTotal);
 
+        // Thermal-consistency adjustment for the score fed into the wind estimate
+        // (displayed score/breakdown above stay the raw, transparent sum).
+        // temp_diff_score and lapse_rate_score are the only two features that directly
+        // measure the land-sea heating differential/instability that the documented
+        // mechanism for this spot calls THE cause of the wind (Malian Gulf / Oreoi
+        // Strait sea breeze — see getTempDiffScore's own "PRIMARY driver" comment).
+        // pressure_drop, humidity, VPD and the low/mid-cloud bonus are all downstream
+        // symptoms of that same local heating at Raches itself, not independent
+        // confirmations of it — on a day where Raches warms up locally (good VPD/
+        // humidity/pressure-drop readings) while the inland Lamia-side differential
+        // that has to power the whole circulation stays mediocre, a purely additive
+        // score lets those correlated symptoms outvote a modest actual gradient.
+        // Dampen (never boost) their positive contribution in that case; leave
+        // penalties, cloud_cover, wind_speed/direction and precipitation untouched.
+        const CORE_MAX = 8.25; // getTempDiffScore max (5.25) + getLapseRateScore max (3)
+        const coreStrengthRatio = Math.max(0, Math.min(1, (data.temp_diff_score + data.lapse_rate_score) / CORE_MAX));
+        const secondaryDampener = 0.5 + 0.5 * coreStrengthRatio; // 0.5 at core=0 .. 1.0 at core=max
+        const secondaryFactors = [data.pressure_drop_score, data.humidity_score, data.vpd_score, data.strat_cloud_score, data.suck_effect_score_value];
+        const rawSecondarySum = secondaryFactors.reduce((sum, v) => sum + v, 0);
+        const dampenedSecondarySum = secondaryFactors.reduce((sum, v) => sum + (v > 0 ? v * secondaryDampener : v), 0);
+        const thermalConsistencyScore = score - rawSecondarySum + dampenedSecondarySum;
 
         const scores = {
-            overallScore: score,
+            overallScore: thermalConsistencyScore,
             cloud_cover_score: data.cloud_cover_score,
             temp_diff_score: data.temp_diff_score,
             wind_speed_score: data.wind_speed_score,
@@ -307,7 +392,8 @@ export async function processWeatherData(weatherData, marineData, correctionMode
             precipitation_probability_score: data.precipitation_probability_score,
             lapse_rate_score: data.lapse_rate_score,
             vpd_score: data.vpd_score,
-            strat_cloud_score: data.strat_cloud_score
+            strat_cloud_score: data.strat_cloud_score,
+            gradient_wind_score: data.gradient_wind_score
         };
 
         const windPrediction = predictWindSpeedRange(scores, correctionModel, date);
@@ -363,6 +449,9 @@ export async function processWeatherData(weatherData, marineData, correctionMode
             mid_cloud_value: data.mid_cloud_value,
             strat_cloud_score: data.strat_cloud_score,
             strat_cloud_icon: data.strat_cloud_icon,
+            gradient_wind_value: data.gradient_wind_value,
+            gradient_wind_score: data.gradient_wind_score,
+            gradient_wind_icon: data.gradient_wind_icon,
             pKnots_min: data.pKnots_min,
             pKnots_max: data.pKnots_max,
             pMs_min: data.pMs_min,

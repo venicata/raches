@@ -5,9 +5,21 @@
 // и го запазва в базата данни за целите на калибрирането.
 
 // Забележка: Node.js v18+ е необходим за 'fetch' без допълнителни пакети.
+import dotenv from 'dotenv';
+import path from 'path';
+
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+
 const API_URL = 'https://kiting.live/api/observations/history-5m';
-const API_KEY = '***REMOVED***'; // ВАЖНО: За по-добра сигурност, преместете ключа в environment променлива.
-const CLIENT_USERNAME = 'veniaminikus@gmail.com';
+// Ключът и потребителят се вземат от environment променливи (виж .env.local),
+// същите KITING_LIVE_API_KEY/KITING_LIVE_CLIENT_USERNAME, които ползва api/process-max-wind.js.
+const API_KEY = process.env.KITING_LIVE_API_KEY;
+const CLIENT_USERNAME = process.env.KITING_LIVE_CLIENT_USERNAME;
+
+if (!API_KEY || !CLIENT_USERNAME) {
+    console.error('Липсват KITING_LIVE_API_KEY / KITING_LIVE_CLIENT_USERNAME в .env.local');
+    process.exit(1);
+}
 
 /**
  * Изтегля историческите данни от API-то на kiting.live.

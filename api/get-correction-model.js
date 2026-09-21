@@ -1,7 +1,7 @@
 import { Redis } from '@upstash/redis';
 
 const redis = Redis.fromEnv();
-const MODEL_KEY = 'prediction_model_v7';
+const MODEL_KEY = 'prediction_model_v8'; // must match calculate-correction-model.js's MODEL_KEY
 
 export default async function handler(request, response) {
     if (request.method !== 'GET') {

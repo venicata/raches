@@ -107,9 +107,10 @@ function predictWindSpeedWithModel(scores, model, maxCorrection = 20) {
         scores.pressure_drop_score,
         scores.humidity_score,
         scores.precipitation_probability_score,
-        scores.lapse_rate_score  || 0,
-        scores.vpd_score         || 0,
-        scores.strat_cloud_score || 0,
+        scores.lapse_rate_score     || 0,
+        scores.vpd_score            || 0,
+        scores.strat_cloud_score    || 0,
+        scores.gradient_wind_score  || 0,
     ];
 
     // Per-parameter contribution to the correction (coefficient * this day's score),
@@ -126,6 +127,7 @@ function predictWindSpeedWithModel(scores, model, maxCorrection = 20) {
         lapse_rate:     (coeffs.lapse_rate || 0)     * features[8],
         vpd:            (coeffs.vpd || 0)            * features[9],
         strat_cloud:    (coeffs.strat_cloud || 0)    * features[10],
+        gradient_wind:  (coeffs.gradient_wind || 0)  * features[11],
     };
 
     const contributionsSum = Object.values(contributions).reduce((sum, v) => sum + v, 0);

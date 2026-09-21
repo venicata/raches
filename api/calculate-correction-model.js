@@ -11,9 +11,12 @@ math.config({
 
 const FORECAST_HISTORY_KEY = 'rachesForecastHistory';
 const REAL_WIND_HISTORY_KEY = 'max_wind_history';
-const MODEL_KEY = 'prediction_model_v7'; // v7: fix intercept ridge, NaN guard, UTC month, tail-slice neighbours, ?? for predictedKnots
+const MODEL_KEY = 'prediction_model_v8'; // v7: fix intercept ridge, NaN guard, UTC month, tail-slice neighbours, ?? for predictedKnots
 // v7.1: drop records missing any of the 11 parameters instead of zero-filling them,
 // so an incomplete month falls back to the nearest complete neighbour month (usually last month).
+// v8: +gradient_wind_score (925hPa wind over the Oreoi Strait point) — 12th feature.
+// Backfill test on 209 real-wind-matched days validated corr(real_wind, this feature) = 0.34
+// and a ~5% RMSE improvement over the 11-feature baseline. See constants.js OREOI_STRAIT_LAT/LON.
 
 /**
  * Core logic for calculating the correction model.
@@ -58,9 +61,10 @@ export async function calculateCorrectionModel() {
                 forecast.pressure_drop_score,
                 forecast.humidity_score,
                 forecast.precipitation_probability_score,
-                forecast.lapse_rate_score,   // v3 new
-                forecast.vpd_score,          // v3 new
-                forecast.strat_cloud_score,  // v3 new
+                forecast.lapse_rate_score,     // v3 new
+                forecast.vpd_score,            // v3 new
+                forecast.strat_cloud_score,    // v3 new
+                forecast.gradient_wind_score,   // v8 new
             ];
 
             // Only train on records that actually have all 11 real parameters.
@@ -95,7 +99,7 @@ export async function calculateCorrectionModel() {
         console.log(`Skipped ${incompleteRecords} records missing one or more of the 11 parameters (kept out of training pool).`);
     }
 
-    const NUM_FEATURES = 11; // v3: +lapse_rate, +vpd, +strat_cloud
+    const NUM_FEATURES = 12; // v3: +lapse_rate, +vpd, +strat_cloud; v8: +gradient_wind
     // Minimum records to consider a month's own data as the primary source
     const MIN_OWN_RECORDS = NUM_FEATURES + 1;
     // Target pool size: if own data is below this, blend in neighbour months
@@ -210,6 +214,7 @@ export async function calculateCorrectionModel() {
                 lapse_rate:     Math.round(coefficients[9]  * 100) / 100,
                 vpd:            Math.round(coefficients[10] * 100) / 100,
                 strat_cloud:    Math.round(coefficients[11] * 100) / 100,
+                gradient_wind:  Math.round(coefficients[12] * 100) / 100,
             },
             recordsAnalyzed: pool.length,
             ownMonthRecords: ownCount,

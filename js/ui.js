@@ -291,6 +291,9 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
         const stratCloudText = result.low_cloud_value !== null && result.low_cloud_value !== undefined
             ? `${result.strat_cloud_icon || '⚠️'} ${T.stratCloudLabel || 'Low/Mid Cloud:'} ${result.low_cloud_value}% / ${result.mid_cloud_value}% (${result.strat_cloud_score > 0 ? '+' : ''}${result.strat_cloud_score} ${pointSuffix})${formatContribution(contrib.strat_cloud, T.knotsUnit)}`
             : null;
+        const gradientWindText = result.gradient_wind_value !== null && result.gradient_wind_value !== undefined
+            ? `${result.gradient_wind_icon || '⚠️'} ${T.gradientWindLabel || 'Gradient Wind (925hPa):'} ${result.gradient_wind_value} km/h (${result.gradient_wind_score > 0 ? '+' : ''}${result.gradient_wind_score} ${pointSuffix})${formatContribution(contrib.gradient_wind, T.knotsUnit)}`
+            : null;
 
         // Score bar: show visual progress of score relative to max
         const scoreMin = -20.5;
@@ -396,6 +399,11 @@ export async function displayResults(analysisResults, maxWindHistory, peakWindMo
                     <span class="li-content">${stratCloudText}</span>
                     <i class="info-icon">i</i>
                     <div class="custom-tooltip"><strong>${T.criteria11Title || 'Low/Mid Cloud Layer'}</strong><br>${T.criteria11Desc || ''}</div>
+                </li>` : ''}
+                ${gradientWindText ? `<li>
+                    <span class="li-content">${gradientWindText}</span>
+                    <i class="info-icon">i</i>
+                    <div class="custom-tooltip"><strong>${T.criteria12Title || 'Gradient Wind (925hPa)'}</strong><br>${T.criteria12Desc || ''}</div>
                 </li>` : ''}
                 <li>
                     <span class="li-content">${rainText}</span>
@@ -770,6 +778,7 @@ function displayScoringLegend(T) {
             <li>${T.legendLapseRate}</li>
             <li>${T.legendVpd}</li>
             <li>${T.legendStratCloud}</li>
+            <li>${T.legendGradientWind}</li>
         </ul>
     `;
 

@@ -1,4 +1,4 @@
-import { RACHES_LAT, RACHES_LON, SEA_TEMP_LAT, SEA_TEMP_LON, LAMIA_LAT, LAMIA_LON } from './constants.js';
+import { RACHES_LAT, RACHES_LON, SEA_TEMP_LAT, SEA_TEMP_LON, LAMIA_LAT, LAMIA_LON, OREOI_STRAIT_LAT, OREOI_STRAIT_LON } from './constants.js';
 import { processWeatherData } from './scoring.js';
 import { displayResults, displayRealWindData } from './ui.js';
 import { translations } from './translations.js';
@@ -39,25 +39,33 @@ export async function fetchAndAnalyze(startDate, endDate) {
     // Added: cloud_cover_low, cloud_cover_mid, cloud_cover_high (stratified cloud analysis)
     const lamiaWeatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LAMIA_LAT}&longitude=${LAMIA_LON}&hourly=temperature_2m,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high&daily=cloud_cover_mean,temperature_2m_max&timezone=auto&start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
 
-    // URL for Volos - sea temperature
+    // URL for Malian Gulf near Raches - sea temperature
     const marineApiUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${SEA_TEMP_LAT}&longitude=${SEA_TEMP_LON}&hourly=sea_surface_temperature&start_date=${formattedStartDate}&end_date=${formattedEndDate}&timezone=auto`;
 
+    // URL for the Oreoi Strait point - gradient/synoptic wind at 925hPa (NOT surface).
+    // Backfill-validated: this is the free-atmosphere wind that mixes down into the
+    // channel and reinforces (or fails to reinforce) the local thermal — see constants.js.
+    const gradientWeatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${OREOI_STRAIT_LAT}&longitude=${OREOI_STRAIT_LON}&hourly=wind_speed_925hPa&timezone=auto&start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
+
     try {
-        const [rachesWeatherResponse, lamiaWeatherResponse, marineResponse] = await Promise.all([
+        const [rachesWeatherResponse, lamiaWeatherResponse, marineResponse, gradientWeatherResponse] = await Promise.all([
             fetch(rachesWeatherApiUrl),
             fetch(lamiaWeatherApiUrl),
-            fetch(marineApiUrl)
+            fetch(marineApiUrl),
+            fetch(gradientWeatherApiUrl)
         ]);
 
-        if (!rachesWeatherResponse.ok || !lamiaWeatherResponse.ok || !marineResponse.ok) {
+        if (!rachesWeatherResponse.ok || !lamiaWeatherResponse.ok || !marineResponse.ok || !gradientWeatherResponse.ok) {
             throw new Error('Проблем при връзката с API-то за времето.');
         }
 
         const rachesWeatherData = await rachesWeatherResponse.json();
         const lamiaWeatherData = await lamiaWeatherResponse.json();
         const marineData = await marineResponse.json();
+        const gradientWeatherData = await gradientWeatherResponse.json();
 
-        // Merge weather data — Raches for wind/pressure/VPD, Lamia for temperature/cloud
+        // Merge weather data — Raches for wind/pressure/VPD, Lamia for temperature/cloud,
+        // Oreoi Strait point for the 925hPa gradient/synoptic wind.
         const weatherData = {
             ...rachesWeatherData,
             hourly: {
@@ -69,6 +77,7 @@ export async function fetchAndAnalyze(startDate, endDate) {
                 cloud_cover_mid: lamiaWeatherData.hourly.cloud_cover_mid,
                 cloud_cover_high: lamiaWeatherData.hourly.cloud_cover_high,
                 cloud_cover_total: lamiaWeatherData.hourly.cloud_cover,
+                wind_speed_925hPa_gradient: gradientWeatherData.hourly.wind_speed_925hPa,
             },
             daily: {
                 ...rachesWeatherData.daily,
